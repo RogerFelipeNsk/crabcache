@@ -468,8 +468,7 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICE
 
 - **Issues**: [GitHub Issues](https://github.com/your-org/crabcache/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-org/crabcache/discussions)
-- **Email**: support@crabcache.io
-- **Discord**: [CrabCache Community](https://discord.gg/crabcache)
+- **Email**: rogerfelipensk@gmail.com
 
 ---
 
