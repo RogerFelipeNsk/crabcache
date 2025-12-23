@@ -1,0 +1,16 @@
+{
+  "config": {
+    "connections": 20,
+    "operations_per_connection": 2000
+  },
+  "results": {
+    "total_operations": 40000,
+    "successful_operations": 40000,
+    "throughput_ops_per_sec": 21108.478780999118,
+    "success_rate": 100.0,
+    "latency_p50_ms": 0.8088125032372773,
+    "latency_p95_ms": 1.637039877823554,
+    "latency_p99_ms": 3.675274549750611,
+    "duration_seconds": 1.8949731250177138
+  }
+}

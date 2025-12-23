@@ -1,0 +1,628 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-12-21T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_crabcache_complete",
+      "parentId": null,
+      "modified": 1703029900000,
+      "created": 1703029900000,
+      "name": "CrabCache HTTP API - Completa",
+      "description": "Coleção completa da API HTTP do CrabCache com todos os endpoints disponíveis",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_crabcache_base",
+      "parentId": "wrk_crabcache_complete",
+      "modified": 1703029800000,
+      "created": 1703029800000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8000",
+        "test_key": "test:insomnia",
+        "test_value": "valor_de_teste"
+      },
+      "dataPropertyOrder": {
+        "&": ["base_url", "test_key", "test_value"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1703029800000,
+      "_type": "environment"
+    },
+    {
+      "_id": "fld_health",
+      "parentId": "wrk_crabcache_complete",
+      "modified": 1703030000000,
+      "created": 1703030000000,
+      "name": "🏥 Health Check",
+      "description": "Verificações de saúde e conectividade",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703030000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_docs",
+      "parentId": "fld_health",
+      "modified": 1703030100000,
+      "created": 1703030100000,
+      "url": "{{ _.base_url }}/",
+      "name": "📖 Documentação da API",
+      "description": "Retorna documentação completa com todos os endpoints",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030100000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_health",
+      "parentId": "fld_health",
+      "modified": 1703030200000,
+      "created": 1703030200000,
+      "url": "{{ _.base_url }}/health",
+      "name": "🩺 Health Check Completo",
+      "description": "Verifica status do wrapper e conectividade com CrabCache",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030200000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_ping",
+      "parentId": "fld_health",
+      "modified": 1703030300000,
+      "created": 1703030300000,
+      "url": "{{ _.base_url }}/ping",
+      "name": "🏓 PING - Teste de Conectividade",
+      "description": "Executa comando PING no CrabCache",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030300000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_basic",
+      "parentId": "wrk_crabcache_complete",
+      "modified": 1703029900000,
+      "created": 1703029900000,
+      "name": "🔧 Operações Básicas",
+      "description": "PUT, GET, DELETE - operações fundamentais do cache",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703029900000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_put_simple",
+      "parentId": "fld_basic",
+      "modified": 1703030400000,
+      "created": 1703030400000,
+      "url": "{{ _.base_url }}/put",
+      "name": "💾 PUT - Valor Simples",
+      "description": "Armazena chave-valor simples (sem TTL)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"{{ _.test_key }}\",\n  \"value\": \"{{ _.test_value }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030400000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_put_ttl",
+      "parentId": "fld_basic",
+      "modified": 1703030500000,
+      "created": 1703030500000,
+      "url": "{{ _.base_url }}/put",
+      "name": "⏰ PUT - Com TTL",
+      "description": "Armazena chave-valor com TTL de 1 hora",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"session:{{ _.test_key }}\",\n  \"value\": \"session_data_123\",\n  \"ttl\": 3600\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030500000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_put_json",
+      "parentId": "fld_basic",
+      "modified": 1703030600000,
+      "created": 1703030600000,
+      "url": "{{ _.base_url }}/put",
+      "name": "📄 PUT - Dados JSON",
+      "description": "Armazena dados JSON complexos",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"user:profile:123\",\n  \"value\": \"{\\\"name\\\":\\\"João Silva\\\",\\\"age\\\":30,\\\"email\\\":\\\"joao@example.com\\\"}\",\n  \"ttl\": 7200\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030600000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_simple",
+      "parentId": "fld_basic",
+      "modified": 1703030700000,
+      "created": 1703030700000,
+      "url": "{{ _.base_url }}/get/{{ _.test_key }}",
+      "name": "📥 GET - Valor Simples",
+      "description": "Recupera valor armazenado anteriormente",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030700000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_session",
+      "parentId": "fld_basic",
+      "modified": 1703030800000,
+      "created": 1703030800000,
+      "url": "{{ _.base_url }}/get/session:{{ _.test_key }}",
+      "name": "🔐 GET - Sessão",
+      "description": "Recupera dados de sessão (pode estar expirada)",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030800000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_json",
+      "parentId": "fld_basic",
+      "modified": 1703030900000,
+      "created": 1703030900000,
+      "url": "{{ _.base_url }}/get/user:profile:123",
+      "name": "📋 GET - Dados JSON",
+      "description": "Recupera dados JSON armazenados",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030900000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_nonexistent",
+      "parentId": "fld_basic",
+      "modified": 1703031000000,
+      "created": 1703031000000,
+      "url": "{{ _.base_url }}/get/chave:inexistente",
+      "name": "❌ GET - Chave Inexistente",
+      "description": "Testa recuperação de chave que não existe",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_delete_simple",
+      "parentId": "fld_basic",
+      "modified": 1703031100000,
+      "created": 1703031100000,
+      "url": "{{ _.base_url }}/delete/{{ _.test_key }}",
+      "name": "🗑️ DELETE - Remover Chave",
+      "description": "Remove chave do cache",
+      "method": "DELETE",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031100000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_ttl",
+      "parentId": "wrk_crabcache_complete",
+      "modified": 1703029800000,
+      "created": 1703029800000,
+      "name": "⏰ Gerenciamento TTL",
+      "description": "Comandos para gerenciar Time-To-Live",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703029800000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_expire_1h",
+      "parentId": "fld_ttl",
+      "modified": 1703031200000,
+      "created": 1703031200000,
+      "url": "{{ _.base_url }}/expire",
+      "name": "⏰ EXPIRE - TTL 1 Hora",
+      "description": "Define TTL de 1 hora para chave existente",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"user:profile:123\",\n  \"ttl\": 3600\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031200000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_expire_5m",
+      "parentId": "fld_ttl",
+      "modified": 1703031300000,
+      "created": 1703031300000,
+      "url": "{{ _.base_url }}/expire",
+      "name": "⏱️ EXPIRE - TTL 5 Minutos",
+      "description": "Define TTL de 5 minutos para chave existente",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"session:{{ _.test_key }}\",\n  \"ttl\": 300\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031300000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_monitoring",
+      "parentId": "wrk_crabcache_complete",
+      "modified": 1703029700000,
+      "created": 1703029700000,
+      "name": "📊 Monitoramento",
+      "description": "Estatísticas e comandos de monitoramento",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703029700000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_stats",
+      "parentId": "fld_monitoring",
+      "modified": 1703031400000,
+      "created": 1703031400000,
+      "url": "{{ _.base_url }}/stats",
+      "name": "📈 STATS - Estatísticas",
+      "description": "Obtém estatísticas detalhadas de todos os shards",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031400000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_raw",
+      "parentId": "wrk_crabcache_complete",
+      "modified": 1703029600000,
+      "created": 1703029600000,
+      "name": "🔧 Comandos Raw",
+      "description": "Comandos TCP raw enviados diretamente",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703029600000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_raw_ping",
+      "parentId": "fld_raw",
+      "modified": 1703031500000,
+      "created": 1703031500000,
+      "url": "{{ _.base_url }}/command",
+      "name": "🏓 RAW - PING",
+      "description": "Envia comando PING raw via TCP",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"command\": \"PING\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031500000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_raw_put",
+      "parentId": "fld_raw",
+      "modified": 1703031600000,
+      "created": 1703031600000,
+      "url": "{{ _.base_url }}/command",
+      "name": "💾 RAW - PUT",
+      "description": "Envia comando PUT raw via TCP",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"command\": \"PUT raw:test valor_raw_test 1800\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031600000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_raw_get",
+      "parentId": "fld_raw",
+      "modified": 1703031700000,
+      "created": 1703031700000,
+      "url": "{{ _.base_url }}/command",
+      "name": "📥 RAW - GET",
+      "description": "Envia comando GET raw via TCP",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"command\": \"GET raw:test\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031700000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_raw_stats",
+      "parentId": "fld_raw",
+      "modified": 1703031800000,
+      "created": 1703031800000,
+      "url": "{{ _.base_url }}/command",
+      "name": "📊 RAW - STATS",
+      "description": "Envia comando STATS raw via TCP",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"command\": \"STATS\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031800000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    }
+  ]
+}

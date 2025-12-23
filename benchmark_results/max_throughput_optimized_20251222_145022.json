@@ -1,0 +1,267 @@
+{
+  "timestamp": "20251222_145022",
+  "test_duration": 30,
+  "warmup_duration": 5,
+  "maximum_throughput": {
+    "ops_per_sec": 25823.811844853164,
+    "config": "High Throughput (10 conn)",
+    "operation": "PING"
+  },
+  "configurations_tested": 4,
+  "operation_types_tested": [
+    "PING",
+    "PUT",
+    "GET",
+    "MIXED"
+  ],
+  "results": {
+    "Outlier-Optimized (2 conn)": {
+      "PING": {
+        "config_name": "Outlier-Optimized (2 conn)",
+        "operation_type": "PING",
+        "connections": 2,
+        "total_duration": 30.022470083029475,
+        "successful_operations": 321477,
+        "failed_operations": 0,
+        "throughput": 10707.8797684178,
+        "latency_stats": {
+          "p50": 0.180208,
+          "p95": 0.24375,
+          "p99": 0.30633324,
+          "p99_9": 0.8905800160000539
+        }
+      },
+      "PUT": {
+        "config_name": "Outlier-Optimized (2 conn)",
+        "operation_type": "PUT",
+        "connections": 2,
+        "total_duration": 30.025462916994,
+        "successful_operations": 304368,
+        "failed_operations": 0,
+        "throughput": 10136.996083671766,
+        "latency_stats": {
+          "p50": 0.186708,
+          "p95": 0.255417,
+          "p99": 0.34781939000000134,
+          "p99_9": 1.1284121250000039
+        }
+      },
+      "GET": {
+        "config_name": "Outlier-Optimized (2 conn)",
+        "operation_type": "GET",
+        "connections": 2,
+        "total_duration": 30.023364915978163,
+        "successful_operations": 274792,
+        "failed_operations": 0,
+        "throughput": 9152.605005102481,
+        "latency_stats": {
+          "p50": 0.190291,
+          "p95": 0.26825,
+          "p99": 0.4530150300000043,
+          "p99_9": 1.9321180690002389
+        }
+      },
+      "MIXED": {
+        "config_name": "Outlier-Optimized (2 conn)",
+        "operation_type": "MIXED",
+        "connections": 2,
+        "total_duration": 30.027146417007316,
+        "successful_operations": 298100,
+        "failed_operations": 0,
+        "throughput": 9927.683298974982,
+        "latency_stats": {
+          "p50": 0.1845,
+          "p95": 0.262292,
+          "p99": 0.4195436700000016,
+          "p99_9": 1.8314119410000005
+        }
+      }
+    },
+    "High Throughput (10 conn)": {
+      "PING": {
+        "config_name": "High Throughput (10 conn)",
+        "operation_type": "PING",
+        "connections": 10,
+        "total_duration": 30.026047457999084,
+        "successful_operations": 775387,
+        "failed_operations": 0,
+        "throughput": 25823.811844853164,
+        "latency_stats": {
+          "p50": 0.364708,
+          "p95": 0.585,
+          "p99": 0.7799581400000001,
+          "p99_9": 2.3034613260000127
+        }
+      },
+      "PUT": {
+        "config_name": "High Throughput (10 conn)",
+        "operation_type": "PUT",
+        "connections": 10,
+        "total_duration": 30.02257433399791,
+        "successful_operations": 662208,
+        "failed_operations": 0,
+        "throughput": 22057.002595214097,
+        "latency_stats": {
+          "p50": 0.396833,
+          "p95": 0.671625,
+          "p99": 1.1311963800000084,
+          "p99_9": 5.396314556000019
+        }
+      },
+      "GET": {
+        "config_name": "High Throughput (10 conn)",
+        "operation_type": "GET",
+        "connections": 10,
+        "total_duration": 30.032872250012588,
+        "successful_operations": 407375,
+        "failed_operations": 0,
+        "throughput": 13564.303693924221,
+        "latency_stats": {
+          "p50": 0.465458,
+          "p95": 0.8814705999999994,
+          "p99": 1.7431465800000008,
+          "p99_9": 9.837211084001133
+        }
+      },
+      "MIXED": {
+        "config_name": "High Throughput (10 conn)",
+        "operation_type": "MIXED",
+        "connections": 10,
+        "total_duration": 30.13062249997165,
+        "successful_operations": 654214,
+        "failed_operations": 0,
+        "throughput": 21712.594885838007,
+        "latency_stats": {
+          "p50": 0.399875,
+          "p95": 0.656792,
+          "p99": 0.9377035399999998,
+          "p99_9": 4.4631003580004895
+        }
+      }
+    },
+    "Balanced (5 conn)": {
+      "PING": {
+        "config_name": "Balanced (5 conn)",
+        "operation_type": "PING",
+        "connections": 5,
+        "total_duration": 30.031971207994502,
+        "successful_operations": 572593,
+        "failed_operations": 0,
+        "throughput": 19066.114442983213,
+        "latency_stats": {
+          "p50": 0.244291,
+          "p95": 0.361,
+          "p99": 0.47029527999999826,
+          "p99_9": 1.9445728640002138
+        }
+      },
+      "PUT": {
+        "config_name": "Balanced (5 conn)",
+        "operation_type": "PUT",
+        "connections": 5,
+        "total_duration": 30.03886866598623,
+        "successful_operations": 531342,
+        "failed_operations": 0,
+        "throughput": 17688.482409514043,
+        "latency_stats": {
+          "p50": 0.257417,
+          "p95": 0.406084,
+          "p99": 0.652083,
+          "p99_9": 2.507476553000677
+        }
+      },
+      "GET": {
+        "config_name": "Balanced (5 conn)",
+        "operation_type": "GET",
+        "connections": 5,
+        "total_duration": 30.030408833001275,
+        "successful_operations": 508824,
+        "failed_operations": 0,
+        "throughput": 16943.625470754123,
+        "latency_stats": {
+          "p50": 0.249209,
+          "p95": 0.379917,
+          "p99": 0.487458,
+          "p99_9": 1.644476434000087
+        }
+      },
+      "MIXED": {
+        "config_name": "Balanced (5 conn)",
+        "operation_type": "MIXED",
+        "connections": 5,
+        "total_duration": 30.05038291600067,
+        "successful_operations": 540351,
+        "failed_operations": 0,
+        "throughput": 17981.50131765156,
+        "latency_stats": {
+          "p50": 0.251208,
+          "p95": 0.380041,
+          "p99": 0.5171665,
+          "p99_9": 2.1444209500000135
+        }
+      }
+    },
+    "Ultra High (20 conn)": {
+      "PING": {
+        "config_name": "Ultra High (20 conn)",
+        "operation_type": "PING",
+        "connections": 20,
+        "total_duration": 30.02567241701763,
+        "successful_operations": 677519,
+        "failed_operations": 0,
+        "throughput": 22564.657023834145,
+        "latency_stats": {
+          "p50": 0.789042,
+          "p95": 1.585921099999999,
+          "p99": 2.245992439999998,
+          "p99_9": 7.259472506000293
+        }
+      },
+      "PUT": {
+        "config_name": "Ultra High (20 conn)",
+        "operation_type": "PUT",
+        "connections": 20,
+        "total_duration": 30.023013000027277,
+        "successful_operations": 600829,
+        "failed_operations": 0,
+        "throughput": 20012.28191186055,
+        "latency_stats": {
+          "p50": 0.89475,
+          "p95": 1.620542,
+          "p99": 2.978405239999999,
+          "p99_9": 14.473537828000143
+        }
+      },
+      "GET": {
+        "config_name": "Ultra High (20 conn)",
+        "operation_type": "GET",
+        "connections": 20,
+        "total_duration": 30.02829579199897,
+        "successful_operations": 333930,
+        "failed_operations": 0,
+        "throughput": 11120.511210928446,
+        "latency_stats": {
+          "p50": 0.96025,
+          "p95": 2.264379199999999,
+          "p99": 5.447571110000001,
+          "p99_9": 22.75363342900052
+        }
+      },
+      "MIXED": {
+        "config_name": "Ultra High (20 conn)",
+        "operation_type": "MIXED",
+        "connections": 20,
+        "total_duration": 30.02921733399853,
+        "successful_operations": 529258,
+        "failed_operations": 0,
+        "throughput": 17624.768375191175,
+        "latency_stats": {
+          "p50": 0.852083,
+          "p95": 1.770375,
+          "p99": 2.6579526899999992,
+          "p99_9": 11.567233088000092
+        }
+      }
+    }
+  }
+}

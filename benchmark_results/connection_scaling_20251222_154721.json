@@ -1,0 +1,215 @@
+{
+  "timestamp": "20251222_154721",
+  "config": {
+    "operations_per_connection": 1000,
+    "test_duration": 10,
+    "connection_counts_tested": [
+      1,
+      2,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      40,
+      50,
+      75,
+      100
+    ]
+  },
+  "results": {
+    "1": {
+      "connection_count": 1,
+      "duration": 0.23829654196742922,
+      "total_successful": 1000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 4196.4519994448,
+      "avg_latency": 0.23074309600000004,
+      "percentiles": {
+        "p50": 0.183104,
+        "p95": 0.35900864999999943,
+        "p99": 1.3035204199999995
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "2": {
+      "connection_count": 2,
+      "duration": 0.29733349999878556,
+      "total_successful": 2000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 6726.453628696964,
+      "avg_latency": 0.295397605,
+      "percentiles": {
+        "p50": 0.201292,
+        "p95": 0.37657739999999984,
+        "p99": 1.3499883399999997
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "5": {
+      "connection_count": 5,
+      "duration": 0.35755658301059157,
+      "total_successful": 5000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 13983.800711765638,
+      "avg_latency": 0.353095005,
+      "percentiles": {
+        "p50": 0.277,
+        "p95": 0.7016993500000002,
+        "p99": 1.661243840000009
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "10": {
+      "connection_count": 10,
+      "duration": 0.44389837502967566,
+      "total_successful": 10000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 22527.678771816805,
+      "avg_latency": 0.43775817179999993,
+      "percentiles": {
+        "p50": 0.369854,
+        "p95": 0.6551919999999997,
+        "p99": 1.779710330000001
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "15": {
+      "connection_count": 15,
+      "duration": 0.8147948749829084,
+      "total_successful": 15000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 18409.54142024353,
+      "avg_latency": 0.8093565697999999,
+      "percentiles": {
+        "p50": 0.5767709999999999,
+        "p95": 0.8972972499999998,
+        "p99": 1.1727562500000002
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "20": {
+      "connection_count": 20,
+      "duration": 0.8907944160164334,
+      "total_successful": 20000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 22451.869522755336,
+      "avg_latency": 0.8790852197,
+      "percentiles": {
+        "p50": 0.773416,
+        "p95": 1.6126204999999996,
+        "p99": 2.361533999999988
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "25": {
+      "connection_count": 25,
+      "duration": 1.1313949580071494,
+      "total_successful": 25000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 22096.616060615343,
+      "avg_latency": 1.11373400752,
+      "percentiles": {
+        "p50": 1.006125,
+        "p95": 2.0967958499999995,
+        "p99": 2.7920863399999996
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "30": {
+      "connection_count": 30,
+      "duration": 1.4110346250236034,
+      "total_successful": 30000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 21260.994923847575,
+      "avg_latency": 1.391035292466667,
+      "percentiles": {
+        "p50": 1.21875,
+        "p95": 2.7178725999999997,
+        "p99": 3.707117999999994
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "40": {
+      "connection_count": 40,
+      "duration": 2.0904266249854118,
+      "total_successful": 40000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 19134.850045396423,
+      "avg_latency": 2.0613716974250003,
+      "percentiles": {
+        "p50": 1.6728955,
+        "p95": 4.196091349999999,
+        "p99": 8.779866250000024
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "50": {
+      "connection_count": 50,
+      "duration": 2.4783718330436386,
+      "total_successful": 50000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 20174.535286981536,
+      "avg_latency": 2.4282064563000003,
+      "percentiles": {
+        "p50": 2.040833,
+        "p95": 4.952501749999996,
+        "p99": 7.2981943400000056
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "75": {
+      "connection_count": 75,
+      "duration": 3.5695577079895884,
+      "total_successful": 75000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 21011.006442655544,
+      "avg_latency": 3.485824300693334,
+      "percentiles": {
+        "p50": 2.977812,
+        "p95": 7.570270800000001,
+        "p99": 10.914420329999999
+      },
+      "error_count": 0,
+      "unique_errors": []
+    },
+    "100": {
+      "connection_count": 100,
+      "duration": 4.770146625000052,
+      "total_successful": 100000,
+      "total_failed": 0,
+      "success_rate": 100.0,
+      "throughput": 20963.71618346195,
+      "avg_latency": 4.6701468126700005,
+      "percentiles": {
+        "p50": 4.0592495,
+        "p95": 10.230387499999997,
+        "p99": 14.563474409999992
+      },
+      "error_count": 0,
+      "unique_errors": []
+    }
+  }
+}

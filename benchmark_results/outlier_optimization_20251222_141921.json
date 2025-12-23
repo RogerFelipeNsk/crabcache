@@ -1,0 +1,4927 @@
+{
+  "baseline": {
+    "test_name": "Baseline",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 7001,
+      "connections": 3,
+      "operations_per_connection": 30000,
+      "connection_warmup_ops": 100,
+      "enable_cpu_affinity": true,
+      "enable_process_priority": true,
+      "enable_connection_pooling": true,
+      "recv_buffer_size": 2048,
+      "send_buffer_size": 1024
+    },
+    "successful_operations": 90000,
+    "failed_operations": 0,
+    "duration": 7.15152587502962,
+    "outliers": [
+      {
+        "operation_id": 4957,
+        "latency_ms": 1.483666,
+        "timestamp": 508917.623553541
+      },
+      {
+        "operation_id": 6271,
+        "latency_ms": 2.530833,
+        "timestamp": 508917.92195825
+      },
+      {
+        "operation_id": 6275,
+        "latency_ms": 1.43275,
+        "timestamp": 508917.925257291
+      },
+      {
+        "operation_id": 6277,
+        "latency_ms": 1.405,
+        "timestamp": 508917.927535541
+      },
+      {
+        "operation_id": 6280,
+        "latency_ms": 1.930334,
+        "timestamp": 508917.930641791
+      },
+      {
+        "operation_id": 6281,
+        "latency_ms": 2.470833,
+        "timestamp": 508917.933117416
+      },
+      {
+        "operation_id": 6287,
+        "latency_ms": 2.020209,
+        "timestamp": 508917.93757225
+      },
+      {
+        "operation_id": 6288,
+        "latency_ms": 1.206375,
+        "timestamp": 508917.938780125
+      },
+      {
+        "operation_id": 6298,
+        "latency_ms": 1.742125,
+        "timestamp": 508917.943912958
+      },
+      {
+        "operation_id": 6301,
+        "latency_ms": 1.056792,
+        "timestamp": 508917.945536875
+      },
+      {
+        "operation_id": 6302,
+        "latency_ms": 1.525875,
+        "timestamp": 508917.947065875
+      },
+      {
+        "operation_id": 6303,
+        "latency_ms": 2.670791,
+        "timestamp": 508917.949741708
+      },
+      {
+        "operation_id": 6309,
+        "latency_ms": 1.307917,
+        "timestamp": 508917.954078916
+      },
+      {
+        "operation_id": 9057,
+        "latency_ms": 1.324542,
+        "timestamp": 508918.573377416
+      },
+      {
+        "operation_id": 9262,
+        "latency_ms": 1.7105,
+        "timestamp": 508918.626560083
+      },
+      {
+        "operation_id": 9268,
+        "latency_ms": 21.230625,
+        "timestamp": 508918.649150666
+      },
+      {
+        "operation_id": 9269,
+        "latency_ms": 78.308458,
+        "timestamp": 508918.72746775
+      },
+      {
+        "operation_id": 9270,
+        "latency_ms": 11.917166,
+        "timestamp": 508918.739394625
+      },
+      {
+        "operation_id": 9271,
+        "latency_ms": 1.0295,
+        "timestamp": 508918.740428875
+      },
+      {
+        "operation_id": 9272,
+        "latency_ms": 1.125125,
+        "timestamp": 508918.741561
+      },
+      {
+        "operation_id": 9273,
+        "latency_ms": 1.275042,
+        "timestamp": 508918.742840166
+      },
+      {
+        "operation_id": 9295,
+        "latency_ms": 2.319625,
+        "timestamp": 508918.752567541
+      },
+      {
+        "operation_id": 9319,
+        "latency_ms": 7.106875,
+        "timestamp": 508918.768318791
+      },
+      {
+        "operation_id": 9320,
+        "latency_ms": 3.586,
+        "timestamp": 508918.771909583
+      },
+      {
+        "operation_id": 9321,
+        "latency_ms": 3.04775,
+        "timestamp": 508918.77496025
+      },
+      {
+        "operation_id": 9322,
+        "latency_ms": 1.525459,
+        "timestamp": 508918.776489666
+      },
+      {
+        "operation_id": 9323,
+        "latency_ms": 4.853708,
+        "timestamp": 508918.781350875
+      },
+      {
+        "operation_id": 11035,
+        "latency_ms": 2.017542,
+        "timestamp": 508919.180996375
+      },
+      {
+        "operation_id": 11036,
+        "latency_ms": 1.413041,
+        "timestamp": 508919.182413875
+      },
+      {
+        "operation_id": 13937,
+        "latency_ms": 2.640041,
+        "timestamp": 508919.791710125
+      },
+      {
+        "operation_id": 13939,
+        "latency_ms": 2.83675,
+        "timestamp": 508919.795234916
+      },
+      {
+        "operation_id": 13942,
+        "latency_ms": 1.523875,
+        "timestamp": 508919.797576291
+      },
+      {
+        "operation_id": 13945,
+        "latency_ms": 1.321833,
+        "timestamp": 508919.799917958
+      },
+      {
+        "operation_id": 14703,
+        "latency_ms": 2.581,
+        "timestamp": 508919.971605916
+      },
+      {
+        "operation_id": 14705,
+        "latency_ms": 1.831791,
+        "timestamp": 508919.974034083
+      },
+      {
+        "operation_id": 14811,
+        "latency_ms": 3.331708,
+        "timestamp": 508920.004173833
+      },
+      {
+        "operation_id": 14814,
+        "latency_ms": 10.454625,
+        "timestamp": 508920.016208625
+      },
+      {
+        "operation_id": 14815,
+        "latency_ms": 1.423208,
+        "timestamp": 508920.017825291
+      },
+      {
+        "operation_id": 14817,
+        "latency_ms": 1.684375,
+        "timestamp": 508920.020149666
+      },
+      {
+        "operation_id": 14818,
+        "latency_ms": 1.568083,
+        "timestamp": 508920.021719416
+      },
+      {
+        "operation_id": 14821,
+        "latency_ms": 1.117875,
+        "timestamp": 508920.023937125
+      },
+      {
+        "operation_id": 14822,
+        "latency_ms": 1.9265,
+        "timestamp": 508920.02586625
+      },
+      {
+        "operation_id": 14823,
+        "latency_ms": 1.292666,
+        "timestamp": 508920.027160083
+      },
+      {
+        "operation_id": 14825,
+        "latency_ms": 2.652542,
+        "timestamp": 508920.030681666
+      },
+      {
+        "operation_id": 14834,
+        "latency_ms": 1.817583,
+        "timestamp": 508920.036073375
+      },
+      {
+        "operation_id": 14835,
+        "latency_ms": 1.02275,
+        "timestamp": 508920.037102125
+      },
+      {
+        "operation_id": 14841,
+        "latency_ms": 1.748084,
+        "timestamp": 508920.040679458
+      },
+      {
+        "operation_id": 14843,
+        "latency_ms": 1.90975,
+        "timestamp": 508920.043372333
+      },
+      {
+        "operation_id": 14845,
+        "latency_ms": 1.871708,
+        "timestamp": 508920.045602583
+      },
+      {
+        "operation_id": 14879,
+        "latency_ms": 1.123709,
+        "timestamp": 508920.058781041
+      },
+      {
+        "operation_id": 14880,
+        "latency_ms": 4.239542,
+        "timestamp": 508920.063026583
+      },
+      {
+        "operation_id": 14881,
+        "latency_ms": 1.328,
+        "timestamp": 508920.064358916
+      },
+      {
+        "operation_id": 14884,
+        "latency_ms": 1.319083,
+        "timestamp": 508920.066571208
+      },
+      {
+        "operation_id": 14888,
+        "latency_ms": 1.495875,
+        "timestamp": 508920.069628333
+      },
+      {
+        "operation_id": 14891,
+        "latency_ms": 1.647417,
+        "timestamp": 508920.072932125
+      },
+      {
+        "operation_id": 14898,
+        "latency_ms": 1.628042,
+        "timestamp": 508920.077635458
+      },
+      {
+        "operation_id": 14900,
+        "latency_ms": 2.19125,
+        "timestamp": 508920.080358958
+      },
+      {
+        "operation_id": 14901,
+        "latency_ms": 2.630208,
+        "timestamp": 508920.082995041
+      },
+      {
+        "operation_id": 14902,
+        "latency_ms": 1.106542,
+        "timestamp": 508920.0841045
+      },
+      {
+        "operation_id": 14905,
+        "latency_ms": 1.750875,
+        "timestamp": 508920.087049708
+      },
+      {
+        "operation_id": 14907,
+        "latency_ms": 1.408708,
+        "timestamp": 508920.089366291
+      },
+      {
+        "operation_id": 14911,
+        "latency_ms": 1.614375,
+        "timestamp": 508920.092696791
+      },
+      {
+        "operation_id": 14913,
+        "latency_ms": 2.664625,
+        "timestamp": 508920.096238375
+      },
+      {
+        "operation_id": 14915,
+        "latency_ms": 1.001625,
+        "timestamp": 508920.097796458
+      },
+      {
+        "operation_id": 14922,
+        "latency_ms": 1.07325,
+        "timestamp": 508920.102617416
+      },
+      {
+        "operation_id": 14924,
+        "latency_ms": 1.21925,
+        "timestamp": 508920.104724958
+      },
+      {
+        "operation_id": 14925,
+        "latency_ms": 1.056083,
+        "timestamp": 508920.105794041
+      },
+      {
+        "operation_id": 14926,
+        "latency_ms": 2.686334,
+        "timestamp": 508920.1084875
+      },
+      {
+        "operation_id": 14931,
+        "latency_ms": 1.697125,
+        "timestamp": 508920.112004
+      },
+      {
+        "operation_id": 14932,
+        "latency_ms": 1.304875,
+        "timestamp": 508920.113311208
+      },
+      {
+        "operation_id": 14933,
+        "latency_ms": 10.999292,
+        "timestamp": 508920.124431083
+      },
+      {
+        "operation_id": 14934,
+        "latency_ms": 16.51125,
+        "timestamp": 508920.140968875
+      },
+      {
+        "operation_id": 16112,
+        "latency_ms": 2.384209,
+        "timestamp": 508920.405319875
+      },
+      {
+        "operation_id": 16113,
+        "latency_ms": 1.251667,
+        "timestamp": 508920.406579
+      },
+      {
+        "operation_id": 16547,
+        "latency_ms": 1.011666,
+        "timestamp": 508920.52663675
+      },
+      {
+        "operation_id": 16643,
+        "latency_ms": 1.0535,
+        "timestamp": 508920.550668875
+      },
+      {
+        "operation_id": 16644,
+        "latency_ms": 1.239083,
+        "timestamp": 508920.552026375
+      },
+      {
+        "operation_id": 16645,
+        "latency_ms": 1.000084,
+        "timestamp": 508920.553034
+      },
+      {
+        "operation_id": 19318,
+        "latency_ms": 1.249125,
+        "timestamp": 508921.156354541
+      },
+      {
+        "operation_id": 21915,
+        "latency_ms": 1.6355,
+        "timestamp": 508921.733940791
+      },
+      {
+        "operation_id": 21916,
+        "latency_ms": 1.969375,
+        "timestamp": 508921.735912125
+      },
+      {
+        "operation_id": 21918,
+        "latency_ms": 1.33925,
+        "timestamp": 508921.737817791
+      },
+      {
+        "operation_id": 21919,
+        "latency_ms": 1.502792,
+        "timestamp": 508921.739322958
+      },
+      {
+        "operation_id": 21921,
+        "latency_ms": 2.109208,
+        "timestamp": 508921.741940666
+      },
+      {
+        "operation_id": 21929,
+        "latency_ms": 1.464,
+        "timestamp": 508921.747287
+      },
+      {
+        "operation_id": 22213,
+        "latency_ms": 1.220167,
+        "timestamp": 508921.822984958
+      },
+      {
+        "operation_id": 22975,
+        "latency_ms": 1.191125,
+        "timestamp": 508921.999637708
+      },
+      {
+        "operation_id": 22978,
+        "latency_ms": 1.701667,
+        "timestamp": 508922.002546375
+      },
+      {
+        "operation_id": 22985,
+        "latency_ms": 1.254333,
+        "timestamp": 508922.00635
+      },
+      {
+        "operation_id": 22993,
+        "latency_ms": 1.058459,
+        "timestamp": 508922.0106975
+      },
+      {
+        "operation_id": 24048,
+        "latency_ms": 2.40625,
+        "timestamp": 508922.242569833
+      },
+      {
+        "operation_id": 24050,
+        "latency_ms": 1.078958,
+        "timestamp": 508922.243931583
+      },
+      {
+        "operation_id": 24053,
+        "latency_ms": 6.492625,
+        "timestamp": 508922.251188458
+      },
+      {
+        "operation_id": 24054,
+        "latency_ms": 5.264125,
+        "timestamp": 508922.256462041
+      },
+      {
+        "operation_id": 24055,
+        "latency_ms": 1.920875,
+        "timestamp": 508922.258387208
+      },
+      {
+        "operation_id": 24056,
+        "latency_ms": 4.49725,
+        "timestamp": 508922.262895458
+      },
+      {
+        "operation_id": 24059,
+        "latency_ms": 2.89475,
+        "timestamp": 508922.266992458
+      },
+      {
+        "operation_id": 24060,
+        "latency_ms": 6.060667,
+        "timestamp": 508922.273060708
+      },
+      {
+        "operation_id": 24063,
+        "latency_ms": 2.835,
+        "timestamp": 508922.276784791
+      },
+      {
+        "operation_id": 24068,
+        "latency_ms": 4.012625,
+        "timestamp": 508922.282540791
+      },
+      {
+        "operation_id": 24075,
+        "latency_ms": 2.7295,
+        "timestamp": 508922.287887
+      },
+      {
+        "operation_id": 24077,
+        "latency_ms": 1.172667,
+        "timestamp": 508922.289665375
+      },
+      {
+        "operation_id": 24078,
+        "latency_ms": 2.368833,
+        "timestamp": 508922.292036375
+      },
+      {
+        "operation_id": 24081,
+        "latency_ms": 3.914709,
+        "timestamp": 508922.297785416
+      },
+      {
+        "operation_id": 24082,
+        "latency_ms": 2.539875,
+        "timestamp": 508922.300326416
+      },
+      {
+        "operation_id": 24083,
+        "latency_ms": 3.0135,
+        "timestamp": 508922.3033415
+      },
+      {
+        "operation_id": 24084,
+        "latency_ms": 6.74125,
+        "timestamp": 508922.310089291
+      },
+      {
+        "operation_id": 24085,
+        "latency_ms": 1.0475,
+        "timestamp": 508922.311147166
+      },
+      {
+        "operation_id": 24090,
+        "latency_ms": 1.3065,
+        "timestamp": 508922.314039333
+      },
+      {
+        "operation_id": 24093,
+        "latency_ms": 2.435416,
+        "timestamp": 508922.317862291
+      },
+      {
+        "operation_id": 24094,
+        "latency_ms": 1.1085,
+        "timestamp": 508922.318972958
+      },
+      {
+        "operation_id": 24097,
+        "latency_ms": 1.183708,
+        "timestamp": 508922.321135208
+      },
+      {
+        "operation_id": 24099,
+        "latency_ms": 5.415625,
+        "timestamp": 508922.327120083
+      },
+      {
+        "operation_id": 24100,
+        "latency_ms": 4.703417,
+        "timestamp": 508922.331826375
+      },
+      {
+        "operation_id": 24101,
+        "latency_ms": 1.232291,
+        "timestamp": 508922.333059875
+      },
+      {
+        "operation_id": 24104,
+        "latency_ms": 3.062125,
+        "timestamp": 508922.336809625
+      },
+      {
+        "operation_id": 24107,
+        "latency_ms": 1.55725,
+        "timestamp": 508922.339833416
+      },
+      {
+        "operation_id": 24108,
+        "latency_ms": 1.1255,
+        "timestamp": 508922.340961166
+      },
+      {
+        "operation_id": 24109,
+        "latency_ms": 1.75325,
+        "timestamp": 508922.34271575
+      },
+      {
+        "operation_id": 24110,
+        "latency_ms": 1.03875,
+        "timestamp": 508922.343755541
+      },
+      {
+        "operation_id": 24112,
+        "latency_ms": 3.745291,
+        "timestamp": 508922.347994458
+      },
+      {
+        "operation_id": 24183,
+        "latency_ms": 2.310584,
+        "timestamp": 508922.3705925
+      },
+      {
+        "operation_id": 24185,
+        "latency_ms": 2.558042,
+        "timestamp": 508922.373729541
+      },
+      {
+        "operation_id": 24186,
+        "latency_ms": 1.0935,
+        "timestamp": 508922.374826583
+      },
+      {
+        "operation_id": 24187,
+        "latency_ms": 1.40375,
+        "timestamp": 508922.376231708
+      },
+      {
+        "operation_id": 24596,
+        "latency_ms": 5.819916,
+        "timestamp": 508922.477703375
+      },
+      {
+        "operation_id": 26269,
+        "latency_ms": 1.508875,
+        "timestamp": 508922.839876958
+      },
+      {
+        "operation_id": 28745,
+        "latency_ms": 2.030459,
+        "timestamp": 508923.359000333
+      },
+      {
+        "operation_id": 4899,
+        "latency_ms": 1.502625,
+        "timestamp": 508917.603213083
+      },
+      {
+        "operation_id": 4950,
+        "latency_ms": 1.201875,
+        "timestamp": 508917.618902916
+      },
+      {
+        "operation_id": 4962,
+        "latency_ms": 1.271833,
+        "timestamp": 508917.623514625
+      },
+      {
+        "operation_id": 6280,
+        "latency_ms": 2.736375,
+        "timestamp": 508917.922108708
+      },
+      {
+        "operation_id": 6284,
+        "latency_ms": 1.69525,
+        "timestamp": 508917.925489708
+      },
+      {
+        "operation_id": 6285,
+        "latency_ms": 1.123167,
+        "timestamp": 508917.926615916
+      },
+      {
+        "operation_id": 6286,
+        "latency_ms": 1.025083,
+        "timestamp": 508917.927659458
+      },
+      {
+        "operation_id": 6289,
+        "latency_ms": 2.299042,
+        "timestamp": 508917.931063208
+      },
+      {
+        "operation_id": 6290,
+        "latency_ms": 2.02175,
+        "timestamp": 508917.933089375
+      },
+      {
+        "operation_id": 6295,
+        "latency_ms": 1.916917,
+        "timestamp": 508917.937534291
+      },
+      {
+        "operation_id": 6296,
+        "latency_ms": 1.27975,
+        "timestamp": 508917.938817583
+      },
+      {
+        "operation_id": 6305,
+        "latency_ms": 2.108959,
+        "timestamp": 508917.943609583
+      },
+      {
+        "operation_id": 6309,
+        "latency_ms": 1.1535,
+        "timestamp": 508917.946212875
+      },
+      {
+        "operation_id": 6310,
+        "latency_ms": 3.359417,
+        "timestamp": 508917.949586875
+      },
+      {
+        "operation_id": 6311,
+        "latency_ms": 1.32625,
+        "timestamp": 508917.950919
+      },
+      {
+        "operation_id": 6315,
+        "latency_ms": 1.046708,
+        "timestamp": 508917.953013666
+      },
+      {
+        "operation_id": 6316,
+        "latency_ms": 1.795583,
+        "timestamp": 508917.954811625
+      },
+      {
+        "operation_id": 9078,
+        "latency_ms": 1.2375,
+        "timestamp": 508918.573302875
+      },
+      {
+        "operation_id": 9281,
+        "latency_ms": 1.70925,
+        "timestamp": 508918.626609375
+      },
+      {
+        "operation_id": 9287,
+        "latency_ms": 24.083541,
+        "timestamp": 508918.652039041
+      },
+      {
+        "operation_id": 9288,
+        "latency_ms": 79.18275,
+        "timestamp": 508918.731237666
+      },
+      {
+        "operation_id": 9289,
+        "latency_ms": 7.905334,
+        "timestamp": 508918.739158125
+      },
+      {
+        "operation_id": 9291,
+        "latency_ms": 1.469,
+        "timestamp": 508918.741627375
+      },
+      {
+        "operation_id": 9292,
+        "latency_ms": 1.164541,
+        "timestamp": 508918.742795041
+      },
+      {
+        "operation_id": 9314,
+        "latency_ms": 3.202458,
+        "timestamp": 508918.753502291
+      },
+      {
+        "operation_id": 9337,
+        "latency_ms": 7.116583,
+        "timestamp": 508918.768361666
+      },
+      {
+        "operation_id": 9338,
+        "latency_ms": 3.589459,
+        "timestamp": 508918.771952875
+      },
+      {
+        "operation_id": 9339,
+        "latency_ms": 2.984083,
+        "timestamp": 508918.774945541
+      },
+      {
+        "operation_id": 9340,
+        "latency_ms": 1.555833,
+        "timestamp": 508918.776504125
+      },
+      {
+        "operation_id": 9341,
+        "latency_ms": 4.887834,
+        "timestamp": 508918.781392625
+      },
+      {
+        "operation_id": 11058,
+        "latency_ms": 1.998666,
+        "timestamp": 508919.180956583
+      },
+      {
+        "operation_id": 11059,
+        "latency_ms": 1.496,
+        "timestamp": 508919.18245675
+      },
+      {
+        "operation_id": 13738,
+        "latency_ms": 1.019625,
+        "timestamp": 508919.7395485
+      },
+      {
+        "operation_id": 13955,
+        "latency_ms": 2.539917,
+        "timestamp": 508919.791747125
+      },
+      {
+        "operation_id": 13957,
+        "latency_ms": 2.826458,
+        "timestamp": 508919.795261041
+      },
+      {
+        "operation_id": 13960,
+        "latency_ms": 1.0055,
+        "timestamp": 508919.79712275
+      },
+      {
+        "operation_id": 14715,
+        "latency_ms": 2.805,
+        "timestamp": 508919.971738375
+      },
+      {
+        "operation_id": 14717,
+        "latency_ms": 1.820542,
+        "timestamp": 508919.973987916
+      },
+      {
+        "operation_id": 14821,
+        "latency_ms": 3.182542,
+        "timestamp": 508920.004201333
+      },
+      {
+        "operation_id": 14824,
+        "latency_ms": 10.092459,
+        "timestamp": 508920.015802583
+      },
+      {
+        "operation_id": 14825,
+        "latency_ms": 1.920125,
+        "timestamp": 508920.017726625
+      },
+      {
+        "operation_id": 14827,
+        "latency_ms": 1.137167,
+        "timestamp": 508920.019610458
+      },
+      {
+        "operation_id": 14828,
+        "latency_ms": 1.952958,
+        "timestamp": 508920.021568
+      },
+      {
+        "operation_id": 14831,
+        "latency_ms": 1.947416,
+        "timestamp": 508920.024745375
+      },
+      {
+        "operation_id": 14832,
+        "latency_ms": 1.05225,
+        "timestamp": 508920.025798666
+      },
+      {
+        "operation_id": 14834,
+        "latency_ms": 1.323125,
+        "timestamp": 508920.0277435
+      },
+      {
+        "operation_id": 14835,
+        "latency_ms": 2.108875,
+        "timestamp": 508920.029856208
+      },
+      {
+        "operation_id": 14836,
+        "latency_ms": 1.05675,
+        "timestamp": 508920.030915
+      },
+      {
+        "operation_id": 14843,
+        "latency_ms": 1.520875,
+        "timestamp": 508920.036063
+      },
+      {
+        "operation_id": 14844,
+        "latency_ms": 1.179875,
+        "timestamp": 508920.037245291
+      },
+      {
+        "operation_id": 14850,
+        "latency_ms": 1.763375,
+        "timestamp": 508920.040722291
+      },
+      {
+        "operation_id": 14852,
+        "latency_ms": 1.981041,
+        "timestamp": 508920.043398125
+      },
+      {
+        "operation_id": 14854,
+        "latency_ms": 1.884041,
+        "timestamp": 508920.045650958
+      },
+      {
+        "operation_id": 14889,
+        "latency_ms": 1.340875,
+        "timestamp": 508920.060748125
+      },
+      {
+        "operation_id": 14890,
+        "latency_ms": 2.472542,
+        "timestamp": 508920.063280625
+      },
+      {
+        "operation_id": 14891,
+        "latency_ms": 1.216583,
+        "timestamp": 508920.064507458
+      },
+      {
+        "operation_id": 14894,
+        "latency_ms": 1.247167,
+        "timestamp": 508920.066669166
+      },
+      {
+        "operation_id": 14899,
+        "latency_ms": 1.4945,
+        "timestamp": 508920.070472666
+      },
+      {
+        "operation_id": 14901,
+        "latency_ms": 1.717792,
+        "timestamp": 508920.072987166
+      },
+      {
+        "operation_id": 14909,
+        "latency_ms": 1.53225,
+        "timestamp": 508920.077805875
+      },
+      {
+        "operation_id": 14911,
+        "latency_ms": 1.45325,
+        "timestamp": 508920.080108375
+      },
+      {
+        "operation_id": 14912,
+        "latency_ms": 2.98525,
+        "timestamp": 508920.08329375
+      },
+      {
+        "operation_id": 14916,
+        "latency_ms": 1.588834,
+        "timestamp": 508920.087096916
+      },
+      {
+        "operation_id": 14918,
+        "latency_ms": 1.286667,
+        "timestamp": 508920.089331208
+      },
+      {
+        "operation_id": 14924,
+        "latency_ms": 3.093917,
+        "timestamp": 508920.096310708
+      },
+      {
+        "operation_id": 14934,
+        "latency_ms": 1.075542,
+        "timestamp": 508920.1031405
+      },
+      {
+        "operation_id": 14935,
+        "latency_ms": 1.337208,
+        "timestamp": 508920.104479416
+      },
+      {
+        "operation_id": 14936,
+        "latency_ms": 1.364708,
+        "timestamp": 508920.105845041
+      },
+      {
+        "operation_id": 14937,
+        "latency_ms": 3.1985,
+        "timestamp": 508920.109047541
+      },
+      {
+        "operation_id": 14942,
+        "latency_ms": 1.658208,
+        "timestamp": 508920.111983833
+      },
+      {
+        "operation_id": 14943,
+        "latency_ms": 1.549084,
+        "timestamp": 508920.113535333
+      },
+      {
+        "operation_id": 14944,
+        "latency_ms": 10.726542,
+        "timestamp": 508920.124263416
+      },
+      {
+        "operation_id": 14945,
+        "latency_ms": 16.306667,
+        "timestamp": 508920.140614375
+      },
+      {
+        "operation_id": 16122,
+        "latency_ms": 2.36825,
+        "timestamp": 508920.405262833
+      },
+      {
+        "operation_id": 16123,
+        "latency_ms": 1.337375,
+        "timestamp": 508920.406620875
+      },
+      {
+        "operation_id": 16566,
+        "latency_ms": 1.030959,
+        "timestamp": 508920.526627125
+      },
+      {
+        "operation_id": 16661,
+        "latency_ms": 1.5135,
+        "timestamp": 508920.552042291
+      },
+      {
+        "operation_id": 19342,
+        "latency_ms": 1.315917,
+        "timestamp": 508921.156460958
+      },
+      {
+        "operation_id": 21945,
+        "latency_ms": 1.331708,
+        "timestamp": 508921.733670041
+      },
+      {
+        "operation_id": 21946,
+        "latency_ms": 2.189667,
+        "timestamp": 508921.735863
+      },
+      {
+        "operation_id": 21948,
+        "latency_ms": 1.569416,
+        "timestamp": 508921.737863458
+      },
+      {
+        "operation_id": 21949,
+        "latency_ms": 1.343125,
+        "timestamp": 508921.739212666
+      },
+      {
+        "operation_id": 21951,
+        "latency_ms": 2.086083,
+        "timestamp": 508921.741999458
+      },
+      {
+        "operation_id": 21959,
+        "latency_ms": 1.638541,
+        "timestamp": 508921.747306041
+      },
+      {
+        "operation_id": 22255,
+        "latency_ms": 1.340709,
+        "timestamp": 508921.823000125
+      },
+      {
+        "operation_id": 23011,
+        "latency_ms": 1.022208,
+        "timestamp": 508921.997759083
+      },
+      {
+        "operation_id": 23017,
+        "latency_ms": 1.7125,
+        "timestamp": 508922.002573375
+      },
+      {
+        "operation_id": 23024,
+        "latency_ms": 1.229083,
+        "timestamp": 508922.006303333
+      },
+      {
+        "operation_id": 24085,
+        "latency_ms": 2.399875,
+        "timestamp": 508922.24245825
+      },
+      {
+        "operation_id": 24087,
+        "latency_ms": 1.1925,
+        "timestamp": 508922.243916333
+      },
+      {
+        "operation_id": 24090,
+        "latency_ms": 2.375375,
+        "timestamp": 508922.247066666
+      },
+      {
+        "operation_id": 24091,
+        "latency_ms": 8.13225,
+        "timestamp": 508922.255208291
+      },
+      {
+        "operation_id": 24092,
+        "latency_ms": 2.351834,
+        "timestamp": 508922.257566291
+      },
+      {
+        "operation_id": 24093,
+        "latency_ms": 5.338792,
+        "timestamp": 508922.262910416
+      },
+      {
+        "operation_id": 24096,
+        "latency_ms": 2.843458,
+        "timestamp": 508922.266958958
+      },
+      {
+        "operation_id": 24097,
+        "latency_ms": 6.122458,
+        "timestamp": 508922.2730845
+      },
+      {
+        "operation_id": 24100,
+        "latency_ms": 1.727166,
+        "timestamp": 508922.275815125
+      },
+      {
+        "operation_id": 24101,
+        "latency_ms": 1.377959,
+        "timestamp": 508922.27719525
+      },
+      {
+        "operation_id": 24105,
+        "latency_ms": 4.118417,
+        "timestamp": 508922.282609666
+      },
+      {
+        "operation_id": 24112,
+        "latency_ms": 2.705208,
+        "timestamp": 508922.287920416
+      },
+      {
+        "operation_id": 24114,
+        "latency_ms": 1.311209,
+        "timestamp": 508922.28975675
+      },
+      {
+        "operation_id": 24115,
+        "latency_ms": 2.387209,
+        "timestamp": 508922.292145125
+      },
+      {
+        "operation_id": 24116,
+        "latency_ms": 1.162375,
+        "timestamp": 508922.293308791
+      },
+      {
+        "operation_id": 24117,
+        "latency_ms": 4.666292,
+        "timestamp": 508922.29797675
+      },
+      {
+        "operation_id": 24118,
+        "latency_ms": 2.323625,
+        "timestamp": 508922.300301958
+      },
+      {
+        "operation_id": 24119,
+        "latency_ms": 3.073875,
+        "timestamp": 508922.303377875
+      },
+      {
+        "operation_id": 24120,
+        "latency_ms": 6.78825,
+        "timestamp": 508922.310167708
+      },
+      {
+        "operation_id": 24126,
+        "latency_ms": 1.414917,
+        "timestamp": 508922.313913041
+      },
+      {
+        "operation_id": 24130,
+        "latency_ms": 2.378834,
+        "timestamp": 508922.317906583
+      },
+      {
+        "operation_id": 24131,
+        "latency_ms": 1.025333,
+        "timestamp": 508922.318937291
+      },
+      {
+        "operation_id": 24134,
+        "latency_ms": 1.162459,
+        "timestamp": 508922.321076666
+      },
+      {
+        "operation_id": 24136,
+        "latency_ms": 5.630458,
+        "timestamp": 508922.327313833
+      },
+      {
+        "operation_id": 24137,
+        "latency_ms": 4.470792,
+        "timestamp": 508922.331786125
+      },
+      {
+        "operation_id": 24138,
+        "latency_ms": 1.192708,
+        "timestamp": 508922.332983166
+      },
+      {
+        "operation_id": 24141,
+        "latency_ms": 3.036667,
+        "timestamp": 508922.336801875
+      },
+      {
+        "operation_id": 24144,
+        "latency_ms": 1.64225,
+        "timestamp": 508922.339746416
+      },
+      {
+        "operation_id": 24145,
+        "latency_ms": 1.242708,
+        "timestamp": 508922.34099175
+      },
+      {
+        "operation_id": 24146,
+        "latency_ms": 1.705625,
+        "timestamp": 508922.342698458
+      },
+      {
+        "operation_id": 24147,
+        "latency_ms": 1.011584,
+        "timestamp": 508922.343712583
+      },
+      {
+        "operation_id": 24149,
+        "latency_ms": 3.543417,
+        "timestamp": 508922.347833666
+      },
+      {
+        "operation_id": 24222,
+        "latency_ms": 2.238333,
+        "timestamp": 508922.370496666
+      },
+      {
+        "operation_id": 24225,
+        "latency_ms": 3.4175,
+        "timestamp": 508922.374845166
+      },
+      {
+        "operation_id": 24226,
+        "latency_ms": 1.300208,
+        "timestamp": 508922.376150291
+      },
+      {
+        "operation_id": 24637,
+        "latency_ms": 5.832917,
+        "timestamp": 508922.477749041
+      },
+      {
+        "operation_id": 26317,
+        "latency_ms": 1.515333,
+        "timestamp": 508922.83986925
+      },
+      {
+        "operation_id": 28793,
+        "latency_ms": 1.933084,
+        "timestamp": 508923.358941041
+      },
+      {
+        "operation_id": 4889,
+        "latency_ms": 1.05075,
+        "timestamp": 508917.603175791
+      },
+      {
+        "operation_id": 4941,
+        "latency_ms": 1.323291,
+        "timestamp": 508917.619019583
+      },
+      {
+        "operation_id": 4953,
+        "latency_ms": 1.52775,
+        "timestamp": 508917.62367125
+      },
+      {
+        "operation_id": 6264,
+        "latency_ms": 2.026292,
+        "timestamp": 508917.921336708
+      },
+      {
+        "operation_id": 6269,
+        "latency_ms": 1.415,
+        "timestamp": 508917.925291708
+      },
+      {
+        "operation_id": 6271,
+        "latency_ms": 1.537833,
+        "timestamp": 508917.927501666
+      },
+      {
+        "operation_id": 6275,
+        "latency_ms": 3.40575,
+        "timestamp": 508917.933067208
+      },
+      {
+        "operation_id": 6280,
+        "latency_ms": 2.786417,
+        "timestamp": 508917.938531791
+      },
+      {
+        "operation_id": 6291,
+        "latency_ms": 2.224166,
+        "timestamp": 508917.943716208
+      },
+      {
+        "operation_id": 6295,
+        "latency_ms": 1.193208,
+        "timestamp": 508917.946234375
+      },
+      {
+        "operation_id": 6296,
+        "latency_ms": 3.531125,
+        "timestamp": 508917.949767416
+      },
+      {
+        "operation_id": 6301,
+        "latency_ms": 1.053291,
+        "timestamp": 508917.953267125
+      },
+      {
+        "operation_id": 6302,
+        "latency_ms": 1.525667,
+        "timestamp": 508917.954796833
+      },
+      {
+        "operation_id": 9069,
+        "latency_ms": 1.251667,
+        "timestamp": 508918.573283291
+      },
+      {
+        "operation_id": 9275,
+        "latency_ms": 1.860584,
+        "timestamp": 508918.626586208
+      },
+      {
+        "operation_id": 9281,
+        "latency_ms": 21.151792,
+        "timestamp": 508918.649096458
+      },
+      {
+        "operation_id": 9282,
+        "latency_ms": 82.401375,
+        "timestamp": 508918.731505291
+      },
+      {
+        "operation_id": 9283,
+        "latency_ms": 7.603166,
+        "timestamp": 508918.739117625
+      },
+      {
+        "operation_id": 9284,
+        "latency_ms": 1.003167,
+        "timestamp": 508918.74012475
+      },
+      {
+        "operation_id": 9285,
+        "latency_ms": 1.601417,
+        "timestamp": 508918.741732541
+      },
+      {
+        "operation_id": 9308,
+        "latency_ms": 3.126417,
+        "timestamp": 508918.75347225
+      },
+      {
+        "operation_id": 9332,
+        "latency_ms": 6.988916,
+        "timestamp": 508918.768261708
+      },
+      {
+        "operation_id": 9333,
+        "latency_ms": 1.691958,
+        "timestamp": 508918.769960875
+      },
+      {
+        "operation_id": 9334,
+        "latency_ms": 5.007125,
+        "timestamp": 508918.774971083
+      },
+      {
+        "operation_id": 9335,
+        "latency_ms": 1.613333,
+        "timestamp": 508918.776585958
+      },
+      {
+        "operation_id": 9336,
+        "latency_ms": 4.795708,
+        "timestamp": 508918.781383208
+      },
+      {
+        "operation_id": 11038,
+        "latency_ms": 3.281083,
+        "timestamp": 508919.182446583
+      },
+      {
+        "operation_id": 13944,
+        "latency_ms": 2.71325,
+        "timestamp": 508919.79173325
+      },
+      {
+        "operation_id": 13946,
+        "latency_ms": 2.951917,
+        "timestamp": 508919.795298125
+      },
+      {
+        "operation_id": 13949,
+        "latency_ms": 1.436291,
+        "timestamp": 508919.797502458
+      },
+      {
+        "operation_id": 14700,
+        "latency_ms": 2.653708,
+        "timestamp": 508919.9716855
+      },
+      {
+        "operation_id": 14702,
+        "latency_ms": 1.865625,
+        "timestamp": 508919.974026541
+      },
+      {
+        "operation_id": 14808,
+        "latency_ms": 3.239959,
+        "timestamp": 508920.004213083
+      },
+      {
+        "operation_id": 14810,
+        "latency_ms": 1.558459,
+        "timestamp": 508920.006557666
+      },
+      {
+        "operation_id": 14811,
+        "latency_ms": 9.205292,
+        "timestamp": 508920.015774
+      },
+      {
+        "operation_id": 14812,
+        "latency_ms": 1.981792,
+        "timestamp": 508920.017767208
+      },
+      {
+        "operation_id": 14814,
+        "latency_ms": 2.781083,
+        "timestamp": 508920.021347708
+      },
+      {
+        "operation_id": 14816,
+        "latency_ms": 1.041792,
+        "timestamp": 508920.023336583
+      },
+      {
+        "operation_id": 14817,
+        "latency_ms": 2.373292,
+        "timestamp": 508920.025715333
+      },
+      {
+        "operation_id": 14819,
+        "latency_ms": 1.326042,
+        "timestamp": 508920.027875833
+      },
+      {
+        "operation_id": 14820,
+        "latency_ms": 2.512083,
+        "timestamp": 508920.030389875
+      },
+      {
+        "operation_id": 14830,
+        "latency_ms": 1.117958,
+        "timestamp": 508920.037170083
+      },
+      {
+        "operation_id": 14836,
+        "latency_ms": 1.5645,
+        "timestamp": 508920.040686666
+      },
+      {
+        "operation_id": 14838,
+        "latency_ms": 1.799375,
+        "timestamp": 508920.043150041
+      },
+      {
+        "operation_id": 14841,
+        "latency_ms": 1.827333,
+        "timestamp": 508920.045588625
+      },
+      {
+        "operation_id": 14868,
+        "latency_ms": 4.6675,
+        "timestamp": 508920.0607795
+      },
+      {
+        "operation_id": 14869,
+        "latency_ms": 2.54725,
+        "timestamp": 508920.063328875
+      },
+      {
+        "operation_id": 14870,
+        "latency_ms": 1.182959,
+        "timestamp": 508920.064517625
+      },
+      {
+        "operation_id": 14872,
+        "latency_ms": 1.268875,
+        "timestamp": 508920.066638625
+      },
+      {
+        "operation_id": 14876,
+        "latency_ms": 1.316542,
+        "timestamp": 508920.069580166
+      },
+      {
+        "operation_id": 14879,
+        "latency_ms": 1.525333,
+        "timestamp": 508920.072569125
+      },
+      {
+        "operation_id": 14888,
+        "latency_ms": 1.46775,
+        "timestamp": 508920.077985625
+      },
+      {
+        "operation_id": 14890,
+        "latency_ms": 2.417125,
+        "timestamp": 508920.081055791
+      },
+      {
+        "operation_id": 14891,
+        "latency_ms": 1.988625,
+        "timestamp": 508920.083062708
+      },
+      {
+        "operation_id": 14892,
+        "latency_ms": 1.437334,
+        "timestamp": 508920.084505833
+      },
+      {
+        "operation_id": 14895,
+        "latency_ms": 1.255583,
+        "timestamp": 508920.086814541
+      },
+      {
+        "operation_id": 14896,
+        "latency_ms": 1.246709,
+        "timestamp": 508920.088097625
+      },
+      {
+        "operation_id": 14897,
+        "latency_ms": 1.10575,
+        "timestamp": 508920.089206666
+      },
+      {
+        "operation_id": 14901,
+        "latency_ms": 1.231375,
+        "timestamp": 508920.092467708
+      },
+      {
+        "operation_id": 14903,
+        "latency_ms": 3.084125,
+        "timestamp": 508920.096280875
+      },
+      {
+        "operation_id": 14905,
+        "latency_ms": 1.089666,
+        "timestamp": 508920.097835583
+      },
+      {
+        "operation_id": 14912,
+        "latency_ms": 1.163666,
+        "timestamp": 508920.102688
+      },
+      {
+        "operation_id": 14913,
+        "latency_ms": 1.073084,
+        "timestamp": 508920.103763958
+      },
+      {
+        "operation_id": 14914,
+        "latency_ms": 1.509625,
+        "timestamp": 508920.105285083
+      },
+      {
+        "operation_id": 14916,
+        "latency_ms": 2.422583,
+        "timestamp": 508920.10817975
+      },
+      {
+        "operation_id": 14917,
+        "latency_ms": 1.26,
+        "timestamp": 508920.10944975
+      },
+      {
+        "operation_id": 14921,
+        "latency_ms": 1.774917,
+        "timestamp": 508920.112358333
+      },
+      {
+        "operation_id": 14923,
+        "latency_ms": 10.819666,
+        "timestamp": 508920.124069541
+      },
+      {
+        "operation_id": 14924,
+        "latency_ms": 16.356084,
+        "timestamp": 508920.140436
+      },
+      {
+        "operation_id": 16089,
+        "latency_ms": 2.731083,
+        "timestamp": 508920.405394666
+      },
+      {
+        "operation_id": 16090,
+        "latency_ms": 1.137542,
+        "timestamp": 508920.406539583
+      },
+      {
+        "operation_id": 16527,
+        "latency_ms": 1.527083,
+        "timestamp": 508920.526595916
+      },
+      {
+        "operation_id": 16618,
+        "latency_ms": 1.063291,
+        "timestamp": 508920.550615666
+      },
+      {
+        "operation_id": 16619,
+        "latency_ms": 1.430208,
+        "timestamp": 508920.552057083
+      },
+      {
+        "operation_id": 21904,
+        "latency_ms": 3.643709,
+        "timestamp": 508921.73585325
+      },
+      {
+        "operation_id": 21906,
+        "latency_ms": 1.566542,
+        "timestamp": 508921.737893875
+      },
+      {
+        "operation_id": 21907,
+        "latency_ms": 1.360041,
+        "timestamp": 508921.739255875
+      },
+      {
+        "operation_id": 21909,
+        "latency_ms": 2.178375,
+        "timestamp": 508921.742062125
+      },
+      {
+        "operation_id": 21917,
+        "latency_ms": 1.722042,
+        "timestamp": 508921.747322166
+      },
+      {
+        "operation_id": 22214,
+        "latency_ms": 1.384625,
+        "timestamp": 508921.822942208
+      },
+      {
+        "operation_id": 22976,
+        "latency_ms": 1.579458,
+        "timestamp": 508922.002754916
+      },
+      {
+        "operation_id": 22983,
+        "latency_ms": 1.057542,
+        "timestamp": 508922.006333708
+      },
+      {
+        "operation_id": 24040,
+        "latency_ms": 2.411042,
+        "timestamp": 508922.242599375
+      },
+      {
+        "operation_id": 24042,
+        "latency_ms": 1.034792,
+        "timestamp": 508922.243898416
+      },
+      {
+        "operation_id": 24045,
+        "latency_ms": 6.058542,
+        "timestamp": 508922.25073775
+      },
+      {
+        "operation_id": 24046,
+        "latency_ms": 4.547125,
+        "timestamp": 508922.255289041
+      },
+      {
+        "operation_id": 24047,
+        "latency_ms": 2.358917,
+        "timestamp": 508922.257651083
+      },
+      {
+        "operation_id": 24048,
+        "latency_ms": 5.266167,
+        "timestamp": 508922.26291975
+      },
+      {
+        "operation_id": 24051,
+        "latency_ms": 2.87375,
+        "timestamp": 508922.267015541
+      },
+      {
+        "operation_id": 24052,
+        "latency_ms": 6.081416,
+        "timestamp": 508922.273099208
+      },
+      {
+        "operation_id": 24055,
+        "latency_ms": 1.750542,
+        "timestamp": 508922.275863
+      },
+      {
+        "operation_id": 24060,
+        "latency_ms": 4.097083,
+        "timestamp": 508922.282649625
+      },
+      {
+        "operation_id": 24067,
+        "latency_ms": 2.655833,
+        "timestamp": 508922.287845
+      },
+      {
+        "operation_id": 24069,
+        "latency_ms": 1.176125,
+        "timestamp": 508922.289721708
+      },
+      {
+        "operation_id": 24070,
+        "latency_ms": 2.227375,
+        "timestamp": 508922.291952916
+      },
+      {
+        "operation_id": 24071,
+        "latency_ms": 1.119291,
+        "timestamp": 508922.293074291
+      },
+      {
+        "operation_id": 24073,
+        "latency_ms": 3.821875,
+        "timestamp": 508922.297736333
+      },
+      {
+        "operation_id": 24074,
+        "latency_ms": 2.448875,
+        "timestamp": 508922.300259875
+      },
+      {
+        "operation_id": 24075,
+        "latency_ms": 3.026875,
+        "timestamp": 508922.303294583
+      },
+      {
+        "operation_id": 24076,
+        "latency_ms": 6.838333,
+        "timestamp": 508922.310134833
+      },
+      {
+        "operation_id": 24077,
+        "latency_ms": 1.048542,
+        "timestamp": 508922.31118525
+      },
+      {
+        "operation_id": 24082,
+        "latency_ms": 1.281333,
+        "timestamp": 508922.314006
+      },
+      {
+        "operation_id": 24086,
+        "latency_ms": 2.443583,
+        "timestamp": 508922.31794975
+      },
+      {
+        "operation_id": 24087,
+        "latency_ms": 1.043959,
+        "timestamp": 508922.318994916
+      },
+      {
+        "operation_id": 24092,
+        "latency_ms": 5.598083,
+        "timestamp": 508922.327248083
+      },
+      {
+        "operation_id": 24093,
+        "latency_ms": 4.484125,
+        "timestamp": 508922.331737791
+      },
+      {
+        "operation_id": 24094,
+        "latency_ms": 1.290542,
+        "timestamp": 508922.33303125
+      },
+      {
+        "operation_id": 24097,
+        "latency_ms": 3.060791,
+        "timestamp": 508922.336786416
+      },
+      {
+        "operation_id": 24100,
+        "latency_ms": 1.735125,
+        "timestamp": 508922.339787625
+      },
+      {
+        "operation_id": 24101,
+        "latency_ms": 1.241166,
+        "timestamp": 508922.341033375
+      },
+      {
+        "operation_id": 24102,
+        "latency_ms": 1.6395,
+        "timestamp": 508922.34267575
+      },
+      {
+        "operation_id": 24103,
+        "latency_ms": 1.143083,
+        "timestamp": 508922.3438205
+      },
+      {
+        "operation_id": 24105,
+        "latency_ms": 3.637458,
+        "timestamp": 508922.347958416
+      },
+      {
+        "operation_id": 24176,
+        "latency_ms": 2.109709,
+        "timestamp": 508922.370549208
+      },
+      {
+        "operation_id": 24178,
+        "latency_ms": 2.193875,
+        "timestamp": 508922.373301833
+      },
+      {
+        "operation_id": 24179,
+        "latency_ms": 1.554834,
+        "timestamp": 508922.374859166
+      },
+      {
+        "operation_id": 24180,
+        "latency_ms": 1.340875,
+        "timestamp": 508922.376205458
+      },
+      {
+        "operation_id": 24597,
+        "latency_ms": 5.836667,
+        "timestamp": 508922.4776885
+      },
+      {
+        "operation_id": 26284,
+        "latency_ms": 1.479333,
+        "timestamp": 508922.839788541
+      },
+      {
+        "operation_id": 28755,
+        "latency_ms": 1.947625,
+        "timestamp": 508923.358965083
+      }
+    ],
+    "percentiles": {
+      "p50": 0.215083,
+      "p90": 0.283542,
+      "p95": 0.311917,
+      "p99": 0.4992951799999978,
+      "p99_9": 2.8264665420000328,
+      "p99_99": 11.917604950056973
+    },
+    "throughput": 12584.726892235043
+  },
+  "reduced_connections": {
+    "test_name": "Reduced Connections",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 7001,
+      "connections": 2,
+      "operations_per_connection": 30000,
+      "connection_warmup_ops": 100,
+      "enable_cpu_affinity": true,
+      "enable_process_priority": true,
+      "enable_connection_pooling": true,
+      "recv_buffer_size": 2048,
+      "send_buffer_size": 1024
+    },
+    "successful_operations": 60000,
+    "failed_operations": 0,
+    "duration": 5.73162495798897,
+    "outliers": [
+      {
+        "operation_id": 1903,
+        "latency_ms": 2.682917,
+        "timestamp": 508924.037594875
+      },
+      {
+        "operation_id": 11155,
+        "latency_ms": 1.934333,
+        "timestamp": 508925.778896083
+      },
+      {
+        "operation_id": 13177,
+        "latency_ms": 4.680708,
+        "timestamp": 508926.176134541
+      },
+      {
+        "operation_id": 13183,
+        "latency_ms": 1.06525,
+        "timestamp": 508926.178593541
+      },
+      {
+        "operation_id": 16548,
+        "latency_ms": 1.342084,
+        "timestamp": 508926.812187458
+      },
+      {
+        "operation_id": 16557,
+        "latency_ms": 1.316,
+        "timestamp": 508926.814906458
+      },
+      {
+        "operation_id": 20733,
+        "latency_ms": 1.402208,
+        "timestamp": 508927.605227958
+      },
+      {
+        "operation_id": 20740,
+        "latency_ms": 1.481208,
+        "timestamp": 508927.608640083
+      },
+      {
+        "operation_id": 20776,
+        "latency_ms": 1.503708,
+        "timestamp": 508927.618858541
+      },
+      {
+        "operation_id": 23222,
+        "latency_ms": 1.061833,
+        "timestamp": 508928.080719208
+      },
+      {
+        "operation_id": 23232,
+        "latency_ms": 3.252833,
+        "timestamp": 508928.08690775
+      },
+      {
+        "operation_id": 23233,
+        "latency_ms": 2.522458,
+        "timestamp": 508928.089440916
+      },
+      {
+        "operation_id": 25882,
+        "latency_ms": 3.062,
+        "timestamp": 508928.589992166
+      },
+      {
+        "operation_id": 25883,
+        "latency_ms": 1.962042,
+        "timestamp": 508928.591960333
+      },
+      {
+        "operation_id": 29761,
+        "latency_ms": 1.674916,
+        "timestamp": 508929.317541875
+      },
+      {
+        "operation_id": 1905,
+        "latency_ms": 3.0045,
+        "timestamp": 508924.037665708
+      },
+      {
+        "operation_id": 9432,
+        "latency_ms": 1.008667,
+        "timestamp": 508925.47109425
+      },
+      {
+        "operation_id": 11159,
+        "latency_ms": 2.202292,
+        "timestamp": 508925.778912375
+      },
+      {
+        "operation_id": 13188,
+        "latency_ms": 4.728583,
+        "timestamp": 508926.176040291
+      },
+      {
+        "operation_id": 13195,
+        "latency_ms": 1.186125,
+        "timestamp": 508926.178896916
+      },
+      {
+        "operation_id": 16550,
+        "latency_ms": 1.34475,
+        "timestamp": 508926.812168041
+      },
+      {
+        "operation_id": 16559,
+        "latency_ms": 1.31475,
+        "timestamp": 508926.81491575
+      },
+      {
+        "operation_id": 20740,
+        "latency_ms": 1.231625,
+        "timestamp": 508927.605212583
+      },
+      {
+        "operation_id": 20746,
+        "latency_ms": 1.81575,
+        "timestamp": 508927.608672458
+      },
+      {
+        "operation_id": 20783,
+        "latency_ms": 1.45925,
+        "timestamp": 508927.618895125
+      },
+      {
+        "operation_id": 23234,
+        "latency_ms": 1.019417,
+        "timestamp": 508928.080694458
+      },
+      {
+        "operation_id": 23244,
+        "latency_ms": 3.305916,
+        "timestamp": 508928.086940875
+      },
+      {
+        "operation_id": 23245,
+        "latency_ms": 2.441208,
+        "timestamp": 508928.089396791
+      },
+      {
+        "operation_id": 25891,
+        "latency_ms": 4.5345,
+        "timestamp": 508928.591453083
+      }
+    ],
+    "percentiles": {
+      "p50": 0.185208,
+      "p90": 0.228667,
+      "p95": 0.24429105,
+      "p99": 0.2872504200000001,
+      "p99_9": 0.605843374000036,
+      "p99_99": 3.004505749999855
+    },
+    "throughput": 10468.235524791198
+  },
+  "smaller_buffers": {
+    "test_name": "Smaller Buffers",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 7001,
+      "connections": 3,
+      "operations_per_connection": 30000,
+      "connection_warmup_ops": 100,
+      "enable_cpu_affinity": true,
+      "enable_process_priority": true,
+      "enable_connection_pooling": true,
+      "recv_buffer_size": 1024,
+      "send_buffer_size": 512
+    },
+    "successful_operations": 90000,
+    "failed_operations": 0,
+    "duration": 6.586814915994182,
+    "outliers": [
+      {
+        "operation_id": 30,
+        "latency_ms": 1.042916,
+        "timestamp": 508929.404777833
+      },
+      {
+        "operation_id": 31,
+        "latency_ms": 1.225417,
+        "timestamp": 508929.406013583
+      },
+      {
+        "operation_id": 284,
+        "latency_ms": 5.956,
+        "timestamp": 508929.473182416
+      },
+      {
+        "operation_id": 285,
+        "latency_ms": 1.672708,
+        "timestamp": 508929.474859583
+      },
+      {
+        "operation_id": 286,
+        "latency_ms": 2.46875,
+        "timestamp": 508929.477336541
+      },
+      {
+        "operation_id": 287,
+        "latency_ms": 7.339833,
+        "timestamp": 508929.484740416
+      },
+      {
+        "operation_id": 288,
+        "latency_ms": 1.375333,
+        "timestamp": 508929.486148666
+      },
+      {
+        "operation_id": 289,
+        "latency_ms": 3.257334,
+        "timestamp": 508929.489408583
+      },
+      {
+        "operation_id": 290,
+        "latency_ms": 1.519833,
+        "timestamp": 508929.490931541
+      },
+      {
+        "operation_id": 291,
+        "latency_ms": 2.565167,
+        "timestamp": 508929.493499625
+      },
+      {
+        "operation_id": 292,
+        "latency_ms": 3.322542,
+        "timestamp": 508929.4968255
+      },
+      {
+        "operation_id": 293,
+        "latency_ms": 1.755834,
+        "timestamp": 508929.498583416
+      },
+      {
+        "operation_id": 298,
+        "latency_ms": 1.88275,
+        "timestamp": 508929.50238075
+      },
+      {
+        "operation_id": 300,
+        "latency_ms": 1.247833,
+        "timestamp": 508929.504417
+      },
+      {
+        "operation_id": 301,
+        "latency_ms": 1.562334,
+        "timestamp": 508929.505983291
+      },
+      {
+        "operation_id": 302,
+        "latency_ms": 4.166792,
+        "timestamp": 508929.510159666
+      },
+      {
+        "operation_id": 303,
+        "latency_ms": 6.284,
+        "timestamp": 508929.516447916
+      },
+      {
+        "operation_id": 305,
+        "latency_ms": 2.455833,
+        "timestamp": 508929.519842375
+      },
+      {
+        "operation_id": 306,
+        "latency_ms": 2.080917,
+        "timestamp": 508929.521924541
+      },
+      {
+        "operation_id": 308,
+        "latency_ms": 1.195292,
+        "timestamp": 508929.523697666
+      },
+      {
+        "operation_id": 309,
+        "latency_ms": 3.188334,
+        "timestamp": 508929.526887416
+      },
+      {
+        "operation_id": 310,
+        "latency_ms": 2.673041,
+        "timestamp": 508929.5295615
+      },
+      {
+        "operation_id": 311,
+        "latency_ms": 1.961708,
+        "timestamp": 508929.531524166
+      },
+      {
+        "operation_id": 315,
+        "latency_ms": 3.078416,
+        "timestamp": 508929.535959208
+      },
+      {
+        "operation_id": 316,
+        "latency_ms": 1.036667,
+        "timestamp": 508929.536998458
+      },
+      {
+        "operation_id": 320,
+        "latency_ms": 1.917125,
+        "timestamp": 508929.541156
+      },
+      {
+        "operation_id": 321,
+        "latency_ms": 2.152958,
+        "timestamp": 508929.543310708
+      },
+      {
+        "operation_id": 369,
+        "latency_ms": 1.657208,
+        "timestamp": 508929.555395958
+      },
+      {
+        "operation_id": 409,
+        "latency_ms": 1.209459,
+        "timestamp": 508929.565993583
+      },
+      {
+        "operation_id": 911,
+        "latency_ms": 1.645041,
+        "timestamp": 508929.687144583
+      },
+      {
+        "operation_id": 912,
+        "latency_ms": 1.557208,
+        "timestamp": 508929.688743083
+      },
+      {
+        "operation_id": 917,
+        "latency_ms": 3.866083,
+        "timestamp": 508929.694137166
+      },
+      {
+        "operation_id": 918,
+        "latency_ms": 1.811833,
+        "timestamp": 508929.695953333
+      },
+      {
+        "operation_id": 920,
+        "latency_ms": 1.979625,
+        "timestamp": 508929.698449625
+      },
+      {
+        "operation_id": 1466,
+        "latency_ms": 2.182917,
+        "timestamp": 508929.817144791
+      },
+      {
+        "operation_id": 1814,
+        "latency_ms": 2.853625,
+        "timestamp": 508929.892573416
+      },
+      {
+        "operation_id": 7344,
+        "latency_ms": 4.64275,
+        "timestamp": 508931.058152708
+      },
+      {
+        "operation_id": 7363,
+        "latency_ms": 1.067708,
+        "timestamp": 508931.064080041
+      },
+      {
+        "operation_id": 12452,
+        "latency_ms": 1.344042,
+        "timestamp": 508932.130920708
+      },
+      {
+        "operation_id": 13049,
+        "latency_ms": 1.028333,
+        "timestamp": 508932.265329375
+      },
+      {
+        "operation_id": 13057,
+        "latency_ms": 5.887792,
+        "timestamp": 508932.27337425
+      },
+      {
+        "operation_id": 13058,
+        "latency_ms": 2.736292,
+        "timestamp": 508932.276114083
+      },
+      {
+        "operation_id": 13059,
+        "latency_ms": 7.655083,
+        "timestamp": 508932.283771333
+      },
+      {
+        "operation_id": 13061,
+        "latency_ms": 1.589,
+        "timestamp": 508932.28574125
+      },
+      {
+        "operation_id": 13070,
+        "latency_ms": 1.211167,
+        "timestamp": 508932.291302583
+      },
+      {
+        "operation_id": 13079,
+        "latency_ms": 1.004167,
+        "timestamp": 508932.296094041
+      },
+      {
+        "operation_id": 13081,
+        "latency_ms": 1.134208,
+        "timestamp": 508932.298151
+      },
+      {
+        "operation_id": 13086,
+        "latency_ms": 1.025,
+        "timestamp": 508932.30072175
+      },
+      {
+        "operation_id": 13097,
+        "latency_ms": 2.029584,
+        "timestamp": 508932.30934775
+      },
+      {
+        "operation_id": 13120,
+        "latency_ms": 2.709791,
+        "timestamp": 508932.320255458
+      },
+      {
+        "operation_id": 13122,
+        "latency_ms": 1.206958,
+        "timestamp": 508932.321843208
+      },
+      {
+        "operation_id": 13125,
+        "latency_ms": 1.911791,
+        "timestamp": 508932.325243625
+      },
+      {
+        "operation_id": 13126,
+        "latency_ms": 5.823291,
+        "timestamp": 508932.331072208
+      },
+      {
+        "operation_id": 13127,
+        "latency_ms": 3.269375,
+        "timestamp": 508932.334353833
+      },
+      {
+        "operation_id": 13129,
+        "latency_ms": 1.776292,
+        "timestamp": 508932.337115666
+      },
+      {
+        "operation_id": 13137,
+        "latency_ms": 1.052791,
+        "timestamp": 508932.342577041
+      },
+      {
+        "operation_id": 13143,
+        "latency_ms": 2.304,
+        "timestamp": 508932.347134958
+      },
+      {
+        "operation_id": 19953,
+        "latency_ms": 4.155375,
+        "timestamp": 508933.824734875
+      },
+      {
+        "operation_id": 21476,
+        "latency_ms": 1.043334,
+        "timestamp": 508934.157210625
+      },
+      {
+        "operation_id": 21487,
+        "latency_ms": 1.043958,
+        "timestamp": 508934.161610041
+      },
+      {
+        "operation_id": 21488,
+        "latency_ms": 2.141625,
+        "timestamp": 508934.16375475
+      },
+      {
+        "operation_id": 28117,
+        "latency_ms": 1.62275,
+        "timestamp": 508935.544927708
+      },
+      {
+        "operation_id": 28,
+        "latency_ms": 1.221625,
+        "timestamp": 508929.40474075
+      },
+      {
+        "operation_id": 29,
+        "latency_ms": 1.219583,
+        "timestamp": 508929.405967291
+      },
+      {
+        "operation_id": 283,
+        "latency_ms": 1.575958,
+        "timestamp": 508929.46870875
+      },
+      {
+        "operation_id": 284,
+        "latency_ms": 2.353916,
+        "timestamp": 508929.471071458
+      },
+      {
+        "operation_id": 285,
+        "latency_ms": 3.848875,
+        "timestamp": 508929.474926458
+      },
+      {
+        "operation_id": 286,
+        "latency_ms": 2.457167,
+        "timestamp": 508929.477389916
+      },
+      {
+        "operation_id": 287,
+        "latency_ms": 7.25525,
+        "timestamp": 508929.484648625
+      },
+      {
+        "operation_id": 288,
+        "latency_ms": 1.383667,
+        "timestamp": 508929.4860405
+      },
+      {
+        "operation_id": 289,
+        "latency_ms": 3.443959,
+        "timestamp": 508929.489487791
+      },
+      {
+        "operation_id": 290,
+        "latency_ms": 1.504834,
+        "timestamp": 508929.490994083
+      },
+      {
+        "operation_id": 291,
+        "latency_ms": 2.68475,
+        "timestamp": 508929.493680291
+      },
+      {
+        "operation_id": 292,
+        "latency_ms": 1.6785,
+        "timestamp": 508929.495363666
+      },
+      {
+        "operation_id": 293,
+        "latency_ms": 2.74575,
+        "timestamp": 508929.498111958
+      },
+      {
+        "operation_id": 298,
+        "latency_ms": 1.617375,
+        "timestamp": 508929.502158666
+      },
+      {
+        "operation_id": 299,
+        "latency_ms": 1.755875,
+        "timestamp": 508929.503917791
+      },
+      {
+        "operation_id": 301,
+        "latency_ms": 1.325833,
+        "timestamp": 508929.5060235
+      },
+      {
+        "operation_id": 302,
+        "latency_ms": 8.800833,
+        "timestamp": 508929.51482525
+      },
+      {
+        "operation_id": 303,
+        "latency_ms": 1.398375,
+        "timestamp": 508929.516226875
+      },
+      {
+        "operation_id": 306,
+        "latency_ms": 3.454833,
+        "timestamp": 508929.5211665
+      },
+      {
+        "operation_id": 309,
+        "latency_ms": 1.1025,
+        "timestamp": 508929.523659125
+      },
+      {
+        "operation_id": 310,
+        "latency_ms": 3.183458,
+        "timestamp": 508929.526843583
+      },
+      {
+        "operation_id": 311,
+        "latency_ms": 2.590292,
+        "timestamp": 508929.529437291
+      },
+      {
+        "operation_id": 312,
+        "latency_ms": 2.063417,
+        "timestamp": 508929.531502958
+      },
+      {
+        "operation_id": 316,
+        "latency_ms": 3.416959,
+        "timestamp": 508929.536261708
+      },
+      {
+        "operation_id": 319,
+        "latency_ms": 1.056792,
+        "timestamp": 508929.538289166
+      },
+      {
+        "operation_id": 321,
+        "latency_ms": 1.939583,
+        "timestamp": 508929.541108416
+      },
+      {
+        "operation_id": 322,
+        "latency_ms": 1.665334,
+        "timestamp": 508929.542778958
+      },
+      {
+        "operation_id": 367,
+        "latency_ms": 1.706792,
+        "timestamp": 508929.555126375
+      },
+      {
+        "operation_id": 411,
+        "latency_ms": 1.328292,
+        "timestamp": 508929.566378625
+      },
+      {
+        "operation_id": 906,
+        "latency_ms": 2.99975,
+        "timestamp": 508929.688782916
+      },
+      {
+        "operation_id": 911,
+        "latency_ms": 3.950291,
+        "timestamp": 508929.694229583
+      },
+      {
+        "operation_id": 912,
+        "latency_ms": 2.272875,
+        "timestamp": 508929.696503875
+      },
+      {
+        "operation_id": 913,
+        "latency_ms": 1.847459,
+        "timestamp": 508929.698354458
+      },
+      {
+        "operation_id": 1457,
+        "latency_ms": 2.278958,
+        "timestamp": 508929.817272458
+      },
+      {
+        "operation_id": 1806,
+        "latency_ms": 2.495541,
+        "timestamp": 508929.892074708
+      },
+      {
+        "operation_id": 7342,
+        "latency_ms": 4.497875,
+        "timestamp": 508931.058012458
+      },
+      {
+        "operation_id": 12458,
+        "latency_ms": 1.287583,
+        "timestamp": 508932.130860708
+      },
+      {
+        "operation_id": 13051,
+        "latency_ms": 1.19675,
+        "timestamp": 508932.265909
+      },
+      {
+        "operation_id": 13058,
+        "latency_ms": 4.054416,
+        "timestamp": 508932.271576125
+      },
+      {
+        "operation_id": 13059,
+        "latency_ms": 11.61175,
+        "timestamp": 508932.283197166
+      },
+      {
+        "operation_id": 13062,
+        "latency_ms": 1.438583,
+        "timestamp": 508932.285658416
+      },
+      {
+        "operation_id": 13069,
+        "latency_ms": 1.061584,
+        "timestamp": 508932.289584708
+      },
+      {
+        "operation_id": 13071,
+        "latency_ms": 1.233875,
+        "timestamp": 508932.291287166
+      },
+      {
+        "operation_id": 13081,
+        "latency_ms": 1.638125,
+        "timestamp": 508932.297059125
+      },
+      {
+        "operation_id": 13082,
+        "latency_ms": 1.177125,
+        "timestamp": 508932.298237541
+      },
+      {
+        "operation_id": 13087,
+        "latency_ms": 1.548708,
+        "timestamp": 508932.301523666
+      },
+      {
+        "operation_id": 13097,
+        "latency_ms": 2.063792,
+        "timestamp": 508932.309313333
+      },
+      {
+        "operation_id": 13122,
+        "latency_ms": 1.332,
+        "timestamp": 508932.320281958
+      },
+      {
+        "operation_id": 13125,
+        "latency_ms": 1.299542,
+        "timestamp": 508932.322464125
+      },
+      {
+        "operation_id": 13127,
+        "latency_ms": 1.9795,
+        "timestamp": 508932.325210125
+      },
+      {
+        "operation_id": 13128,
+        "latency_ms": 5.570125,
+        "timestamp": 508932.33079575
+      },
+      {
+        "operation_id": 13129,
+        "latency_ms": 3.472833,
+        "timestamp": 508932.3342745
+      },
+      {
+        "operation_id": 13131,
+        "latency_ms": 1.908458,
+        "timestamp": 508932.337067333
+      },
+      {
+        "operation_id": 13139,
+        "latency_ms": 1.061375,
+        "timestamp": 508932.342620833
+      },
+      {
+        "operation_id": 13145,
+        "latency_ms": 2.24975,
+        "timestamp": 508932.347054666
+      },
+      {
+        "operation_id": 19975,
+        "latency_ms": 4.605875,
+        "timestamp": 508933.825191083
+      },
+      {
+        "operation_id": 21510,
+        "latency_ms": 1.1045,
+        "timestamp": 508934.15719775
+      },
+      {
+        "operation_id": 21521,
+        "latency_ms": 1.176167,
+        "timestamp": 508934.161730208
+      },
+      {
+        "operation_id": 21522,
+        "latency_ms": 1.955917,
+        "timestamp": 508934.163689666
+      },
+      {
+        "operation_id": 28142,
+        "latency_ms": 1.456875,
+        "timestamp": 508935.544895208
+      },
+      {
+        "operation_id": 29764,
+        "latency_ms": 1.042917,
+        "timestamp": 508935.895296041
+      },
+      {
+        "operation_id": 30,
+        "latency_ms": 1.414917,
+        "timestamp": 508929.405999041
+      },
+      {
+        "operation_id": 286,
+        "latency_ms": 5.060958,
+        "timestamp": 508929.472388083
+      },
+      {
+        "operation_id": 287,
+        "latency_ms": 2.407125,
+        "timestamp": 508929.474805583
+      },
+      {
+        "operation_id": 288,
+        "latency_ms": 1.542208,
+        "timestamp": 508929.47635825
+      },
+      {
+        "operation_id": 289,
+        "latency_ms": 7.54925,
+        "timestamp": 508929.483914083
+      },
+      {
+        "operation_id": 290,
+        "latency_ms": 2.311625,
+        "timestamp": 508929.486228208
+      },
+      {
+        "operation_id": 291,
+        "latency_ms": 3.119792,
+        "timestamp": 508929.489354375
+      },
+      {
+        "operation_id": 292,
+        "latency_ms": 1.794958,
+        "timestamp": 508929.491152333
+      },
+      {
+        "operation_id": 293,
+        "latency_ms": 1.552083,
+        "timestamp": 508929.492707041
+      },
+      {
+        "operation_id": 294,
+        "latency_ms": 1.358792,
+        "timestamp": 508929.494068333
+      },
+      {
+        "operation_id": 295,
+        "latency_ms": 4.027417,
+        "timestamp": 508929.498099041
+      },
+      {
+        "operation_id": 300,
+        "latency_ms": 1.822666,
+        "timestamp": 508929.502396833
+      },
+      {
+        "operation_id": 302,
+        "latency_ms": 1.392042,
+        "timestamp": 508929.504518791
+      },
+      {
+        "operation_id": 303,
+        "latency_ms": 1.343458,
+        "timestamp": 508929.505873166
+      },
+      {
+        "operation_id": 304,
+        "latency_ms": 8.910625,
+        "timestamp": 508929.514794083
+      },
+      {
+        "operation_id": 305,
+        "latency_ms": 1.584125,
+        "timestamp": 508929.516389625
+      },
+      {
+        "operation_id": 307,
+        "latency_ms": 2.282375,
+        "timestamp": 508929.519632875
+      },
+      {
+        "operation_id": 308,
+        "latency_ms": 2.264417,
+        "timestamp": 508929.521903416
+      },
+      {
+        "operation_id": 310,
+        "latency_ms": 1.0515,
+        "timestamp": 508929.523590916
+      },
+      {
+        "operation_id": 311,
+        "latency_ms": 3.217417,
+        "timestamp": 508929.526822291
+      },
+      {
+        "operation_id": 312,
+        "latency_ms": 2.699583,
+        "timestamp": 508929.529524458
+      },
+      {
+        "operation_id": 313,
+        "latency_ms": 1.948208,
+        "timestamp": 508929.531477916
+      },
+      {
+        "operation_id": 316,
+        "latency_ms": 1.07325,
+        "timestamp": 508929.533618875
+      },
+      {
+        "operation_id": 317,
+        "latency_ms": 2.700333,
+        "timestamp": 508929.536321
+      },
+      {
+        "operation_id": 320,
+        "latency_ms": 1.130042,
+        "timestamp": 508929.538395041
+      },
+      {
+        "operation_id": 322,
+        "latency_ms": 1.799292,
+        "timestamp": 508929.541008333
+      },
+      {
+        "operation_id": 323,
+        "latency_ms": 1.742209,
+        "timestamp": 508929.54275525
+      },
+      {
+        "operation_id": 371,
+        "latency_ms": 1.672958,
+        "timestamp": 508929.555143
+      },
+      {
+        "operation_id": 412,
+        "latency_ms": 1.148375,
+        "timestamp": 508929.566315541
+      },
+      {
+        "operation_id": 911,
+        "latency_ms": 2.712959,
+        "timestamp": 508929.688393166
+      },
+      {
+        "operation_id": 912,
+        "latency_ms": 1.172709,
+        "timestamp": 508929.6895695
+      },
+      {
+        "operation_id": 916,
+        "latency_ms": 3.990167,
+        "timestamp": 508929.694271583
+      },
+      {
+        "operation_id": 917,
+        "latency_ms": 2.28625,
+        "timestamp": 508929.696559083
+      },
+      {
+        "operation_id": 918,
+        "latency_ms": 1.942292,
+        "timestamp": 508929.698502958
+      },
+      {
+        "operation_id": 1460,
+        "latency_ms": 2.23675,
+        "timestamp": 508929.817252208
+      },
+      {
+        "operation_id": 1805,
+        "latency_ms": 2.98825,
+        "timestamp": 508929.892592416
+      },
+      {
+        "operation_id": 2772,
+        "latency_ms": 1.21575,
+        "timestamp": 508930.104695583
+      },
+      {
+        "operation_id": 7313,
+        "latency_ms": 4.853708,
+        "timestamp": 508931.058569833
+      },
+      {
+        "operation_id": 12419,
+        "latency_ms": 1.288958,
+        "timestamp": 508932.130884
+      },
+      {
+        "operation_id": 13017,
+        "latency_ms": 1.542375,
+        "timestamp": 508932.26588975
+      },
+      {
+        "operation_id": 13024,
+        "latency_ms": 5.797958,
+        "timestamp": 508932.273334041
+      },
+      {
+        "operation_id": 13025,
+        "latency_ms": 8.763291,
+        "timestamp": 508932.28226375
+      },
+      {
+        "operation_id": 13026,
+        "latency_ms": 1.458792,
+        "timestamp": 508932.283729291
+      },
+      {
+        "operation_id": 13028,
+        "latency_ms": 1.467208,
+        "timestamp": 508932.28570525
+      },
+      {
+        "operation_id": 13037,
+        "latency_ms": 1.295916,
+        "timestamp": 508932.291209208
+      },
+      {
+        "operation_id": 13048,
+        "latency_ms": 1.173583,
+        "timestamp": 508932.298269333
+      },
+      {
+        "operation_id": 13053,
+        "latency_ms": 1.6685,
+        "timestamp": 508932.301680083
+      },
+      {
+        "operation_id": 13063,
+        "latency_ms": 1.986708,
+        "timestamp": 508932.309270625
+      },
+      {
+        "operation_id": 13088,
+        "latency_ms": 1.050709,
+        "timestamp": 508932.319968333
+      },
+      {
+        "operation_id": 13091,
+        "latency_ms": 1.228375,
+        "timestamp": 508932.322427833
+      },
+      {
+        "operation_id": 13093,
+        "latency_ms": 1.986625,
+        "timestamp": 508932.3252855
+      },
+      {
+        "operation_id": 13094,
+        "latency_ms": 5.705541,
+        "timestamp": 508932.330994291
+      },
+      {
+        "operation_id": 13095,
+        "latency_ms": 3.227417,
+        "timestamp": 508932.334228666
+      },
+      {
+        "operation_id": 13097,
+        "latency_ms": 1.701917,
+        "timestamp": 508932.336880125
+      },
+      {
+        "operation_id": 13098,
+        "latency_ms": 1.132875,
+        "timestamp": 508932.338015708
+      },
+      {
+        "operation_id": 13105,
+        "latency_ms": 1.182959,
+        "timestamp": 508932.342666875
+      },
+      {
+        "operation_id": 13111,
+        "latency_ms": 2.329917,
+        "timestamp": 508932.347101083
+      },
+      {
+        "operation_id": 19927,
+        "latency_ms": 4.453292,
+        "timestamp": 508933.825057541
+      },
+      {
+        "operation_id": 21471,
+        "latency_ms": 1.230917,
+        "timestamp": 508934.161803083
+      },
+      {
+        "operation_id": 21472,
+        "latency_ms": 1.896416,
+        "timestamp": 508934.163702375
+      },
+      {
+        "operation_id": 28100,
+        "latency_ms": 1.500958,
+        "timestamp": 508935.544909958
+      }
+    ],
+    "percentiles": {
+      "p50": 0.207583,
+      "p90": 0.26725,
+      "p95": 0.288291,
+      "p99": 0.3622924099999998,
+      "p99_9": 1.8964280420000463,
+      "p99_99": 5.956032799996786
+    },
+    "throughput": 13663.660076657221
+  },
+  "more_warmup": {
+    "test_name": "More Warmup",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 7001,
+      "connections": 3,
+      "operations_per_connection": 30000,
+      "connection_warmup_ops": 200,
+      "enable_cpu_affinity": true,
+      "enable_process_priority": true,
+      "enable_connection_pooling": true,
+      "recv_buffer_size": 2048,
+      "send_buffer_size": 1024
+    },
+    "successful_operations": 90000,
+    "failed_operations": 0,
+    "duration": 6.720741583034396,
+    "outliers": [
+      {
+        "operation_id": 725,
+        "latency_ms": 2.657167,
+        "timestamp": 508936.178320791
+      },
+      {
+        "operation_id": 726,
+        "latency_ms": 9.970458,
+        "timestamp": 508936.188292916
+      },
+      {
+        "operation_id": 727,
+        "latency_ms": 1.686917,
+        "timestamp": 508936.189983041
+      },
+      {
+        "operation_id": 730,
+        "latency_ms": 1.829667,
+        "timestamp": 508936.193324416
+      },
+      {
+        "operation_id": 732,
+        "latency_ms": 4.389208,
+        "timestamp": 508936.198144708
+      },
+      {
+        "operation_id": 734,
+        "latency_ms": 1.001791,
+        "timestamp": 508936.200042875
+      },
+      {
+        "operation_id": 735,
+        "latency_ms": 1.1025,
+        "timestamp": 508936.201148708
+      },
+      {
+        "operation_id": 737,
+        "latency_ms": 2.929541,
+        "timestamp": 508936.20436975
+      },
+      {
+        "operation_id": 740,
+        "latency_ms": 2.223333,
+        "timestamp": 508936.20707975
+      },
+      {
+        "operation_id": 752,
+        "latency_ms": 1.808167,
+        "timestamp": 508936.211657708
+      },
+      {
+        "operation_id": 754,
+        "latency_ms": 1.307542,
+        "timestamp": 508936.21387325
+      },
+      {
+        "operation_id": 755,
+        "latency_ms": 1.149958,
+        "timestamp": 508936.215024916
+      },
+      {
+        "operation_id": 766,
+        "latency_ms": 4.623625,
+        "timestamp": 508936.223580833
+      },
+      {
+        "operation_id": 773,
+        "latency_ms": 1.167292,
+        "timestamp": 508936.227548416
+      },
+      {
+        "operation_id": 774,
+        "latency_ms": 6.739833,
+        "timestamp": 508936.234296875
+      },
+      {
+        "operation_id": 775,
+        "latency_ms": 4.261666,
+        "timestamp": 508936.238603541
+      },
+      {
+        "operation_id": 776,
+        "latency_ms": 1.358208,
+        "timestamp": 508936.239964458
+      },
+      {
+        "operation_id": 777,
+        "latency_ms": 1.535458,
+        "timestamp": 508936.241502333
+      },
+      {
+        "operation_id": 779,
+        "latency_ms": 1.051834,
+        "timestamp": 508936.2429785
+      },
+      {
+        "operation_id": 784,
+        "latency_ms": 1.496958,
+        "timestamp": 508936.246417125
+      },
+      {
+        "operation_id": 786,
+        "latency_ms": 1.227042,
+        "timestamp": 508936.248163166
+      },
+      {
+        "operation_id": 788,
+        "latency_ms": 1.503334,
+        "timestamp": 508936.250363416
+      },
+      {
+        "operation_id": 789,
+        "latency_ms": 1.408,
+        "timestamp": 508936.251773166
+      },
+      {
+        "operation_id": 790,
+        "latency_ms": 1.800125,
+        "timestamp": 508936.253577666
+      },
+      {
+        "operation_id": 791,
+        "latency_ms": 2.09925,
+        "timestamp": 508936.255679375
+      },
+      {
+        "operation_id": 792,
+        "latency_ms": 1.497,
+        "timestamp": 508936.257177875
+      },
+      {
+        "operation_id": 793,
+        "latency_ms": 1.928875,
+        "timestamp": 508936.259110958
+      },
+      {
+        "operation_id": 794,
+        "latency_ms": 1.486584,
+        "timestamp": 508936.260600708
+      },
+      {
+        "operation_id": 795,
+        "latency_ms": 1.5595,
+        "timestamp": 508936.262165708
+      },
+      {
+        "operation_id": 829,
+        "latency_ms": 3.592708,
+        "timestamp": 508936.274393041
+      },
+      {
+        "operation_id": 830,
+        "latency_ms": 3.243917,
+        "timestamp": 508936.277641291
+      },
+      {
+        "operation_id": 831,
+        "latency_ms": 2.473167,
+        "timestamp": 508936.280116208
+      },
+      {
+        "operation_id": 2683,
+        "latency_ms": 2.644541,
+        "timestamp": 508936.673512
+      },
+      {
+        "operation_id": 2684,
+        "latency_ms": 1.261833,
+        "timestamp": 508936.674775
+      },
+      {
+        "operation_id": 5668,
+        "latency_ms": 1.025083,
+        "timestamp": 508937.325675625
+      },
+      {
+        "operation_id": 5891,
+        "latency_ms": 1.783,
+        "timestamp": 508937.376909458
+      },
+      {
+        "operation_id": 6944,
+        "latency_ms": 2.599708,
+        "timestamp": 508937.609748833
+      },
+      {
+        "operation_id": 6945,
+        "latency_ms": 3.945708,
+        "timestamp": 508937.613700541
+      },
+      {
+        "operation_id": 6946,
+        "latency_ms": 1.459792,
+        "timestamp": 508937.615188875
+      },
+      {
+        "operation_id": 7250,
+        "latency_ms": 1.609833,
+        "timestamp": 508937.692123916
+      },
+      {
+        "operation_id": 7919,
+        "latency_ms": 1.108958,
+        "timestamp": 508937.843206958
+      },
+      {
+        "operation_id": 7920,
+        "latency_ms": 2.495209,
+        "timestamp": 508937.845704541
+      },
+      {
+        "operation_id": 8042,
+        "latency_ms": 9.500667,
+        "timestamp": 508937.884210208
+      },
+      {
+        "operation_id": 8043,
+        "latency_ms": 1.213041,
+        "timestamp": 508937.885428708
+      },
+      {
+        "operation_id": 8045,
+        "latency_ms": 1.398875,
+        "timestamp": 508937.887615791
+      },
+      {
+        "operation_id": 8046,
+        "latency_ms": 1.697875,
+        "timestamp": 508937.889315083
+      },
+      {
+        "operation_id": 8055,
+        "latency_ms": 2.773625,
+        "timestamp": 508937.896874625
+      },
+      {
+        "operation_id": 8056,
+        "latency_ms": 1.275292,
+        "timestamp": 508937.898162958
+      },
+      {
+        "operation_id": 8058,
+        "latency_ms": 1.106417,
+        "timestamp": 508937.899916583
+      },
+      {
+        "operation_id": 8066,
+        "latency_ms": 1.600667,
+        "timestamp": 508937.905564041
+      },
+      {
+        "operation_id": 8074,
+        "latency_ms": 3.67475,
+        "timestamp": 508937.9146595
+      },
+      {
+        "operation_id": 8075,
+        "latency_ms": 1.07625,
+        "timestamp": 508937.915738416
+      },
+      {
+        "operation_id": 8081,
+        "latency_ms": 1.115458,
+        "timestamp": 508937.919947416
+      },
+      {
+        "operation_id": 8087,
+        "latency_ms": 2.202667,
+        "timestamp": 508937.924402041
+      },
+      {
+        "operation_id": 8088,
+        "latency_ms": 1.313417,
+        "timestamp": 508937.925716291
+      },
+      {
+        "operation_id": 8091,
+        "latency_ms": 1.167583,
+        "timestamp": 508937.927670333
+      },
+      {
+        "operation_id": 8093,
+        "latency_ms": 4.062417,
+        "timestamp": 508937.932073333
+      },
+      {
+        "operation_id": 8096,
+        "latency_ms": 1.025584,
+        "timestamp": 508937.933471708
+      },
+      {
+        "operation_id": 8102,
+        "latency_ms": 1.558167,
+        "timestamp": 508937.937834916
+      },
+      {
+        "operation_id": 8103,
+        "latency_ms": 1.013375,
+        "timestamp": 508937.938849833
+      },
+      {
+        "operation_id": 8105,
+        "latency_ms": 1.052666,
+        "timestamp": 508937.940241875
+      },
+      {
+        "operation_id": 8109,
+        "latency_ms": 1.984417,
+        "timestamp": 508937.944140541
+      },
+      {
+        "operation_id": 8110,
+        "latency_ms": 2.553791,
+        "timestamp": 508937.946696416
+      },
+      {
+        "operation_id": 8113,
+        "latency_ms": 1.056459,
+        "timestamp": 508937.948511583
+      },
+      {
+        "operation_id": 8982,
+        "latency_ms": 1.010917,
+        "timestamp": 508938.150417375
+      },
+      {
+        "operation_id": 8983,
+        "latency_ms": 1.014708,
+        "timestamp": 508938.151436833
+      },
+      {
+        "operation_id": 9224,
+        "latency_ms": 4.441041,
+        "timestamp": 508938.21223575
+      },
+      {
+        "operation_id": 9229,
+        "latency_ms": 2.795542,
+        "timestamp": 508938.21647975
+      },
+      {
+        "operation_id": 9230,
+        "latency_ms": 1.04025,
+        "timestamp": 508938.217525083
+      },
+      {
+        "operation_id": 9234,
+        "latency_ms": 2.207917,
+        "timestamp": 508938.22140675
+      },
+      {
+        "operation_id": 9235,
+        "latency_ms": 1.111208,
+        "timestamp": 508938.222523291
+      },
+      {
+        "operation_id": 9450,
+        "latency_ms": 1.051667,
+        "timestamp": 508938.274512041
+      },
+      {
+        "operation_id": 9455,
+        "latency_ms": 6.095084,
+        "timestamp": 508938.283549208
+      },
+      {
+        "operation_id": 9456,
+        "latency_ms": 2.137125,
+        "timestamp": 508938.285695875
+      },
+      {
+        "operation_id": 9457,
+        "latency_ms": 5.5845,
+        "timestamp": 508938.291288416
+      },
+      {
+        "operation_id": 11412,
+        "latency_ms": 1.234166,
+        "timestamp": 508938.713784083
+      },
+      {
+        "operation_id": 11415,
+        "latency_ms": 1.79425,
+        "timestamp": 508938.716614416
+      },
+      {
+        "operation_id": 11419,
+        "latency_ms": 1.303333,
+        "timestamp": 508938.719689083
+      },
+      {
+        "operation_id": 11926,
+        "latency_ms": 3.772375,
+        "timestamp": 508938.823820291
+      },
+      {
+        "operation_id": 11927,
+        "latency_ms": 1.14175,
+        "timestamp": 508938.824966958
+      },
+      {
+        "operation_id": 14646,
+        "latency_ms": 2.289625,
+        "timestamp": 508939.363194458
+      },
+      {
+        "operation_id": 14738,
+        "latency_ms": 1.345625,
+        "timestamp": 508939.389539291
+      },
+      {
+        "operation_id": 15884,
+        "latency_ms": 1.03475,
+        "timestamp": 508939.637437583
+      },
+      {
+        "operation_id": 18670,
+        "latency_ms": 3.376958,
+        "timestamp": 508940.246933541
+      },
+      {
+        "operation_id": 18676,
+        "latency_ms": 3.379125,
+        "timestamp": 508940.252711208
+      },
+      {
+        "operation_id": 18677,
+        "latency_ms": 3.372042,
+        "timestamp": 508940.256085541
+      },
+      {
+        "operation_id": 23940,
+        "latency_ms": 4.581792,
+        "timestamp": 508941.375388541
+      },
+      {
+        "operation_id": 24013,
+        "latency_ms": 7.620916,
+        "timestamp": 508941.40287775
+      },
+      {
+        "operation_id": 24014,
+        "latency_ms": 1.170292,
+        "timestamp": 508941.404052375
+      },
+      {
+        "operation_id": 28100,
+        "latency_ms": 1.557208,
+        "timestamp": 508942.273326208
+      },
+      {
+        "operation_id": 28101,
+        "latency_ms": 1.065625,
+        "timestamp": 508942.274398875
+      },
+      {
+        "operation_id": 28102,
+        "latency_ms": 2.521917,
+        "timestamp": 508942.276925125
+      },
+      {
+        "operation_id": 29704,
+        "latency_ms": 3.344541,
+        "timestamp": 508942.625035458
+      },
+      {
+        "operation_id": 730,
+        "latency_ms": 2.935458,
+        "timestamp": 508936.178542291
+      },
+      {
+        "operation_id": 731,
+        "latency_ms": 9.132417,
+        "timestamp": 508936.18787075
+      },
+      {
+        "operation_id": 732,
+        "latency_ms": 2.278125,
+        "timestamp": 508936.190153333
+      },
+      {
+        "operation_id": 735,
+        "latency_ms": 1.803083,
+        "timestamp": 508936.193247625
+      },
+      {
+        "operation_id": 737,
+        "latency_ms": 4.313208,
+        "timestamp": 508936.198044583
+      },
+      {
+        "operation_id": 738,
+        "latency_ms": 1.216,
+        "timestamp": 508936.199273166
+      },
+      {
+        "operation_id": 740,
+        "latency_ms": 1.111333,
+        "timestamp": 508936.201129375
+      },
+      {
+        "operation_id": 742,
+        "latency_ms": 3.065291,
+        "timestamp": 508936.204540583
+      },
+      {
+        "operation_id": 744,
+        "latency_ms": 2.033916,
+        "timestamp": 508936.206876708
+      },
+      {
+        "operation_id": 756,
+        "latency_ms": 1.001709,
+        "timestamp": 508936.211280083
+      },
+      {
+        "operation_id": 757,
+        "latency_ms": 1.348666,
+        "timestamp": 508936.21263225
+      },
+      {
+        "operation_id": 758,
+        "latency_ms": 1.186166,
+        "timestamp": 508936.213821166
+      },
+      {
+        "operation_id": 759,
+        "latency_ms": 1.222542,
+        "timestamp": 508936.215047291
+      },
+      {
+        "operation_id": 771,
+        "latency_ms": 4.883583,
+        "timestamp": 508936.224261125
+      },
+      {
+        "operation_id": 777,
+        "latency_ms": 1.664167,
+        "timestamp": 508936.228004458
+      },
+      {
+        "operation_id": 778,
+        "latency_ms": 6.112583,
+        "timestamp": 508936.23413375
+      },
+      {
+        "operation_id": 779,
+        "latency_ms": 4.485542,
+        "timestamp": 508936.238643458
+      },
+      {
+        "operation_id": 780,
+        "latency_ms": 1.665958,
+        "timestamp": 508936.240314583
+      },
+      {
+        "operation_id": 781,
+        "latency_ms": 1.148834,
+        "timestamp": 508936.241464625
+      },
+      {
+        "operation_id": 786,
+        "latency_ms": 1.066667,
+        "timestamp": 508936.244877958
+      },
+      {
+        "operation_id": 787,
+        "latency_ms": 1.646459,
+        "timestamp": 508936.246526416
+      },
+      {
+        "operation_id": 790,
+        "latency_ms": 2.39375,
+        "timestamp": 508936.249610875
+      },
+      {
+        "operation_id": 792,
+        "latency_ms": 1.508958,
+        "timestamp": 508936.251802166
+      },
+      {
+        "operation_id": 793,
+        "latency_ms": 3.044333,
+        "timestamp": 508936.254850125
+      },
+      {
+        "operation_id": 795,
+        "latency_ms": 1.730708,
+        "timestamp": 508936.257122208
+      },
+      {
+        "operation_id": 796,
+        "latency_ms": 1.541666,
+        "timestamp": 508936.258675041
+      },
+      {
+        "operation_id": 797,
+        "latency_ms": 1.890291,
+        "timestamp": 508936.260571208
+      },
+      {
+        "operation_id": 798,
+        "latency_ms": 1.611209,
+        "timestamp": 508936.26219375
+      },
+      {
+        "operation_id": 832,
+        "latency_ms": 4.211125,
+        "timestamp": 508936.274949333
+      },
+      {
+        "operation_id": 833,
+        "latency_ms": 2.442,
+        "timestamp": 508936.277396041
+      },
+      {
+        "operation_id": 834,
+        "latency_ms": 2.698959,
+        "timestamp": 508936.280100416
+      },
+      {
+        "operation_id": 2687,
+        "latency_ms": 2.438625,
+        "timestamp": 508936.673324041
+      },
+      {
+        "operation_id": 2688,
+        "latency_ms": 1.406833,
+        "timestamp": 508936.674737125
+      },
+      {
+        "operation_id": 5901,
+        "latency_ms": 1.817167,
+        "timestamp": 508937.376918041
+      },
+      {
+        "operation_id": 6951,
+        "latency_ms": 2.550292,
+        "timestamp": 508937.609728458
+      },
+      {
+        "operation_id": 6952,
+        "latency_ms": 3.992875,
+        "timestamp": 508937.613723583
+      },
+      {
+        "operation_id": 6953,
+        "latency_ms": 1.485833,
+        "timestamp": 508937.615213625
+      },
+      {
+        "operation_id": 7256,
+        "latency_ms": 1.080292,
+        "timestamp": 508937.692959958
+      },
+      {
+        "operation_id": 7918,
+        "latency_ms": 2.621333,
+        "timestamp": 508937.845637125
+      },
+      {
+        "operation_id": 8036,
+        "latency_ms": 6.195291,
+        "timestamp": 508937.880736541
+      },
+      {
+        "operation_id": 8037,
+        "latency_ms": 3.343792,
+        "timestamp": 508937.884095666
+      },
+      {
+        "operation_id": 8038,
+        "latency_ms": 1.1875,
+        "timestamp": 508937.88529075
+      },
+      {
+        "operation_id": 8039,
+        "latency_ms": 1.626375,
+        "timestamp": 508937.886925875
+      },
+      {
+        "operation_id": 8040,
+        "latency_ms": 1.564666,
+        "timestamp": 508937.888495833
+      },
+      {
+        "operation_id": 8048,
+        "latency_ms": 1.741875,
+        "timestamp": 508937.895456958
+      },
+      {
+        "operation_id": 8049,
+        "latency_ms": 1.660583,
+        "timestamp": 508937.89711975
+      },
+      {
+        "operation_id": 8050,
+        "latency_ms": 1.754375,
+        "timestamp": 508937.898875833
+      },
+      {
+        "operation_id": 8051,
+        "latency_ms": 1.11825,
+        "timestamp": 508937.89999525
+      },
+      {
+        "operation_id": 8058,
+        "latency_ms": 1.156542,
+        "timestamp": 508937.904276333
+      },
+      {
+        "operation_id": 8059,
+        "latency_ms": 1.330375,
+        "timestamp": 508937.905611541
+      },
+      {
+        "operation_id": 8067,
+        "latency_ms": 3.762375,
+        "timestamp": 508937.914639125
+      },
+      {
+        "operation_id": 8068,
+        "latency_ms": 1.184792,
+        "timestamp": 508937.915826208
+      },
+      {
+        "operation_id": 8074,
+        "latency_ms": 1.071375,
+        "timestamp": 508937.919873041
+      },
+      {
+        "operation_id": 8080,
+        "latency_ms": 2.229166,
+        "timestamp": 508937.924368333
+      },
+      {
+        "operation_id": 8081,
+        "latency_ms": 1.24875,
+        "timestamp": 508937.92561925
+      },
+      {
+        "operation_id": 8084,
+        "latency_ms": 1.07925,
+        "timestamp": 508937.927633708
+      },
+      {
+        "operation_id": 8086,
+        "latency_ms": 3.995292,
+        "timestamp": 508937.931987416
+      },
+      {
+        "operation_id": 8089,
+        "latency_ms": 1.270625,
+        "timestamp": 508937.933687541
+      },
+      {
+        "operation_id": 8091,
+        "latency_ms": 1.01725,
+        "timestamp": 508937.935006166
+      },
+      {
+        "operation_id": 8095,
+        "latency_ms": 1.566417,
+        "timestamp": 508937.937695125
+      },
+      {
+        "operation_id": 8096,
+        "latency_ms": 1.110958,
+        "timestamp": 508937.938810541
+      },
+      {
+        "operation_id": 8098,
+        "latency_ms": 1.064542,
+        "timestamp": 508937.940187375
+      },
+      {
+        "operation_id": 8102,
+        "latency_ms": 3.890083,
+        "timestamp": 508937.94607525
+      },
+      {
+        "operation_id": 8106,
+        "latency_ms": 1.091625,
+        "timestamp": 508937.948440083
+      },
+      {
+        "operation_id": 9224,
+        "latency_ms": 4.375583,
+        "timestamp": 508938.21214825
+      },
+      {
+        "operation_id": 9229,
+        "latency_ms": 2.557542,
+        "timestamp": 508938.216261833
+      },
+      {
+        "operation_id": 9230,
+        "latency_ms": 1.239292,
+        "timestamp": 508938.217513916
+      },
+      {
+        "operation_id": 9234,
+        "latency_ms": 1.190917,
+        "timestamp": 508938.220519208
+      },
+      {
+        "operation_id": 9235,
+        "latency_ms": 2.0395,
+        "timestamp": 508938.222562583
+      },
+      {
+        "operation_id": 9457,
+        "latency_ms": 1.179208,
+        "timestamp": 508938.274554
+      },
+      {
+        "operation_id": 9461,
+        "latency_ms": 1.072333,
+        "timestamp": 508938.277492083
+      },
+      {
+        "operation_id": 9462,
+        "latency_ms": 5.883375,
+        "timestamp": 508938.28339075
+      },
+      {
+        "operation_id": 9463,
+        "latency_ms": 1.780959,
+        "timestamp": 508938.285179083
+      },
+      {
+        "operation_id": 9464,
+        "latency_ms": 6.22,
+        "timestamp": 508938.291400875
+      },
+      {
+        "operation_id": 11424,
+        "latency_ms": 1.103667,
+        "timestamp": 508938.713505
+      },
+      {
+        "operation_id": 11427,
+        "latency_ms": 2.033416,
+        "timestamp": 508938.716658666
+      },
+      {
+        "operation_id": 11431,
+        "latency_ms": 1.513834,
+        "timestamp": 508938.71993125
+      },
+      {
+        "operation_id": 11942,
+        "latency_ms": 3.152584,
+        "timestamp": 508938.823282625
+      },
+      {
+        "operation_id": 11943,
+        "latency_ms": 1.718291,
+        "timestamp": 508938.825004083
+      },
+      {
+        "operation_id": 14653,
+        "latency_ms": 2.44525,
+        "timestamp": 508939.362960083
+      },
+      {
+        "operation_id": 14750,
+        "latency_ms": 1.229125,
+        "timestamp": 508939.389498583
+      },
+      {
+        "operation_id": 15908,
+        "latency_ms": 1.003583,
+        "timestamp": 508939.637421541
+      },
+      {
+        "operation_id": 18699,
+        "latency_ms": 3.58875,
+        "timestamp": 508940.246960625
+      },
+      {
+        "operation_id": 18706,
+        "latency_ms": 3.294458,
+        "timestamp": 508940.252579208
+      },
+      {
+        "operation_id": 18707,
+        "latency_ms": 3.40125,
+        "timestamp": 508940.256035541
+      },
+      {
+        "operation_id": 23976,
+        "latency_ms": 4.5195,
+        "timestamp": 508941.375436041
+      },
+      {
+        "operation_id": 23993,
+        "latency_ms": 1.01625,
+        "timestamp": 508941.380552
+      },
+      {
+        "operation_id": 24049,
+        "latency_ms": 7.530375,
+        "timestamp": 508941.402802708
+      },
+      {
+        "operation_id": 24050,
+        "latency_ms": 1.196459,
+        "timestamp": 508941.404003166
+      },
+      {
+        "operation_id": 24065,
+        "latency_ms": 1.616917,
+        "timestamp": 508941.410848583
+      },
+      {
+        "operation_id": 28151,
+        "latency_ms": 1.459167,
+        "timestamp": 508942.273278041
+      },
+      {
+        "operation_id": 28153,
+        "latency_ms": 1.729959,
+        "timestamp": 508942.275816
+      },
+      {
+        "operation_id": 28154,
+        "latency_ms": 1.634417,
+        "timestamp": 508942.277453708
+      },
+      {
+        "operation_id": 29740,
+        "latency_ms": 3.151583,
+        "timestamp": 508942.624357666
+      },
+      {
+        "operation_id": 734,
+        "latency_ms": 2.69375,
+        "timestamp": 508936.178244041
+      },
+      {
+        "operation_id": 735,
+        "latency_ms": 10.02475,
+        "timestamp": 508936.188272583
+      },
+      {
+        "operation_id": 736,
+        "latency_ms": 1.787416,
+        "timestamp": 508936.190065958
+      },
+      {
+        "operation_id": 739,
+        "latency_ms": 1.80125,
+        "timestamp": 508936.193283208
+      },
+      {
+        "operation_id": 741,
+        "latency_ms": 4.376583,
+        "timestamp": 508936.198171166
+      },
+      {
+        "operation_id": 742,
+        "latency_ms": 1.009833,
+        "timestamp": 508936.199182875
+      },
+      {
+        "operation_id": 744,
+        "latency_ms": 1.179042,
+        "timestamp": 508936.2011665
+      },
+      {
+        "operation_id": 746,
+        "latency_ms": 3.062625,
+        "timestamp": 508936.204531833
+      },
+      {
+        "operation_id": 748,
+        "latency_ms": 2.221875,
+        "timestamp": 508936.207018958
+      },
+      {
+        "operation_id": 760,
+        "latency_ms": 2.175583,
+        "timestamp": 508936.212720541
+      },
+      {
+        "operation_id": 761,
+        "latency_ms": 2.26175,
+        "timestamp": 508936.214985041
+      },
+      {
+        "operation_id": 772,
+        "latency_ms": 1.319209,
+        "timestamp": 508936.220217958
+      },
+      {
+        "operation_id": 773,
+        "latency_ms": 4.025666,
+        "timestamp": 508936.224247625
+      },
+      {
+        "operation_id": 780,
+        "latency_ms": 2.745084,
+        "timestamp": 508936.229254041
+      },
+      {
+        "operation_id": 781,
+        "latency_ms": 6.433875,
+        "timestamp": 508936.2356935
+      },
+      {
+        "operation_id": 782,
+        "latency_ms": 2.819834,
+        "timestamp": 508936.238521125
+      },
+      {
+        "operation_id": 783,
+        "latency_ms": 1.676834,
+        "timestamp": 508936.240204375
+      },
+      {
+        "operation_id": 784,
+        "latency_ms": 1.211417,
+        "timestamp": 508936.241419666
+      },
+      {
+        "operation_id": 789,
+        "latency_ms": 1.151542,
+        "timestamp": 508936.244956416
+      },
+      {
+        "operation_id": 790,
+        "latency_ms": 1.542958,
+        "timestamp": 508936.2465005
+      },
+      {
+        "operation_id": 793,
+        "latency_ms": 2.257625,
+        "timestamp": 508936.249445916
+      },
+      {
+        "operation_id": 795,
+        "latency_ms": 1.556458,
+        "timestamp": 508936.251744458
+      },
+      {
+        "operation_id": 796,
+        "latency_ms": 1.874917,
+        "timestamp": 508936.253620916
+      },
+      {
+        "operation_id": 797,
+        "latency_ms": 1.868375,
+        "timestamp": 508936.255491375
+      },
+      {
+        "operation_id": 799,
+        "latency_ms": 2.475292,
+        "timestamp": 508936.258745708
+      },
+      {
+        "operation_id": 800,
+        "latency_ms": 2.088125,
+        "timestamp": 508936.260842166
+      },
+      {
+        "operation_id": 801,
+        "latency_ms": 1.362125,
+        "timestamp": 508936.262212916
+      },
+      {
+        "operation_id": 834,
+        "latency_ms": 1.993459,
+        "timestamp": 508936.272281833
+      },
+      {
+        "operation_id": 835,
+        "latency_ms": 3.250417,
+        "timestamp": 508936.27553625
+      },
+      {
+        "operation_id": 836,
+        "latency_ms": 1.996458,
+        "timestamp": 508936.277545
+      },
+      {
+        "operation_id": 837,
+        "latency_ms": 2.604208,
+        "timestamp": 508936.280155416
+      },
+      {
+        "operation_id": 2699,
+        "latency_ms": 2.615583,
+        "timestamp": 508936.673465166
+      },
+      {
+        "operation_id": 2700,
+        "latency_ms": 1.291291,
+        "timestamp": 508936.674758625
+      },
+      {
+        "operation_id": 5693,
+        "latency_ms": 1.2155,
+        "timestamp": 508937.325657541
+      },
+      {
+        "operation_id": 5919,
+        "latency_ms": 1.802333,
+        "timestamp": 508937.376922166
+      },
+      {
+        "operation_id": 6973,
+        "latency_ms": 2.499584,
+        "timestamp": 508937.609704416
+      },
+      {
+        "operation_id": 6974,
+        "latency_ms": 4.256625,
+        "timestamp": 508937.613973583
+      },
+      {
+        "operation_id": 6975,
+        "latency_ms": 1.255458,
+        "timestamp": 508937.615236916
+      },
+      {
+        "operation_id": 7277,
+        "latency_ms": 1.542542,
+        "timestamp": 508937.692085166
+      },
+      {
+        "operation_id": 7938,
+        "latency_ms": 1.217375,
+        "timestamp": 508937.843161041
+      },
+      {
+        "operation_id": 7939,
+        "latency_ms": 2.436917,
+        "timestamp": 508937.8456075
+      },
+      {
+        "operation_id": 8057,
+        "latency_ms": 6.007292,
+        "timestamp": 508937.880565708
+      },
+      {
+        "operation_id": 8058,
+        "latency_ms": 3.604084,
+        "timestamp": 508937.884179833
+      },
+      {
+        "operation_id": 8059,
+        "latency_ms": 1.058041,
+        "timestamp": 508937.885245916
+      },
+      {
+        "operation_id": 8060,
+        "latency_ms": 1.016125,
+        "timestamp": 508937.886265666
+      },
+      {
+        "operation_id": 8061,
+        "latency_ms": 1.295042,
+        "timestamp": 508937.88756425
+      },
+      {
+        "operation_id": 8062,
+        "latency_ms": 1.693833,
+        "timestamp": 508937.889262541
+      },
+      {
+        "operation_id": 8064,
+        "latency_ms": 1.116125,
+        "timestamp": 508937.890790666
+      },
+      {
+        "operation_id": 8069,
+        "latency_ms": 2.099792,
+        "timestamp": 508937.895502666
+      },
+      {
+        "operation_id": 8070,
+        "latency_ms": 1.580166,
+        "timestamp": 508937.89708425
+      },
+      {
+        "operation_id": 8071,
+        "latency_ms": 1.610708,
+        "timestamp": 508937.898697666
+      },
+      {
+        "operation_id": 8072,
+        "latency_ms": 1.26275,
+        "timestamp": 508937.899961875
+      },
+      {
+        "operation_id": 8080,
+        "latency_ms": 1.304375,
+        "timestamp": 508937.905316791
+      },
+      {
+        "operation_id": 8081,
+        "latency_ms": 1.036708,
+        "timestamp": 508937.906356416
+      },
+      {
+        "operation_id": 8088,
+        "latency_ms": 2.963166,
+        "timestamp": 508937.913921416
+      },
+      {
+        "operation_id": 8089,
+        "latency_ms": 1.86475,
+        "timestamp": 508937.915791625
+      },
+      {
+        "operation_id": 8095,
+        "latency_ms": 1.146167,
+        "timestamp": 508937.919914208
+      },
+      {
+        "operation_id": 8101,
+        "latency_ms": 2.144875,
+        "timestamp": 508937.924317083
+      },
+      {
+        "operation_id": 8102,
+        "latency_ms": 1.354125,
+        "timestamp": 508937.925679791
+      },
+      {
+        "operation_id": 8104,
+        "latency_ms": 1.027375,
+        "timestamp": 508937.927085625
+      },
+      {
+        "operation_id": 8107,
+        "latency_ms": 4.150958,
+        "timestamp": 508937.932132791
+      },
+      {
+        "operation_id": 8110,
+        "latency_ms": 1.167333,
+        "timestamp": 508937.933635375
+      },
+      {
+        "operation_id": 8116,
+        "latency_ms": 1.642334,
+        "timestamp": 508937.937737291
+      },
+      {
+        "operation_id": 8123,
+        "latency_ms": 2.063792,
+        "timestamp": 508937.944186833
+      },
+      {
+        "operation_id": 8124,
+        "latency_ms": 2.472417,
+        "timestamp": 508937.946660625
+      },
+      {
+        "operation_id": 8127,
+        "latency_ms": 1.019625,
+        "timestamp": 508937.948399291
+      },
+      {
+        "operation_id": 8206,
+        "latency_ms": 1.160792,
+        "timestamp": 508937.971648625
+      },
+      {
+        "operation_id": 9240,
+        "latency_ms": 4.379834,
+        "timestamp": 508938.212135208
+      },
+      {
+        "operation_id": 9245,
+        "latency_ms": 2.752542,
+        "timestamp": 508938.216424833
+      },
+      {
+        "operation_id": 9246,
+        "latency_ms": 1.127042,
+        "timestamp": 508938.217554291
+      },
+      {
+        "operation_id": 9251,
+        "latency_ms": 2.858167,
+        "timestamp": 508938.2226125
+      },
+      {
+        "operation_id": 9469,
+        "latency_ms": 1.58325,
+        "timestamp": 508938.274887666
+      },
+      {
+        "operation_id": 9473,
+        "latency_ms": 1.034292,
+        "timestamp": 508938.277527208
+      },
+      {
+        "operation_id": 9474,
+        "latency_ms": 6.114166,
+        "timestamp": 508938.283647041
+      },
+      {
+        "operation_id": 9475,
+        "latency_ms": 2.112291,
+        "timestamp": 508938.285763666
+      },
+      {
+        "operation_id": 9476,
+        "latency_ms": 5.370792,
+        "timestamp": 508938.291143583
+      },
+      {
+        "operation_id": 9496,
+        "latency_ms": 1.025292,
+        "timestamp": 508938.297358541
+      },
+      {
+        "operation_id": 10147,
+        "latency_ms": 1.098833,
+        "timestamp": 508938.442570625
+      },
+      {
+        "operation_id": 11445,
+        "latency_ms": 1.079625,
+        "timestamp": 508938.713355
+      },
+      {
+        "operation_id": 11448,
+        "latency_ms": 1.587042,
+        "timestamp": 508938.716037041
+      },
+      {
+        "operation_id": 11453,
+        "latency_ms": 1.646209,
+        "timestamp": 508938.720056125
+      },
+      {
+        "operation_id": 11958,
+        "latency_ms": 2.818791,
+        "timestamp": 508938.822761333
+      },
+      {
+        "operation_id": 11959,
+        "latency_ms": 1.793542,
+        "timestamp": 508938.824558666
+      },
+      {
+        "operation_id": 14658,
+        "latency_ms": 1.093084,
+        "timestamp": 508939.348358291
+      },
+      {
+        "operation_id": 14704,
+        "latency_ms": 2.438167,
+        "timestamp": 508939.363315791
+      },
+      {
+        "operation_id": 14797,
+        "latency_ms": 1.379208,
+        "timestamp": 508939.389580541
+      },
+      {
+        "operation_id": 15950,
+        "latency_ms": 1.081375,
+        "timestamp": 508939.637493291
+      },
+      {
+        "operation_id": 18743,
+        "latency_ms": 3.421834,
+        "timestamp": 508940.246888416
+      },
+      {
+        "operation_id": 18749,
+        "latency_ms": 3.356792,
+        "timestamp": 508940.252679375
+      },
+      {
+        "operation_id": 18750,
+        "latency_ms": 3.417375,
+        "timestamp": 508940.256098541
+      },
+      {
+        "operation_id": 23989,
+        "latency_ms": 3.245459,
+        "timestamp": 508941.373889375
+      },
+      {
+        "operation_id": 23990,
+        "latency_ms": 1.528958,
+        "timestamp": 508941.375421625
+      },
+      {
+        "operation_id": 24064,
+        "latency_ms": 7.556584,
+        "timestamp": 508941.402977791
+      },
+      {
+        "operation_id": 24065,
+        "latency_ms": 1.011417,
+        "timestamp": 508941.403994625
+      },
+      {
+        "operation_id": 24080,
+        "latency_ms": 1.026166,
+        "timestamp": 508941.410326083
+      },
+      {
+        "operation_id": 28171,
+        "latency_ms": 1.60125,
+        "timestamp": 508942.27339175
+      },
+      {
+        "operation_id": 28173,
+        "latency_ms": 2.597667,
+        "timestamp": 508942.27697825
+      },
+      {
+        "operation_id": 28178,
+        "latency_ms": 1.029667,
+        "timestamp": 508942.280308583
+      },
+      {
+        "operation_id": 29766,
+        "latency_ms": 2.880083,
+        "timestamp": 508942.624024875
+      },
+      {
+        "operation_id": 29767,
+        "latency_ms": 1.152875,
+        "timestamp": 508942.625202666
+      }
+    ],
+    "percentiles": {
+      "p50": 0.208584,
+      "p90": 0.269042,
+      "p95": 0.291417,
+      "p99": 0.4111674099999998,
+      "p99_9": 2.473169125000008,
+      "p99_99": 6.220021387497903
+    },
+    "throughput": 13391.379342302467
+  },
+  "cpu_yield": {
+    "test_name": "CPU Yield",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 7001,
+      "connections": 2,
+      "operations_per_connection": 30000,
+      "connection_warmup_ops": 100,
+      "enable_cpu_affinity": true,
+      "enable_process_priority": true,
+      "enable_connection_pooling": true,
+      "recv_buffer_size": 1024,
+      "send_buffer_size": 1024
+    },
+    "successful_operations": 60000,
+    "failed_operations": 0,
+    "duration": 5.8532564580091275,
+    "outliers": [
+      {
+        "operation_id": 4232,
+        "latency_ms": 1.521125,
+        "timestamp": 508943.535929208
+      },
+      {
+        "operation_id": 4759,
+        "latency_ms": 5.988875,
+        "timestamp": 508943.652786875
+      },
+      {
+        "operation_id": 5219,
+        "latency_ms": 1.845834,
+        "timestamp": 508943.770448833
+      },
+      {
+        "operation_id": 5220,
+        "latency_ms": 2.118917,
+        "timestamp": 508943.77258
+      },
+      {
+        "operation_id": 7863,
+        "latency_ms": 1.816916,
+        "timestamp": 508944.306004958
+      },
+      {
+        "operation_id": 7877,
+        "latency_ms": 1.202458,
+        "timestamp": 508944.311646416
+      },
+      {
+        "operation_id": 7878,
+        "latency_ms": 2.174583,
+        "timestamp": 508944.313827125
+      },
+      {
+        "operation_id": 12235,
+        "latency_ms": 5.4765,
+        "timestamp": 508945.126354958
+      },
+      {
+        "operation_id": 16082,
+        "latency_ms": 1.456375,
+        "timestamp": 508945.839748458
+      },
+      {
+        "operation_id": 18822,
+        "latency_ms": 2.517583,
+        "timestamp": 508946.337438916
+      },
+      {
+        "operation_id": 20668,
+        "latency_ms": 3.45225,
+        "timestamp": 508946.690289791
+      },
+      {
+        "operation_id": 20669,
+        "latency_ms": 1.541167,
+        "timestamp": 508946.691836125
+      },
+      {
+        "operation_id": 20670,
+        "latency_ms": 1.882167,
+        "timestamp": 508946.693720958
+      },
+      {
+        "operation_id": 20671,
+        "latency_ms": 1.200542,
+        "timestamp": 508946.69492875
+      },
+      {
+        "operation_id": 20687,
+        "latency_ms": 1.328875,
+        "timestamp": 508946.705173916
+      },
+      {
+        "operation_id": 20691,
+        "latency_ms": 1.292958,
+        "timestamp": 508946.70773425
+      },
+      {
+        "operation_id": 20710,
+        "latency_ms": 1.175458,
+        "timestamp": 508946.717833416
+      },
+      {
+        "operation_id": 20711,
+        "latency_ms": 1.105,
+        "timestamp": 508946.718942333
+      },
+      {
+        "operation_id": 20717,
+        "latency_ms": 5.621833,
+        "timestamp": 508946.727516875
+      },
+      {
+        "operation_id": 20718,
+        "latency_ms": 14.403542,
+        "timestamp": 508946.7419285
+      },
+      {
+        "operation_id": 20719,
+        "latency_ms": 3.833041,
+        "timestamp": 508946.745770166
+      },
+      {
+        "operation_id": 20722,
+        "latency_ms": 2.978917,
+        "timestamp": 508946.750154291
+      },
+      {
+        "operation_id": 20725,
+        "latency_ms": 2.476834,
+        "timestamp": 508946.753311083
+      },
+      {
+        "operation_id": 20726,
+        "latency_ms": 9.543542,
+        "timestamp": 508946.762860625
+      },
+      {
+        "operation_id": 20727,
+        "latency_ms": 19.542792,
+        "timestamp": 508946.782413
+      },
+      {
+        "operation_id": 20728,
+        "latency_ms": 2.229458,
+        "timestamp": 508946.784648333
+      },
+      {
+        "operation_id": 20729,
+        "latency_ms": 5.606833,
+        "timestamp": 508946.790259291
+      },
+      {
+        "operation_id": 20731,
+        "latency_ms": 2.4015,
+        "timestamp": 508946.793353583
+      },
+      {
+        "operation_id": 20732,
+        "latency_ms": 5.413125,
+        "timestamp": 508946.7987745
+      },
+      {
+        "operation_id": 20735,
+        "latency_ms": 1.030833,
+        "timestamp": 508946.80152725
+      },
+      {
+        "operation_id": 20796,
+        "latency_ms": 1.275625,
+        "timestamp": 508946.81715475
+      },
+      {
+        "operation_id": 20878,
+        "latency_ms": 1.9015,
+        "timestamp": 508946.8376015
+      },
+      {
+        "operation_id": 20879,
+        "latency_ms": 2.012125,
+        "timestamp": 508946.839615958
+      },
+      {
+        "operation_id": 25266,
+        "latency_ms": 3.3885,
+        "timestamp": 508947.6091105
+      },
+      {
+        "operation_id": 25282,
+        "latency_ms": 1.002666,
+        "timestamp": 508947.615341416
+      },
+      {
+        "operation_id": 29159,
+        "latency_ms": 1.034125,
+        "timestamp": 508948.374443
+      },
+      {
+        "operation_id": 29165,
+        "latency_ms": 1.0905,
+        "timestamp": 508948.378418625
+      },
+      {
+        "operation_id": 29169,
+        "latency_ms": 1.011541,
+        "timestamp": 508948.381386416
+      },
+      {
+        "operation_id": 29170,
+        "latency_ms": 2.062375,
+        "timestamp": 508948.383452166
+      },
+      {
+        "operation_id": 4134,
+        "latency_ms": 1.147875,
+        "timestamp": 508943.5119345
+      },
+      {
+        "operation_id": 4248,
+        "latency_ms": 1.47,
+        "timestamp": 508943.535794166
+      },
+      {
+        "operation_id": 4775,
+        "latency_ms": 6.068834,
+        "timestamp": 508943.652799583
+      },
+      {
+        "operation_id": 5235,
+        "latency_ms": 1.86975,
+        "timestamp": 508943.770502125
+      },
+      {
+        "operation_id": 5236,
+        "latency_ms": 2.045292,
+        "timestamp": 508943.772554375
+      },
+      {
+        "operation_id": 7868,
+        "latency_ms": 1.713042,
+        "timestamp": 508944.305798625
+      },
+      {
+        "operation_id": 7882,
+        "latency_ms": 1.72675,
+        "timestamp": 508944.31296625
+      },
+      {
+        "operation_id": 7883,
+        "latency_ms": 1.033958,
+        "timestamp": 508944.314002666
+      },
+      {
+        "operation_id": 12233,
+        "latency_ms": 1.916792,
+        "timestamp": 508945.122367583
+      },
+      {
+        "operation_id": 12234,
+        "latency_ms": 3.963625,
+        "timestamp": 508945.126340666
+      },
+      {
+        "operation_id": 16068,
+        "latency_ms": 1.392333,
+        "timestamp": 508945.839762291
+      },
+      {
+        "operation_id": 18806,
+        "latency_ms": 1.857708,
+        "timestamp": 508946.336471916
+      },
+      {
+        "operation_id": 18807,
+        "latency_ms": 1.294625,
+        "timestamp": 508946.337775166
+      },
+      {
+        "operation_id": 20661,
+        "latency_ms": 3.876791,
+        "timestamp": 508946.690696166
+      },
+      {
+        "operation_id": 20662,
+        "latency_ms": 2.108875,
+        "timestamp": 508946.692807791
+      },
+      {
+        "operation_id": 20663,
+        "latency_ms": 1.788208,
+        "timestamp": 508946.694599291
+      },
+      {
+        "operation_id": 20667,
+        "latency_ms": 1.015,
+        "timestamp": 508946.696652208
+      },
+      {
+        "operation_id": 20673,
+        "latency_ms": 1.044708,
+        "timestamp": 508946.70029375
+      },
+      {
+        "operation_id": 20680,
+        "latency_ms": 1.445125,
+        "timestamp": 508946.704694041
+      },
+      {
+        "operation_id": 20711,
+        "latency_ms": 5.316958,
+        "timestamp": 508946.727487166
+      },
+      {
+        "operation_id": 20712,
+        "latency_ms": 16.682917,
+        "timestamp": 508946.744176583
+      },
+      {
+        "operation_id": 20713,
+        "latency_ms": 1.668667,
+        "timestamp": 508946.745847666
+      },
+      {
+        "operation_id": 20717,
+        "latency_ms": 2.929459,
+        "timestamp": 508946.750247916
+      },
+      {
+        "operation_id": 20720,
+        "latency_ms": 2.473375,
+        "timestamp": 508946.753357791
+      },
+      {
+        "operation_id": 20721,
+        "latency_ms": 6.066083,
+        "timestamp": 508946.759431666
+      },
+      {
+        "operation_id": 20722,
+        "latency_ms": 23.043459,
+        "timestamp": 508946.782478875
+      },
+      {
+        "operation_id": 20723,
+        "latency_ms": 1.82725,
+        "timestamp": 508946.784315583
+      },
+      {
+        "operation_id": 20724,
+        "latency_ms": 1.483833,
+        "timestamp": 508946.785806666
+      },
+      {
+        "operation_id": 20725,
+        "latency_ms": 4.158375,
+        "timestamp": 508946.789981041
+      },
+      {
+        "operation_id": 20726,
+        "latency_ms": 2.706625,
+        "timestamp": 508946.792700125
+      },
+      {
+        "operation_id": 20727,
+        "latency_ms": 1.261666,
+        "timestamp": 508946.793968708
+      },
+      {
+        "operation_id": 20728,
+        "latency_ms": 4.632458,
+        "timestamp": 508946.798617125
+      },
+      {
+        "operation_id": 20730,
+        "latency_ms": 1.111334,
+        "timestamp": 508946.800529166
+      },
+      {
+        "operation_id": 20790,
+        "latency_ms": 1.33975,
+        "timestamp": 508946.817041458
+      },
+      {
+        "operation_id": 20872,
+        "latency_ms": 1.1475,
+        "timestamp": 508946.836884458
+      },
+      {
+        "operation_id": 20873,
+        "latency_ms": 1.717167,
+        "timestamp": 508946.838606333
+      },
+      {
+        "operation_id": 25258,
+        "latency_ms": 3.396167,
+        "timestamp": 508947.609096416
+      },
+      {
+        "operation_id": 25274,
+        "latency_ms": 1.1205,
+        "timestamp": 508947.615372
+      },
+      {
+        "operation_id": 29131,
+        "latency_ms": 1.114917,
+        "timestamp": 508948.365091958
+      },
+      {
+        "operation_id": 29150,
+        "latency_ms": 1.094125,
+        "timestamp": 508948.370780625
+      },
+      {
+        "operation_id": 29155,
+        "latency_ms": 1.014125,
+        "timestamp": 508948.374457833
+      },
+      {
+        "operation_id": 29161,
+        "latency_ms": 1.128292,
+        "timestamp": 508948.378439333
+      },
+      {
+        "operation_id": 29166,
+        "latency_ms": 2.209125,
+        "timestamp": 508948.383425
+      }
+    ],
+    "percentiles": {
+      "p50": 0.184625,
+      "p90": 0.23325,
+      "p95": 0.252292,
+      "p99": 0.32750250000000053,
+      "p99_9": 1.2756423330000666,
+      "p99_99": 6.066083275099993
+    },
+    "throughput": 10250.70410470411
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "timestamp": "20251222_141013",
+  "validation_goal": "P99 < 1ms",
+  "validation_passed": true,
+  "best_p99_ms": 0.3355212699999998,
+  "target_p99_ms": 1.0,
+  "margin_ms": 0.6644787300000001,
+  "tests": {
+    "Single Connection": {
+      "connections": 1,
+      "operations": 10000,
+      "duration": 1.7664012919995002,
+      "p50": 0.152625,
+      "p95": 0.218666,
+      "p99": 0.6380850000000046,
+      "success": true
+    },
+    "Low Concurrency": {
+      "connections": 3,
+      "operations": 4998,
+      "duration": 0.35854933300288394,
+      "p50": 0.2084165,
+      "p95": 0.2875893,
+      "p99": 0.3355212699999998,
+      "success": true
+    },
+    "Optimal Config": {
+      "connections": 5,
+      "operations": 10000,
+      "duration": 0.5217826250009239,
+      "p50": 0.24647950000000002,
+      "p95": 0.3515082999999999,
+      "p99": 0.42463292000000014,
+      "success": true
+    },
+    "Mixed Operations": {
+      "connections": 5,
+      "operations": 5000,
+      "duration": 0.2693022910389118,
+      "p50": 0.256708,
+      "p95": 0.37854405,
+      "p99": 0.44441783,
+      "success": true
+    }
+  },
+  "summary": {
+    "total_tests": 4,
+    "passed_tests": 4,
+    "success_rate": 100.0
+  }
+}

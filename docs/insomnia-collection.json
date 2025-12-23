@@ -1,0 +1,532 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-12-20T04:35:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "req_crabcache_ping",
+      "parentId": "fld_crabcache_health",
+      "modified": 1703030400000,
+      "created": 1703030400000,
+      "url": "{{ _.base_url }}/ping",
+      "name": "PING - Health Check",
+      "description": "Verifica se o servidor CrabCache está respondendo via HTTP wrapper",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030400000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_put_simple",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703030500000,
+      "created": 1703030500000,
+      "url": "{{ _.base_url }}/put",
+      "name": "PUT - Armazenar Valor Simples",
+      "description": "Armazena uma chave-valor simples no cache via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"user:123\",\n  \"value\": \"john_doe\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030500000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_put_ttl",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703030600000,
+      "created": 1703030600000,
+      "url": "{{ _.base_url }}/put",
+      "name": "PUT - Armazenar com TTL",
+      "description": "Armazena uma chave-valor com TTL de 1 hora (3600 segundos) via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"session:abc123\",\n  \"value\": \"user_session_data\",\n  \"ttl\": 3600\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030600000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_put_json",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703030700000,
+      "created": 1703030700000,
+      "url": "{{ _.base_url }}/put",
+      "name": "PUT - Armazenar JSON",
+      "description": "Armazena dados JSON como string no cache via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"user:profile:123\",\n  \"value\": \"{\\\"name\\\":\\\"John Doe\\\",\\\"age\\\":30,\\\"email\\\":\\\"john@example.com\\\"}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030700000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_get_user",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703030800000,
+      "created": 1703030800000,
+      "url": "{{ _.base_url }}/get/user:123",
+      "name": "GET - Recuperar Usuário",
+      "description": "Recupera os dados do usuário armazenados anteriormente via HTTP wrapper",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030800000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_get_session",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703030900000,
+      "created": 1703030900000,
+      "url": "{{ _.base_url }}/get/session:abc123",
+      "name": "GET - Recuperar Sessão",
+      "description": "Recupera os dados da sessão (pode estar expirada) via HTTP wrapper",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703030900000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_get_json",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703031000000,
+      "created": 1703031000000,
+      "url": "{{ _.base_url }}/get/user:profile:123",
+      "name": "GET - Recuperar JSON",
+      "description": "Recupera dados JSON armazenados como string via HTTP wrapper",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_del_user",
+      "parentId": "fld_crabcache_basic",
+      "modified": 1703031100000,
+      "created": 1703031100000,
+      "url": "{{ _.base_url }}/delete/user:123",
+      "name": "DEL - Remover Usuário",
+      "description": "Remove o usuário do cache via HTTP wrapper",
+      "method": "DELETE",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031100000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_expire_1h",
+      "parentId": "fld_crabcache_ttl",
+      "modified": 1703031200000,
+      "created": 1703031200000,
+      "url": "{{ _.base_url }}/expire",
+      "name": "EXPIRE - TTL 1 Hora",
+      "description": "Define TTL de 1 hora para uma chave existente via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"user:profile:123\",\n  \"ttl\": 3600\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031200000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_expire_5m",
+      "parentId": "fld_crabcache_ttl",
+      "modified": 1703031300000,
+      "created": 1703031300000,
+      "url": "{{ _.base_url }}/expire",
+      "name": "EXPIRE - TTL 5 Minutos",
+      "description": "Define TTL de 5 minutos para uma chave existente via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"session:abc123\",\n  \"ttl\": 300\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031300000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_expire_1d",
+      "parentId": "fld_crabcache_ttl",
+      "modified": 1703031400000,
+      "created": 1703031400000,
+      "url": "{{ _.base_url }}/expire",
+      "name": "EXPIRE - TTL 1 Dia",
+      "description": "Define TTL de 1 dia para uma chave existente via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"key\": \"cache:long_term\",\n  \"ttl\": 86400\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031400000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_stats",
+      "parentId": "fld_crabcache_monitoring",
+      "modified": 1703031500000,
+      "created": 1703031500000,
+      "url": "{{ _.base_url }}/stats",
+      "name": "STATS - Estatísticas do Servidor",
+      "description": "Obtém estatísticas detalhadas de todos os shards via HTTP wrapper",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031500000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_raw_command",
+      "parentId": "fld_crabcache_monitoring",
+      "modified": 1703031600000,
+      "created": 1703031600000,
+      "url": "{{ _.base_url }}/command",
+      "name": "RAW - Comando Personalizado",
+      "description": "Envia comando TCP raw via HTTP wrapper",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"command\": \"PING\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031600000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_crabcache_health",
+      "parentId": "fld_crabcache_monitoring",
+      "modified": 1703031700000,
+      "created": 1703031700000,
+      "url": "{{ _.base_url }}/health",
+      "name": "HEALTH - Status do Wrapper",
+      "description": "Verifica status do HTTP wrapper e conexão com CrabCache",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1703031700000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_crabcache_health",
+      "parentId": "wrk_crabcache",
+      "modified": 1703030300000,
+      "created": 1703030300000,
+      "name": "Health Check",
+      "description": "Comandos para verificação de saúde do servidor",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703030300000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_crabcache_basic",
+      "parentId": "wrk_crabcache",
+      "modified": 1703030200000,
+      "created": 1703030200000,
+      "name": "Operações Básicas",
+      "description": "Comandos básicos de cache: PUT, GET, DEL",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703030200000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_crabcache_ttl",
+      "parentId": "wrk_crabcache",
+      "modified": 1703030100000,
+      "created": 1703030100000,
+      "name": "Gerenciamento TTL",
+      "description": "Comandos para gerenciar Time-To-Live das chaves",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703030100000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_crabcache_monitoring",
+      "parentId": "wrk_crabcache",
+      "modified": 1703030000000,
+      "created": 1703030000000,
+      "name": "Monitoramento",
+      "description": "Comandos para monitoramento e estatísticas",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1703030000000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "wrk_crabcache",
+      "parentId": null,
+      "modified": 1703029900000,
+      "created": 1703029900000,
+      "name": "CrabCache API",
+      "description": "Coleção completa da API do CrabCache - Sistema de Cache em Rust",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_crabcache_base",
+      "parentId": "wrk_crabcache",
+      "modified": 1703029800000,
+      "created": 1703029800000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8000",
+        "crabcache_tcp": "localhost:7000",
+        "crabcache_docker": "localhost:7004"
+      },
+      "dataPropertyOrder": {
+        "&": ["base_url", "crabcache_tcp", "crabcache_docker"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1703029800000,
+      "_type": "environment"
+    },
+    {
+      "_id": "env_crabcache_local",
+      "parentId": "env_crabcache_base",
+      "modified": 1703029700000,
+      "created": 1703029700000,
+      "name": "Local Development",
+      "data": {
+        "base_url": "http://localhost:8000"
+      },
+      "dataPropertyOrder": {
+        "&": ["base_url"]
+      },
+      "color": "#7d69cb",
+      "isPrivate": false,
+      "metaSortKey": 1703029700000,
+      "_type": "environment"
+    },
+    {
+      "_id": "env_crabcache_docker",
+      "parentId": "env_crabcache_base",
+      "modified": 1703029600000,
+      "created": 1703029600000,
+      "name": "Docker Container",
+      "data": {
+        "base_url": "http://localhost:8000"
+      },
+      "dataPropertyOrder": {
+        "&": ["base_url"]
+      },
+      "color": "#0b7ec8",
+      "isPrivate": false,
+      "metaSortKey": 1703029600000,
+      "_type": "environment"
+    }
+  ]
+}

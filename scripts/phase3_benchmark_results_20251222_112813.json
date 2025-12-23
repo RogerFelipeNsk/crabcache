@@ -1,0 +1,71 @@
+{
+  "timestamp": "20251222_112813",
+  "config": {
+    "host": "127.0.0.1",
+    "port": 7001,
+    "connections": 30,
+    "operations": 50000
+  },
+  "results": {
+    "PING Throughput": {
+      "total_operations": 49980,
+      "duration_seconds": 0.0608244999893941,
+      "throughput_ops_per_sec": 821708.3577952133,
+      "latency_p50_ms": 0.0004169996827840805,
+      "latency_p95_ms": 0.000500003807246685,
+      "latency_p99_ms": 0.000541971530765295,
+      "success_rate": 0.0,
+      "errors": 49980
+    },
+    "PUT Throughput": {
+      "total_operations": 49980,
+      "duration_seconds": 0.0592620829702355,
+      "throughput_ops_per_sec": 843372.3132057737,
+      "latency_p50_ms": 0.00100000761449337,
+      "latency_p95_ms": 0.0011249794624745846,
+      "latency_p99_ms": 0.001207983586937189,
+      "success_rate": 0.0,
+      "errors": 49980
+    },
+    "GET Throughput": {
+      "total_operations": 49980,
+      "duration_seconds": 0.04879945900756866,
+      "throughput_ops_per_sec": 1024191.6819661513,
+      "latency_p50_ms": 0.0008330098353326321,
+      "latency_p95_ms": 0.0008750357665121555,
+      "latency_p99_ms": 0.0009579816833138466,
+      "success_rate": 0.0,
+      "errors": 49980
+    },
+    "Mixed Workload": {
+      "total_operations": 49980,
+      "duration_seconds": 0.05740437499480322,
+      "throughput_ops_per_sec": 870665.3457079649,
+      "latency_p50_ms": 0.000959029421210289,
+      "latency_p95_ms": 0.0010420335456728935,
+      "latency_p99_ms": 0.001125037670135498,
+      "success_rate": 0.0,
+      "errors": 49980
+    },
+    "Pipeline Performance": {
+      "total_operations": 48000,
+      "duration_seconds": 0.009203166991937906,
+      "throughput_ops_per_sec": 5215595.896722142,
+      "latency_p50_ms": 0.016584002878516912,
+      "latency_p95_ms": 0.018413978978060186,
+      "latency_p99_ms": 0.027311783051118255,
+      "success_rate": 0.0,
+      "errors": 480
+    },
+    "High Concurrency": {
+      "total_operations": 49980,
+      "duration_seconds": 0.06033924996154383,
+      "throughput_ops_per_sec": 828316.5606442554,
+      "latency_p50_ms": 0.00100000761449337,
+      "latency_p95_ms": 0.001125037670135498,
+      "latency_p99_ms": 0.001291045919060707,
+      "success_rate": 0.0,
+      "errors": 49980
+    }
+  }
+}

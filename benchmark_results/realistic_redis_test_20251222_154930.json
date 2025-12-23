@@ -1,0 +1,16 @@
+{
+  "timestamp": "20251222_154930",
+  "config": {
+    "connections": 10,
+    "total_requests": 100000,
+    "pipeline_size": 4,
+    "data_size": 64,
+    "test_duration": 30
+  },
+  "results": {
+    "duration": 50.2275682920008,
+    "throughput": 0.6171909382468957,
+    "total_successful": 31,
+    "total_failed": 99969
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "config": {
+    "host": "127.0.0.1",
+    "port": 7001,
+    "connections": 10,
+    "operations_per_connection": 1000,
+    "validation_level": "strict"
+  },
+  "results": {
+    "total_operations": 10000,
+    "successful_operations": 10000,
+    "throughput_ops_per_sec": 16800.201443342055,
+    "success_rate": 100.0,
+    "latency_p50_ms": 0.48679200699552894,
+    "latency_p95_ms": 0.9935180773027241,
+    "latency_p99_ms": 2.0768492110073566,
+    "duration_seconds": 0.595230958017055
+  },
+  "breakdown": {
+    "ping_success": 3340,
+    "put_success": 3330,
+    "get_success": 3330,
+    "failed_operations": 0
+  },
+  "errors_sample": []
+}

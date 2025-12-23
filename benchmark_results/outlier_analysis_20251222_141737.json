@@ -1,0 +1,29 @@
+{
+  "timestamp": "20251222_141737",
+  "config": {
+    "connections": 5,
+    "operations_per_connection": 20000,
+    "sample_interval_ms": 100
+  },
+  "summary": {
+    "total_operations": 100000,
+    "successful_operations": 100000,
+    "failed_operations": 0,
+    "duration_seconds": 5.391389375028666,
+    "throughput_ops_per_sec": 18548.094571534875
+  },
+  "percentiles": {
+    "p50": 0.250083,
+    "p90": 0.341083,
+    "p95": 0.375708,
+    "p99": 0.49000082999999955,
+    "p99_9": 1.5201299170000189,
+    "p99_99": 15.718740358327429
+  },
+  "outlier_analysis": {
+    "normal_outliers_count": 63,
+    "extreme_outliers_count": 11,
+    "outlier_percentage": 0.063
+  },
+  "system_metrics_samples": 0
+}

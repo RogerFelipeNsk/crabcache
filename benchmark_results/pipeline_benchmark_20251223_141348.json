@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-12-23T14:13:48.153350",
+  "server": "127.0.0.1:8000",
+  "benchmarks": [
+    {
+      "mode": "single_commands",
+      "total_operations": 1000,
+      "total_time_seconds": 0.05852913856506348,
+      "ops_per_second": 17085.506886255596,
+      "avg_latency_ms": 0.05793356895446777,
+      "p50_latency_ms": 0.053882598876953125,
+      "p95_latency_ms": 0.11076927185058594,
+      "p99_latency_ms": 0.19883155822753906,
+      "min_latency_ms": 0.02002716064453125,
+      "max_latency_ms": 2.238035202026367
+    },
+    {
+      "mode": "pipeline_batch",
+      "batch_size": 4,
+      "total_operations": 1000,
+      "total_batches": 250,
+      "total_time_seconds": 0.007175922393798828,
+      "ops_per_second": 139354.9073028108,
+      "avg_batch_latency_ms": 0.027063369750976562,
+      "avg_per_command_latency_ms": 0.006765842437744141,
+      "p50_latency_ms": 0.006020069122314453,
+      "p95_latency_ms": 0.01150369644165039,
+      "p99_latency_ms": 0.015497207641601562,
+      "min_latency_ms": 0.004947185516357422,
+      "max_latency_ms": 0.017762184143066406
+    },
+    {
+      "mode": "pipeline_batch",
+      "batch_size": 8,
+      "total_operations": 1000,
+      "total_batches": 125,
+      "total_time_seconds": 0.005873203277587891,
+      "ops_per_second": 170264.83721685476,
+      "avg_batch_latency_ms": 0.04399681091308594,
+      "avg_per_command_latency_ms": 0.005499601364135742,
+      "p50_latency_ms": 0.00476837158203125,
+      "p95_latency_ms": 0.009119510650634766,
+      "p99_latency_ms": 0.010758638381958008,
+      "min_latency_ms": 0.0033676624298095703,
+      "max_latency_ms": 0.01150369644165039
+    },
+    {
+      "mode": "pipeline_batch",
+      "batch_size": 16,
+      "total_operations": 1000,
+      "total_batches": 63,
+      "total_time_seconds": 0.0045549869537353516,
+      "ops_per_second": 219539.59696414552,
+      "avg_batch_latency_ms": 0.06698805188375806,
+      "avg_per_command_latency_ms": 0.004186753242734879,
+      "p50_latency_ms": 0.003248453140258789,
+      "p95_latency_ms": 0.007688999176025391,
+      "p99_latency_ms": 0.019550323486328125,
+      "min_latency_ms": 0.0021904706954956055,
+      "max_latency_ms": 0.019550323486328125
+    },
+    {
+      "mode": "mixed_workload_pipeline",
+      "batch_size": 16,
+      "total_operations": 1000,
+      "total_batches": 63,
+      "total_time_seconds": 0.004860877990722656,
+      "ops_per_second": 205724.1514616441,
+      "avg_batch_latency_ms": 0.07106387425982763,
+      "avg_per_command_latency_ms": 0.004441492141239227,
+      "p50_latency_ms": 0.0040531158447265625,
+      "p95_latency_ms": 0.007674098014831543,
+      "p99_latency_ms": 0.008553266525268555
+    }
+  ],
+  "summary": {
+    "baseline_ops_per_second": 17085.506886255596,
+    "best_pipeline_ops_per_second": 219539.59696414552,
+    "best_batch_size": 16,
+    "improvement_factor": 12.849463491232662,
+    "improvement_percentage": 1184.9463491232661
+  }
+}

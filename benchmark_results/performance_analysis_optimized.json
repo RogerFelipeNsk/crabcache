@@ -1,0 +1,220 @@
+{
+  "timestamp": 1766402275.914847,
+  "connection_analysis": {
+    "new_connections": {
+      "total_time": 0.12257370899897069,
+      "avg_per_op": 0.001207517047878355,
+      "avg_connect_time": 0.00043823743064422163,
+      "throughput": 815.8356373212117
+    },
+    "persistent_connection": {
+      "total_time": 0.02405187499243766,
+      "avg_per_op": 0.00023267151496838778,
+      "avg_connect_time": 6.038171704858541e-08,
+      "throughput": 4157.680015859129
+    },
+    "improvement": {
+      "speedup": 5.189793207141904,
+      "connect_overhead_reduction": 7257.783515689016
+    }
+  },
+  "operation_breakdown": {
+    "PING": {
+      "samples": 50,
+      "avg_connect_time_ms": 6.844056770205498e-05,
+      "avg_send_time_ms": 0.006640020292252302,
+      "avg_recv_time_ms": 0.19875581958331168,
+      "avg_parse_time_ms": 0.0004807009827345609,
+      "avg_total_time_ms": 0.2059449814260006,
+      "avg_response_size": 6,
+      "p95_total_time_ms": 0.2826229901984334,
+      "success_rate": 100.0
+    },
+    "PUT": {
+      "samples": 50,
+      "avg_connect_time_ms": 6.496324203908443e-05,
+      "avg_send_time_ms": 0.0068299612030386925,
+      "avg_recv_time_ms": 0.18337661633268,
+      "avg_parse_time_ms": 0.0008583604358136654,
+      "avg_total_time_ms": 0.19112990121357143,
+      "avg_response_size": 4,
+      "p95_total_time_ms": 0.2632919931784272,
+      "success_rate": 100.0
+    },
+    "GET": {
+      "samples": 50,
+      "avg_connect_time_ms": 6.339862011373043e-05,
+      "avg_send_time_ms": 0.006163323996588588,
+      "avg_recv_time_ms": 0.17209168174304068,
+      "avg_parse_time_ms": 0.000495880376547575,
+      "avg_total_time_ms": 0.17881428473629057,
+      "avg_response_size": 17.8,
+      "p95_total_time_ms": 0.2216249704360962,
+      "success_rate": 100.0
+    },
+    "DEL": {
+      "samples": 50,
+      "avg_connect_time_ms": 6.750109605491161e-05,
+      "avg_send_time_ms": 0.006838401313871145,
+      "avg_recv_time_ms": 0.16587578575126827,
+      "avg_parse_time_ms": 0.0003941019531339407,
+      "avg_total_time_ms": 0.17317579011432827,
+      "avg_response_size": 4,
+      "p95_total_time_ms": 0.22195797646418214,
+      "success_rate": 100.0
+    },
+    "STATS": {
+      "samples": 50,
+      "avg_connect_time_ms": 6.248359568417072e-05,
+      "avg_send_time_ms": 0.006079933373257518,
+      "avg_recv_time_ms": 0.16577746369875968,
+      "avg_parse_time_ms": 0.00040997983887791634,
+      "avg_total_time_ms": 0.17232986050657928,
+      "avg_response_size": 88,
+      "p95_total_time_ms": 0.2364169922657311,
+      "success_rate": 100.0
+    }
+  },
+  "payload_analysis": {
+    "10B": {
+      "payload_size": 10,
+      "avg_total_time_ms": 0.13688754406757653,
+      "avg_send_time_ms": 0.005916802911087871,
+      "avg_recv_time_ms": 0.13053539441898465,
+      "throughput_ops_sec": 7305.2665734607335,
+      "throughput_mb_sec": 0.06966845105610593
+    },
+    "50B": {
+      "payload_size": 50,
+      "avg_total_time_ms": 0.1782440405804664,
+      "avg_send_time_ms": 0.0061147467931732535,
+      "avg_recv_time_ms": 0.17165204917546362,
+      "throughput_ops_sec": 5610.285745001167,
+      "throughput_mb_sec": 0.2675192711353858
+    },
+    "100B": {
+      "payload_size": 100,
+      "avg_total_time_ms": 0.12966675276402384,
+      "avg_send_time_ms": 0.0054083531722426414,
+      "avg_recv_time_ms": 0.12371680059004576,
+      "throughput_ops_sec": 7712.077141469458,
+      "throughput_mb_sec": 0.7354809895963152
+    },
+    "500B": {
+      "payload_size": 500,
+      "avg_total_time_ms": 0.15286655980162323,
+      "avg_send_time_ms": 0.0076291500590741634,
+      "avg_recv_time_ms": 0.14424370601773262,
+      "throughput_ops_sec": 6541.653068517484,
+      "throughput_mb_sec": 3.1193032591426295
+    },
+    "1000B": {
+      "payload_size": 1000,
+      "avg_total_time_ms": 0.18326434073969722,
+      "avg_send_time_ms": 0.008474953938275576,
+      "avg_recv_time_ms": 0.17401450604666024,
+      "throughput_ops_sec": 5456.598899511869,
+      "throughput_mb_sec": 5.203818225395078
+    },
+    "5000B": {
+      "payload_size": 5000,
+      "avg_total_time_ms": 0.1947187789482996,
+      "avg_send_time_ms": 0.009518745355308056,
+      "avg_recv_time_ms": 0.18471664225216955,
+      "throughput_ops_sec": 5135.611497777075,
+      "throughput_mb_sec": 24.48850392235315
+    }
+  },
+  "concurrency_analysis": {
+    "1_workers": {
+      "workers": 1,
+      "total_operations": 50,
+      "total_time": 0.00989008299075067,
+      "avg_latency_ms": 0.1810457301326096,
+      "throughput_ops_sec": 5055.569305814787,
+      "ops_per_worker": 50.0
+    },
+    "2_workers": {
+      "workers": 2,
+      "total_operations": 100,
+      "total_time": 0.014910291996784508,
+      "avg_latency_ms": 0.27665858971886337,
+      "throughput_ops_sec": 6706.776770137405,
+      "ops_per_worker": 50.0
+    },
+    "5_workers": {
+      "workers": 5,
+      "total_operations": 250,
+      "total_time": 0.08965979202184826,
+      "avg_latency_ms": 1.5198151809163392,
+      "throughput_ops_sec": 2788.317866486687,
+      "ops_per_worker": 50.0
+    },
+    "10_workers": {
+      "workers": 10,
+      "total_operations": 500,
+      "total_time": 0.04229295899858698,
+      "avg_latency_ms": 0.6394322790438309,
+      "throughput_ops_sec": 11822.298837418897,
+      "ops_per_worker": 50.0
+    },
+    "15_workers": {
+      "workers": 15,
+      "total_operations": 750,
+      "total_time": 0.0369584999862127,
+      "avg_latency_ms": 0.6730999470067521,
+      "throughput_ops_sec": 20293.03138059678,
+      "ops_per_worker": 50.0
+    },
+    "20_workers": {
+      "workers": 20,
+      "total_operations": 1000,
+      "total_time": 0.050827042025048286,
+      "avg_latency_ms": 0.9170660983072594,
+      "throughput_ops_sec": 19674.56613955984,
+      "ops_per_worker": 50.0
+    }
+  },
+  "recommendations": {
+    "critical_issues": [
+      {
+        "issue": "Connection Overhead",
+        "impact": "5.2x slower with new connections",
+        "solution": "Implement connection pooling in production clients"
+      }
+    ],
+    "optimization_opportunities": [
+      {
+        "area": "PING Receive Performance",
+        "current": "0.20ms (96.5% of total)",
+        "suggestion": "Optimize response generation and TCP receive buffer"
+      },
+      {
+        "area": "PUT Receive Performance",
+        "current": "0.18ms (95.9% of total)",
+        "suggestion": "Optimize response generation and TCP receive buffer"
+      },
+      {
+        "area": "GET Receive Performance",
+        "current": "0.17ms (96.2% of total)",
+        "suggestion": "Optimize response generation and TCP receive buffer"
+      },
+      {
+        "area": "DEL Receive Performance",
+        "current": "0.17ms (95.8% of total)",
+        "suggestion": "Optimize response generation and TCP receive buffer"
+      },
+      {
+        "area": "STATS Receive Performance",
+        "current": "0.17ms (96.2% of total)",
+        "suggestion": "Optimize response generation and TCP receive buffer"
+      }
+    ],
+    "performance_targets": {
+      "current_peak_throughput": "20293 ops/sec",
+      "short_term_target": "40586 ops/sec (2x improvement)",
+      "medium_term_target": "101465 ops/sec (5x improvement)",
+      "long_term_target": "20,000+ ops/sec (Redis competitive)"
+    }
+  }
+}

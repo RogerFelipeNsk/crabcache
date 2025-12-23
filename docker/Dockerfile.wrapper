@@ -1,0 +1,45 @@
+# Dockerfile para HTTP Wrapper
+FROM python:3.11-slim
+
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    curl \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Criar usuário não-root
+RUN useradd -m -u 1000 wrapper && \
+    mkdir -p /app && \
+    chown wrapper:wrapper /app
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar requirements primeiro (para cache de layers)
+COPY requirements-wrapper.txt .
+
+# Instalar dependências Python
+RUN pip install --no-cache-dir -r requirements-wrapper.txt
+
+# Copiar código do wrapper
+COPY http_wrapper.py .
+COPY docs/ ./docs/
+
+# Mudar para usuário não-root
+USER wrapper
+
+# Expor porta
+EXPOSE 8000
+
+# Variáveis de ambiente
+ENV CRABCACHE_HOST=crabcache
+ENV CRABCACHE_PORT=7000
+ENV FLASK_ENV=production
+ENV PYTHONUNBUFFERED=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Comando de inicialização
+CMD ["python", "http_wrapper.py"]

@@ -1,0 +1,14 @@
+{
+  "timestamp": "20251222_155151",
+  "config": {
+    "connections": 10,
+    "operations_per_connection": 10000,
+    "data_size": 64
+  },
+  "results": {
+    "duration": 5.093093083007261,
+    "throughput": 19634.434001146143,
+    "total_successful": 100000,
+    "total_failed": 0
+  }
+}

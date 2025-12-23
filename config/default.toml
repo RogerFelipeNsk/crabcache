@@ -1,0 +1,120 @@
+# CrabCache Default Configuration
+
+# Server settings
+bind_addr = "0.0.0.0"
+port = 8000
+
+# Shard configuration
+# num_shards = 4  # Uncomment to override CPU count
+max_memory_per_shard = 1073741824  # 1GB in bytes
+
+# Persistence settings
+enable_wal = false
+wal_dir = "./data/wal"
+
+# WAL configuration (when enabled)
+[wal]
+# Maximum segment size in bytes (default: 64MB)
+max_segment_size = 67108864
+# Buffer size for batching writes (default: 4KB)
+buffer_size = 4096
+# Flush interval in milliseconds (default: 1000ms)
+flush_interval_ms = 1000
+# Sync policy: "none", "async", "sync"
+sync_policy = "async"
+
+# Metrics configuration
+[metrics]
+enabled = true
+path = "/metrics"
+port = 8001
+
+# Security configuration
+[security]
+# Enable authentication (requires auth_token)
+enable_auth = false
+# Authentication token (set via environment variable CRABCACHE_AUTH_TOKEN)
+# auth_token = "your-secret-token-here"
+# Allowed client IPs (empty = allow all)
+allowed_ips = []
+# Enable TLS (requires cert and key files)
+enable_tls = false
+# TLS certificate path
+# tls_cert_path = "/path/to/cert.pem"
+# TLS private key path
+# tls_key_path = "/path/to/key.pem"
+# Maximum command size in bytes (1MB default)
+max_command_size = 1048576
+
+# Rate limiting configuration
+[rate_limiting]
+# Enable rate limiting
+enabled = false
+# Maximum requests per second per client
+max_requests_per_second = 1000
+# Burst capacity (number of requests that can burst above the rate)
+burst_capacity = 100
+# Rate limit window in seconds
+window_seconds = 1
+
+# Connection configuration
+[connection]
+# Maximum concurrent connections
+max_connections = 1000
+# Connection timeout in seconds
+connection_timeout_seconds = 30
+# Keep-alive timeout in seconds
+keepalive_timeout_seconds = 300
+# TCP nodelay (disable Nagle's algorithm for low latency)
+tcp_nodelay = true
+# TCP buffer sizes (optional, system default if not set)
+tcp_recv_buffer_size = 65536  # 64KB
+tcp_send_buffer_size = 65536  # 64KB
+
+# Pipeline configuration for high-performance batch processing
+[connection.pipeline]
+# Enable pipelining for batch command processing
+enabled = true
+# Maximum batch size for pipeline processing (1-1000)
+max_batch_size = 16
+# Pipeline buffer size in bytes
+buffer_size = 16384  # 16KB
+# Pipeline timeout in milliseconds
+timeout_ms = 100
+
+# Logging configuration
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+# Log format: json, pretty
+format = "json"
+# Enable file logging
+enable_file = false
+# Log file path (when file logging is enabled)
+file_path = "./logs/crabcache.log"
+# Maximum log file size in MB
+max_file_size_mb = 100
+# Number of log files to keep
+max_files = 10
+
+# Eviction policy configuration
+[eviction]
+# Enable TinyLFU eviction algorithm
+enabled = true
+
+# Proportion of cache dedicated to Window LRU (0.0 to 1.0)
+window_ratio = 0.01
+
+# Count-Min Sketch configuration for frequency estimation
+sketch_width = 1024
+sketch_depth = 4
+
+# Memory pressure thresholds (0.0 to 1.0)
+memory_high_watermark = 0.8  # Start eviction at 80% memory usage
+memory_low_watermark = 0.6   # Stop eviction at 60% memory usage
+
+# Frequency sketch reset interval in seconds
+reset_interval_secs = 3600  # 1 hour
+
+# Maximum cache capacity per shard (items)
+max_capacity = 10000

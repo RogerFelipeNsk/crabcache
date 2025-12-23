@@ -1,0 +1,16 @@
+{
+  "timestamp": "20251222_135918",
+  "validation_goal": "P99 < 1ms",
+  "validation_passed": true,
+  "best_p99_ms": 0.31812752,
+  "target_p99_ms": 1.0,
+  "margin_ms": 0.68187248,
+  "tests": {
+    "Single Connection": {
+      "connections": 1,
+      "operations": 10000,
+      "duration": 1.6324722080025822,
+      "p50": 0.151666,
+      "p95": 0.21141904999999997,
+      "p99": 0.4065996700000004,
+      "success": 

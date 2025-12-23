@@ -1,0 +1,329 @@
+openapi: 3.0.3
+info:
+  title: CrabCache API
+  description: |
+    CrabCache - Predictable, Memory-Efficient Cache Engine
+    
+    Um sistema de cache moderno escrito em Rust, projetado para ser mais previsível
+    que Redis e Dragonfly, com melhor eficiência de memória e suporte multi-core nativo.
+    
+    ## Protocolo
+    
+    CrabCache usa um protocolo de texto simples sobre TCP na porta 7000.
+    Cada comando é enviado como uma linha terminada em `\r\n`.
+    
+    ## Características
+    
+    - **Sharding automático**: Distribuição de chaves por hash
+    - **TTL nativo**: Expiração automática de chaves
+    - **Memória eficiente**: Layout binário compacto com varint encoding
+    - **Multi-core**: Verdadeiro paralelismo com shards independentes
+    - **Observabilidade**: Métricas detalhadas por shard
+    
+  version: 0.1.0
+  contact:
+    name: CrabCache Team
+    url: https://github.com/your-org/crabcache
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: tcp://localhost:7000
+    description: Servidor local de desenvolvimento
+  - url: tcp://localhost:7004
+    description: Servidor Docker (porta mapeada)
+
+tags:
+  - name: Basic Operations
+    description: Operações básicas de cache (PUT, GET, DEL)
+  - name: TTL Management
+    description: Gerenciamento de Time-To-Live
+  - name: Monitoring
+    description: Monitoramento e estatísticas
+  - name: Health Check
+    description: Verificação de saúde do servidor
+
+paths:
+  /ping:
+    post:
+      tags:
+        - Health Check
+      summary: Verifica se o servidor está respondendo
+      description: |
+        Comando PING para verificar a conectividade e saúde do servidor.
+        Retorna PONG se o servidor estiver funcionando.
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "PING\r\n"
+      responses:
+        '200':
+          description: Servidor está funcionando
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "PONG\r\n"
+
+  /put:
+    post:
+      tags:
+        - Basic Operations
+      summary: Armazena um valor no cache
+      description: |
+        Comando PUT para armazenar uma chave-valor no cache.
+        Opcionalmente pode especificar um TTL em segundos.
+        
+        **Formato**: `PUT <key> <value> [ttl]`
+        
+        **Exemplos**:
+        - `PUT mykey myvalue` - Armazena sem TTL
+        - `PUT mykey myvalue 3600` - Armazena com TTL de 1 hora
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "PUT mykey myvalue\r\n"
+            examples:
+              without_ttl:
+                summary: PUT sem TTL
+                value: "PUT user:123 john_doe\r\n"
+              with_ttl:
+                summary: PUT com TTL de 1 hora
+                value: "PUT session:abc123 user_data 3600\r\n"
+              with_json:
+                summary: PUT com valor JSON (como string)
+                value: "PUT user:profile {\"name\":\"John\",\"age\":30}\r\n"
+      responses:
+        '200':
+          description: Valor armazenado com sucesso
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "OK\r\n"
+        '507':
+          description: Limite de memória excedido
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "ERROR: Memory limit exceeded\r\n"
+
+  /get:
+    post:
+      tags:
+        - Basic Operations
+      summary: Recupera um valor do cache
+      description: |
+        Comando GET para recuperar o valor de uma chave.
+        Se a chave não existir ou estiver expirada, retorna NULL.
+        
+        **Formato**: `GET <key>`
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "GET mykey\r\n"
+            examples:
+              simple:
+                summary: GET simples
+                value: "GET user:123\r\n"
+              session:
+                summary: GET de sessão
+                value: "GET session:abc123\r\n"
+      responses:
+        '200':
+          description: Valor encontrado
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "myvalue\r\n"
+        '404':
+          description: Chave não encontrada ou expirada
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "NULL\r\n"
+
+  /del:
+    post:
+      tags:
+        - Basic Operations
+      summary: Remove uma chave do cache
+      description: |
+        Comando DEL para remover uma chave do cache.
+        Remove tanto do store quanto do TTL wheel.
+        
+        **Formato**: `DEL <key>`
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "DEL mykey\r\n"
+            examples:
+              simple:
+                summary: DEL simples
+                value: "DEL user:123\r\n"
+              session:
+                summary: DEL de sessão
+                value: "DEL session:abc123\r\n"
+      responses:
+        '200':
+          description: Chave removida com sucesso
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "OK\r\n"
+        '404':
+          description: Chave não existia
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "NULL\r\n"
+
+  /expire:
+    post:
+      tags:
+        - TTL Management
+      summary: Define ou atualiza o TTL de uma chave
+      description: |
+        Comando EXPIRE para definir ou atualizar o TTL de uma chave existente.
+        O TTL é especificado em segundos.
+        
+        **Formato**: `EXPIRE <key> <ttl_seconds>`
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "EXPIRE mykey 3600\r\n"
+            examples:
+              one_hour:
+                summary: TTL de 1 hora
+                value: "EXPIRE session:abc123 3600\r\n"
+              one_day:
+                summary: TTL de 1 dia
+                value: "EXPIRE cache:data 86400\r\n"
+              five_minutes:
+                summary: TTL de 5 minutos
+                value: "EXPIRE temp:key 300\r\n"
+      responses:
+        '200':
+          description: TTL atualizado com sucesso
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "OK\r\n"
+        '404':
+          description: Chave não encontrada
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "NULL\r\n"
+
+  /stats:
+    post:
+      tags:
+        - Monitoring
+      summary: Obtém estatísticas do servidor
+      description: |
+        Comando STATS para obter estatísticas detalhadas do servidor.
+        Retorna informações sobre todos os shards, incluindo:
+        - Número de chaves por shard
+        - Uso de memória por shard
+        - Total de chaves e memória
+        - Chaves com TTL ativo
+        
+        **Formato**: `STATS`
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "STATS\r\n"
+      responses:
+        '200':
+          description: Estatísticas do servidor
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "STATS: shard_0: 10 keys, 1024B/1073741824B, shard_1: 15 keys, 2048B/1073741824B, total: 25 keys, 3072B/2147483648B memory\r\n"
+
+components:
+  schemas:
+    Command:
+      type: object
+      properties:
+        command:
+          type: string
+          enum: [PING, PUT, GET, DEL, EXPIRE, STATS]
+        key:
+          type: string
+          description: Chave para operações que requerem chave
+        value:
+          type: string
+          description: Valor para operação PUT
+        ttl:
+          type: integer
+          description: Time-to-live em segundos (opcional)
+      required:
+        - command
+
+    Response:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OK, PONG, NULL, ERROR, VALUE, STATS]
+        data:
+          type: string
+          description: Dados da resposta (quando aplicável)
+
+  examples:
+    PutExample:
+      summary: Exemplo de PUT
+      value: "PUT user:123 john_doe\r\n"
+    
+    GetExample:
+      summary: Exemplo de GET
+      value: "GET user:123\r\n"
+    
+    DelExample:
+      summary: Exemplo de DEL
+      value: "DEL user:123\r\n"
+    
+    ExpireExample:
+      summary: Exemplo de EXPIRE
+      value: "EXPIRE user:123 3600\r\n"
+    
+    StatsExample:
+      summary: Exemplo de STATS
+      value: "STATS\r\n"
+    
+    PingExample:
+      summary: Exemplo de PING
+      value: "PING\r\n"
+
+externalDocs:
+  description: Documentação completa do CrabCache
+  url: https://github.com/your-org/crabcache/blob/main/README.md

@@ -1,0 +1,133 @@
+services:
+  crabcache:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crabcache-server
+    ports:
+      - "7001:8000"
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - ./config/default.toml:/app/config/default.toml:ro
+    networks:
+      - crabcache-network
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Limitação de recursos para testes
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    restart: unless-stopped
+    labels:
+      - "com.crabcache.service=core"
+      - "com.crabcache.version=0.1.0"
+
+  http-wrapper:
+    build:
+      context: .
+      dockerfile: Dockerfile.wrapper
+    container_name: crabcache-http-wrapper
+    ports:
+      - "8000:8000"
+    environment:
+      - CRABCACHE_HOST=crabcache
+      - CRABCACHE_PORT=8000
+      - FLASK_ENV=production
+    depends_on:
+      - crabcache
+    networks:
+      - crabcache-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # Limitação de recursos para o wrapper
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+    restart: unless-stopped
+    labels:
+      - "com.crabcache.service=wrapper"
+      - "com.crabcache.version=0.1.0"
+
+  # Serviço opcional para testes de carga
+  load-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.tester
+    container_name: crabcache-load-tester
+    environment:
+      - CRABCACHE_HTTP_URL=http://http-wrapper:8000
+      - TEST_DURATION=60
+      - CONCURRENT_USERS=10
+    depends_on:
+      http-wrapper:
+        condition: service_healthy
+    networks:
+      - crabcache-network
+    profiles:
+      - testing
+    # Recursos mínimos para o tester
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    labels:
+      - "com.crabcache.service=tester"
+
+  # Monitor de recursos (opcional)
+  monitor:
+    image: prom/node-exporter:latest
+    container_name: crabcache-monitor
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - crabcache-network
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    labels:
+      - "com.crabcache.service=monitor"
+
+networks:
+  crabcache-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    labels:
+      - "com.crabcache.network=main"
+
+# Volumes para persistência opcional
+volumes:
+  crabcache-data:
+    driver: local
+    labels:
+      - "com.crabcache.volume=data"

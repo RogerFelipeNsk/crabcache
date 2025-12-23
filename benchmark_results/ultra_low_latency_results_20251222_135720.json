@@ -1,0 +1,33 @@
+{
+  "timestamp": "20251222_135720",
+  "config": {
+    "connections": 5,
+    "operations_per_connection": 10000,
+    "target_p99_ms": 1.0
+  },
+  "results": {
+    "total_operations": 50000,
+    "successful_operations": 50000,
+    "failed_operations": 0,
+    "duration_seconds": 3.200533374969382,
+    "throughput_ops_per_sec": 15622.39606405552
+  },
+  "latency_metrics": {
+    "min_ms": 0.090083,
+    "mean_ms": 0.3132093469,
+    "max_ms": 24.74125,
+    "std_dev_ms": 0.44239332844890006,
+    "p50_ms": 0.2699165,
+    "p90_ms": 0.4,
+    "p95_ms": 0.47275209999999984,
+    "p99_ms": 0.9647729200000047,
+    "p99_9_ms": 5.084767375000385,
+    "p99_99_ms": 22.641120662495894
+  },
+  "goal_assessment": {
+    "target_p99_ms": 1.0,
+    "actual_p99_ms": 0.9647729200000047,
+    "goal_achieved": true,
+    "margin_ms": 0.0352270799999953
+  }
+}

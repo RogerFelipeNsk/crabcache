@@ -1,0 +1,35 @@
+# Dockerfile para Load Tester
+FROM python:3.11-slim
+
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Criar usuário não-root
+RUN useradd -m -u 1000 tester && \
+    mkdir -p /app && \
+    chown tester:tester /app
+
+WORKDIR /app
+
+# Instalar dependências Python para testes
+RUN pip install --no-cache-dir \
+    requests==2.31.0 \
+    locust==2.17.0 \
+    pytest==7.4.3
+
+# Copiar scripts de teste
+COPY scripts/load_test.py .
+COPY docs/test_api.py .
+
+# Mudar para usuário não-root
+USER tester
+
+# Variáveis de ambiente
+ENV CRABCACHE_HTTP_URL=http://http-wrapper:8000
+ENV TEST_DURATION=60
+ENV CONCURRENT_USERS=10
+
+# Comando padrão (pode ser sobrescrito)
+CMD ["python", "load_test.py"]

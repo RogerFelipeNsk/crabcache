@@ -1,0 +1,87 @@
+{
+  "test_config": {
+    "concurrent_users": 10,
+    "duration": 60.007817029953,
+    "target_ops_per_sec": 0
+  },
+  "global_metrics": {
+    "total_operations": 77611,
+    "successful_operations": 28315,
+    "failed_operations": 49296,
+    "success_rate": 36.48323046990762,
+    "actual_ops_per_second": 1293.3481643109988,
+    "avg_latency_ms": 2.2578339863581647,
+    "p50_latency_ms": 1.7769336700439453,
+    "p95_latency_ms": 5.114078521728516,
+    "p99_latency_ms": 9.924173355102539,
+    "min_latency_ms": 0.1761913299560547,
+    "max_latency_ms": 60.28294563293457
+  },
+  "operations": {
+    "GET": {
+      "total": 38854,
+      "success": 12982,
+      "errors": 25872,
+      "success_rate": 33.41226128583929,
+      "ops_per_second": 647.4823101897867,
+      "avg_latency_ms": 2.2696847928412853,
+      "p50_latency_ms": 1.7838478088378906,
+      "p95_latency_ms": 5.137205123901367,
+      "p99_latency_ms": 9.967803955078125,
+      "min_latency_ms": 0.1761913299560547,
+      "max_latency_ms": 54.6879768371582
+    },
+    "PUT": {
+      "total": 23220,
+      "success": 9794,
+      "errors": 13426,
+      "success_rate": 42.17915590008614,
+      "ops_per_second": 386.94958672483784,
+      "avg_latency_ms": 2.244292467858235,
+      "p50_latency_ms": 1.7671585083007812,
+      "p95_latency_ms": 5.10096549987793,
+      "p99_latency_ms": 9.986162185668945,
+      "min_latency_ms": 0.21028518676757812,
+      "max_latency_ms": 44.22903060913086
+    },
+    "DEL": {
+      "total": 7868,
+      "success": 2302,
+      "errors": 5566,
+      "success_rate": 29.257752923233348,
+      "ops_per_second": 131.11625100564274,
+      "avg_latency_ms": 2.269312640889744,
+      "p50_latency_ms": 1.7750263214111328,
+      "p95_latency_ms": 5.232810974121094,
+      "p99_latency_ms": 10.256767272949219,
+      "min_latency_ms": 0.19884109497070312,
+      "max_latency_ms": 60.28294563293457
+    },
+    "STATS": {
+      "total": 3775,
+      "success": 1569,
+      "errors": 2206,
+      "success_rate": 41.56291390728477,
+      "ops_per_second": 62.9084707100027,
+      "avg_latency_ms": 2.2670251959996506,
+      "p50_latency_ms": 1.8069744110107422,
+      "p95_latency_ms": 5.03087043762207,
+      "p99_latency_ms": 9.608030319213867,
+      "min_latency_ms": 0.19693374633789062,
+      "max_latency_ms": 44.74210739135742
+    },
+    "PING": {
+      "total": 3894,
+      "success": 1668,
+      "errors": 2226,
+      "success_rate": 42.83513097072419,
+      "ops_per_second": 64.89154568072861,
+      "avg_latency_ms": 2.188232536492252,
+      "p50_latency_ms": 1.7359256744384766,
+      "p95_latency_ms": 4.954814910888672,
+      "p99_latency_ms": 9.074211120605469,
+      "min_latency_ms": 0.2300739288330078,
+      "max_latency_ms": 42.630910873413086
+    }
+  }
+}
