@@ -1,5 +1,7 @@
 # 🦀 CrabCache
 
+# Importante: Esse sistema foi feito através de VibeCoding, para estudo, não foi validado, e as informações contidas aqui, podem não estar corretas.
+
 [![Rust](https://img.shields.io/badge/rust-1.92+-orange.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Performance](https://img.shields.io/badge/performance-219%2C540%2B%20ops%2Fsec-green.svg)](#performance)
