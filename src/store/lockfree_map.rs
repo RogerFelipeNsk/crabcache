@@ -7,8 +7,8 @@ use bytes::Bytes;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::ptr;
-use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
 /// Lock-free HashMap for high-concurrency access
 pub struct LockFreeHashMap<K, V>
@@ -191,8 +191,13 @@ where
     V: Clone,
 {
     fn new() -> Self {
+        const INITIAL_BUCKET_SIZE: usize = 32; // Increased from 8 to 32
+        let mut entries = Vec::with_capacity(INITIAL_BUCKET_SIZE);
+        for _ in 0..INITIAL_BUCKET_SIZE {
+            entries.push(AtomicPtr::new(ptr::null_mut()));
+        }
         Self {
-            entries: Vec::new(),
+            entries,
             size: AtomicUsize::new(0),
         }
     }
@@ -203,7 +208,7 @@ where
             if !entry_ptr.is_null() {
                 let entry = unsafe { &*entry_ptr };
                 if entry.key == *key && !entry.deleted.load(Ordering::Acquire) {
-                    return Some(entry.value.clone());
+                    return entry.value.lock().ok().map(|v| v.clone());
                 }
             }
         }
@@ -220,15 +225,18 @@ where
                     if entry.deleted.load(Ordering::Acquire) {
                         // Resurrect deleted entry
                         entry.deleted.store(false, Ordering::Release);
-                        let old_value = entry.value.clone();
-                        // Note: This is a simplified implementation
-                        // In a real implementation, we'd need atomic value updates
-                        return Some(old_value);
+                        if let Ok(mut old_value) = entry.value.lock() {
+                            let result = old_value.clone();
+                            *old_value = value;
+                            return Some(result);
+                        }
                     } else {
                         // Update existing entry
-                        let old_value = entry.value.clone();
-                        // Note: This is a simplified implementation
-                        return Some(old_value);
+                        if let Ok(mut old_value) = entry.value.lock() {
+                            let result = old_value.clone();
+                            *old_value = value;
+                            return Some(result);
+                        }
                     }
                 }
             }
@@ -237,7 +245,7 @@ where
         // Create new entry
         let new_entry = Box::into_raw(Box::new(Entry {
             key,
-            value,
+            value: Mutex::new(value),
             deleted: AtomicBool::new(false),
         }));
 
@@ -274,7 +282,7 @@ where
                 if entry.key == *key && !entry.deleted.load(Ordering::Acquire) {
                     entry.deleted.store(true, Ordering::Release);
                     self.size.fetch_sub(1, Ordering::Relaxed);
-                    return Some(entry.value.clone());
+                    return entry.value.lock().ok().map(|v| v.clone());
                 }
             }
         }
@@ -285,11 +293,9 @@ where
 /// An entry in the bucket
 struct Entry<K, V> {
     key: K,
-    value: V,
+    value: Mutex<V>,
     deleted: AtomicBool,
 }
-
-use std::sync::atomic::AtomicBool;
 
 /// Lock-free metrics for monitoring
 #[derive(Debug, Default)]

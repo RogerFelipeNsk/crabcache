@@ -9,9 +9,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create TinyLFU configuration using Default and customizing specific fields
     let mut config = EvictionConfig::default();
-    config.max_capacity = 5;   // Small capacity for demonstration
+    config.max_capacity = 5; // Small capacity for demonstration
     config.window_ratio = 0.2; // 20% for window LRU (1 item)
-    config.sketch_width = 64;  // Small sketch for demo
+    config.sketch_width = 64; // Small sketch for demo
     config.sketch_depth = 4;
     config.memory_high_watermark = 0.8;
     config.memory_low_watermark = 0.6;

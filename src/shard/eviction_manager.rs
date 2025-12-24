@@ -617,6 +617,7 @@ mod tests {
     async fn test_put_get_with_eviction() {
         let config = EvictionConfig {
             max_capacity: 2, // Small capacity for testing
+            min_items_threshold: 1, // Must be less than max_capacity
             ..Default::default()
         };
         let metrics = crate::metrics::create_shared_metrics(1);
@@ -671,6 +672,7 @@ mod tests {
     async fn test_force_eviction() {
         let config = EvictionConfig {
             max_capacity: 5,
+            min_items_threshold: 2, // Must be less than max_capacity
             ..Default::default()
         };
         let metrics = crate::metrics::create_shared_metrics(1);
