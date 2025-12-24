@@ -4,9 +4,7 @@
 //! and Main LRU for established items. Provides intelligent eviction decisions
 //! based on both frequency and recency.
 
-use super::{
-    CountMinSketch, EvictionConfig, EvictionMetrics, EvictionPolicy, WindowLRU,
-};
+use super::{CountMinSketch, EvictionConfig, EvictionMetrics, EvictionPolicy, WindowLRU};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 

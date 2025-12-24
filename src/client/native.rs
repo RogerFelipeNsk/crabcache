@@ -6,8 +6,8 @@
 
 use super::pool::{ConnectionPool, PoolConfig};
 use super::{ClientConfig, ClientError, ClientMetrics, ClientResult};
-use crate::protocol::commands::{Command, Response};
 use crate::config::PipelineConfig;
+use crate::protocol::commands::{Command, Response};
 use bytes::Bytes;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
