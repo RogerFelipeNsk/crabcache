@@ -616,7 +616,7 @@ mod tests {
     #[tokio::test]
     async fn test_put_get_with_eviction() {
         let config = EvictionConfig {
-            max_capacity: 2, // Small capacity for testing
+            max_capacity: 2,        // Small capacity for testing
             min_items_threshold: 1, // Must be less than max_capacity
             ..Default::default()
         };
