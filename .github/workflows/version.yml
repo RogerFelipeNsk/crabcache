@@ -1,0 +1,172 @@
+name: Auto Version
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version increment type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: Auto Version Increment
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip-version]') && !contains(github.event.head_commit.message, '[skip-ci]')"
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Install cargo-edit
+      run: cargo install cargo-edit
+    
+    - name: Determine version increment
+      id: version_type
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "increment=${{ github.event.inputs.version_type }}" >> $GITHUB_OUTPUT
+        else
+          # Analisar commits desde a última tag para determinar o tipo de increment
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Last tag: $LAST_TAG"
+          
+          # Obter commits desde a última tag
+          COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"%s" || echo "")
+          echo "Commits since last tag:"
+          echo "$COMMITS"
+          
+          # Determinar tipo de increment baseado em conventional commits
+          if echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?!:|^BREAKING CHANGE:|^[^:]+!:"; then
+            echo "increment=major" >> $GITHUB_OUTPUT
+            echo "Detected BREAKING CHANGE - incrementing major version"
+          elif echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?:"; then
+            echo "increment=minor" >> $GITHUB_OUTPUT
+            echo "Detected new feature - incrementing minor version"
+          elif echo "$COMMITS" | grep -qE "^(fix|bugfix)(\(.+\))?:"; then
+            echo "increment=patch" >> $GITHUB_OUTPUT
+            echo "Detected bug fix - incrementing patch version"
+          elif echo "$COMMITS" | grep -qE "^(perf|performance)(\(.+\))?:"; then
+            echo "increment=patch" >> $GITHUB_OUTPUT
+            echo "Detected performance improvement - incrementing patch version"
+          else
+            echo "increment=patch" >> $GITHUB_OUTPUT
+            echo "No specific pattern detected - incrementing patch version"
+          fi
+        fi
+    
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(grep '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Increment version
+      id: new_version
+      run: |
+        INCREMENT_TYPE="${{ steps.version_type.outputs.increment }}"
+        CURRENT_VERSION="${{ steps.current_version.outputs.current }}"
+        
+        # Usar cargo-edit para incrementar a versão
+        case $INCREMENT_TYPE in
+          "major")
+            cargo set-version --bump major
+            ;;
+          "minor")
+            cargo set-version --bump minor
+            ;;
+          "patch")
+            cargo set-version --bump patch
+            ;;
+        esac
+        
+        # Obter nova versão
+        NEW_VERSION=$(grep '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+        echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+        
+        # Verificar se a versão mudou
+        if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Update Cargo.lock
+      if: steps.new_version.outputs.changed == 'true'
+      run: cargo check
+    
+    - name: Generate changelog entry
+      if: steps.new_version.outputs.changed == 'true'
+      id: changelog
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new }}"
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        
+        # Gerar changelog baseado nos commits
+        echo "## [$NEW_VERSION] - $(date +%Y-%m-%d)" > changelog_entry.md
+        echo "" >> changelog_entry.md
+        
+        # Categorizar commits
+        git log ${LAST_TAG}..HEAD --oneline --pretty=format:"%s" | while read -r commit; do
+          if echo "$commit" | grep -qE "^feat(\(.+\))?:"; then
+            echo "### ✨ Features" >> changelog_entry.md
+            echo "- $(echo "$commit" | sed 's/^feat[^:]*: //')" >> changelog_entry.md
+          elif echo "$commit" | grep -qE "^fix(\(.+\))?:"; then
+            echo "### 🐛 Bug Fixes" >> changelog_entry.md
+            echo "- $(echo "$commit" | sed 's/^fix[^:]*: //')" >> changelog_entry.md
+          elif echo "$commit" | grep -qE "^perf(\(.+\))?:"; then
+            echo "### ⚡ Performance" >> changelog_entry.md
+            echo "- $(echo "$commit" | sed 's/^perf[^:]*: //')" >> changelog_entry.md
+          elif echo "$commit" | grep -qE "^docs(\(.+\))?:"; then
+            echo "### 📚 Documentation" >> changelog_entry.md
+            echo "- $(echo "$commit" | sed 's/^docs[^:]*: //')" >> changelog_entry.md
+          fi
+        done
+        
+        echo "" >> changelog_entry.md
+    
+    - name: Commit version bump
+      if: steps.new_version.outputs.changed == 'true'
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new }}"
+        
+        git add Cargo.toml Cargo.lock
+        git commit -m "chore: bump version to $NEW_VERSION [skip-ci]"
+        git tag "v$NEW_VERSION"
+        git push origin main
+        git push origin "v$NEW_VERSION"
+    
+    - name: Create GitHub Release
+      if: steps.new_version.outputs.changed == 'true'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.new_version.outputs.new }}
+        release_name: Release v${{ steps.new_version.outputs.new }}
+        body_path: changelog_entry.md
+        draft: false
+        prerelease: false
+    
+    outputs:
+      version_changed: ${{ steps.new_version.outputs.changed }}
+      new_version: ${{ steps.new_version.outputs.new }}
