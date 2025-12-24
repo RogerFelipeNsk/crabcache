@@ -1,0 +1,89 @@
+# CrabCache Configuration for Extreme Memory Test (32MB Container)
+
+# Server settings
+bind_addr = "0.0.0.0"
+port = 7000
+
+# Shard configuration optimized for 32MB container
+num_shards = 1  # Single shard to maximize available memory
+max_memory_per_shard = 25000000  # 25MB (leave 7MB for overhead)
+
+# Persistence settings (disabled for memory test)
+enable_wal = false
+wal_dir = "./data/wal"
+
+# WAL configuration (disabled)
+[wal]
+max_segment_size = 67108864
+buffer_size = 4096
+flush_interval_ms = 1000
+sync_policy = "none"
+
+# Metrics configuration
+[metrics]
+enabled = true
+path = "/metrics"
+port = 7001
+
+# Security configuration (minimal for test)
+[security]
+enable_auth = false
+allowed_ips = []
+enable_tls = false
+max_command_size = 1048576
+
+# Rate limiting configuration (disabled for test)
+[rate_limiting]
+enabled = false
+max_requests_per_second = 10000
+burst_capacity = 1000
+window_seconds = 1
+
+# Connection configuration (optimized for test)
+[connection]
+max_connections = 100
+connection_timeout_seconds = 30
+keepalive_timeout_seconds = 300
+tcp_nodelay = true
+tcp_recv_buffer_size = 32768  # 32KB
+tcp_send_buffer_size = 32768  # 32KB
+
+# Pipeline configuration
+[connection.pipeline]
+enabled = true
+max_batch_size = 32
+buffer_size = 8192  # 8KB
+timeout_ms = 50
+
+# Logging configuration (minimal for test)
+[logging]
+level = "warn"  # Reduce logging overhead
+format = "json"
+enable_file = false
+file_path = "./logs/crabcache.log"
+max_file_size_mb = 10
+max_files = 2
+
+# Eviction policy configuration (OPTIMIZED FOR 32MB)
+[eviction]
+# Enable TinyLFU eviction algorithm
+enabled = true
+
+# Proportion of cache dedicated to Window LRU (5% for better admission)
+window_ratio = 0.05
+
+# Count-Min Sketch configuration (smaller for memory efficiency)
+sketch_width = 512   # Reduced from 1024
+sketch_depth = 4
+
+# Memory pressure thresholds (MUCH MORE TOLERANT)
+memory_high_watermark = 0.95  # Start eviction at 95% (was 80%)
+memory_low_watermark = 0.85   # Stop eviction at 85% (was 60%)
+
+# Frequency sketch reset interval (longer for stability)
+reset_interval_secs = 7200  # 2 hours (was 1 hour)
+
+# Maximum cache capacity per shard (REALISTIC FOR 25MB)
+# Assuming ~1KB per item: 25MB / 1KB = ~25,000 items theoretical
+# But with overhead, metadata, etc., use conservative estimate
+max_capacity = 5000  # 5K items should fit comfortably in 25MB

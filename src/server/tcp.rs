@@ -5,6 +5,7 @@ use crate::protocol::{ProtocolParser, ProtocolSerializer, BinaryProtocol, Pipeli
 use crate::protocol::commands::Response;
 use crate::router::ShardRouter;
 use crate::shard::optimized_manager::OptimizedShardManager;
+use crate::shard::eviction_manager::EvictionShardManager;
 use crate::shard::WALShardManager;
 use crate::metrics::SharedMetrics;
 use crate::server::MetricsServer;
@@ -25,6 +26,7 @@ use connection_metrics::{ConnectionMetrics, ConnectionGuard, CommandTimer};
 /// Enum para diferentes tipos de shard manager
 pub enum ShardManagerType {
     Optimized(Arc<OptimizedShardManager>),
+    Eviction(Arc<EvictionShardManager>),
     WAL(Arc<WALShardManager>),
 }
 
@@ -32,6 +34,7 @@ impl ShardManagerType {
     pub async fn process_command(&self, command: crate::protocol::commands::Command) -> Response {
         match self {
             ShardManagerType::Optimized(manager) => manager.process_command_optimized(command).await,
+            ShardManagerType::Eviction(manager) => manager.process_command(command).await,
             ShardManagerType::WAL(manager) => manager.process_command(command).await,
         }
     }
@@ -69,7 +72,7 @@ impl TcpServer {
         let max_memory_per_shard = config.max_memory_per_shard;
         let router = Arc::new(ShardRouter::new(num_shards, max_memory_per_shard));
         
-        // Choose shard manager based on WAL configuration
+        // Choose shard manager based on configuration
         let shard_manager = if config.enable_wal {
             info!("Initializing with WAL-enabled shard manager");
             
@@ -85,7 +88,7 @@ impl TcpServer {
             // Create eviction config
             let eviction_config = config.eviction.clone();
             
-            // Try to create WAL manager, fallback to optimized if it fails
+            // Try to create WAL manager, fallback to eviction if it fails
             match WALShardManager::new_with_recovery(
                 num_shards,
                 max_memory_per_shard,
@@ -100,13 +103,25 @@ impl TcpServer {
                     ShardManagerType::WAL(Arc::new(wal_manager))
                 }
                 Err(e) => {
-                    error!("Failed to initialize WAL manager, falling back to optimized: {}", e);
-                    let optimized_manager = OptimizedShardManager::new(num_shards, max_memory_per_shard);
-                    ShardManagerType::Optimized(Arc::new(optimized_manager))
+                    error!("Failed to initialize WAL manager, falling back to eviction: {}", e);
+                    let eviction_manager = EvictionShardManager::new(
+                        num_shards,
+                        max_memory_per_shard,
+                        config.eviction.clone(),
+                    ).map_err(|e| format!("Failed to create eviction manager: {}", e))?;
+                    ShardManagerType::Eviction(Arc::new(eviction_manager))
                 }
             }
+        } else if config.eviction.enabled {
+            info!("Initializing with eviction-enabled shard manager (TinyLFU)");
+            let eviction_manager = EvictionShardManager::new(
+                num_shards,
+                max_memory_per_shard,
+                config.eviction.clone(),
+            ).map_err(|e| format!("Failed to create eviction manager: {}", e))?;
+            ShardManagerType::Eviction(Arc::new(eviction_manager))
         } else {
-            info!("Initializing with optimized shard manager (WAL disabled)");
+            info!("Initializing with optimized shard manager (no eviction)");
             let optimized_manager = OptimizedShardManager::new(num_shards, max_memory_per_shard);
             ShardManagerType::Optimized(Arc::new(optimized_manager))
         };
@@ -123,6 +138,10 @@ impl TcpServer {
         // Get shared metrics based on manager type
         let shared_metrics = match &shard_manager {
             ShardManagerType::Optimized(manager) => manager.get_shared_metrics(),
+            ShardManagerType::Eviction(_) => {
+                // For eviction manager, create default shared metrics
+                crate::metrics::create_shared_metrics(num_shards)
+            }
             ShardManagerType::WAL(_) => {
                 // For WAL manager, create default shared metrics
                 crate::metrics::create_shared_metrics(num_shards)
@@ -141,6 +160,9 @@ impl TcpServer {
         match &shard_manager {
             ShardManagerType::Optimized(_) => {
                 info!("  - OptimizedShardManager with SIMD, lock-free, zero-copy");
+            }
+            ShardManagerType::Eviction(_) => {
+                info!("  - EvictionShardManager with TinyLFU eviction system");
             }
             ShardManagerType::WAL(_) => {
                 info!("  - WALShardManager with TinyLFU eviction and persistence");
@@ -248,6 +270,7 @@ impl TcpServer {
                     let router = Arc::clone(&self.router);
                     let shard_manager = match &self.shard_manager {
                         ShardManagerType::Optimized(manager) => ShardManagerType::Optimized(Arc::clone(manager)),
+                        ShardManagerType::Eviction(manager) => ShardManagerType::Eviction(Arc::clone(manager)),
                         ShardManagerType::WAL(manager) => ShardManagerType::WAL(Arc::clone(manager)),
                     };
                     let buffer_pool = Arc::clone(&self.buffer_pool);

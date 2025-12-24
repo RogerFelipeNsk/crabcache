@@ -118,3 +118,18 @@ reset_interval_secs = 3600  # 1 hour
 
 # Maximum cache capacity per shard (items)
 max_capacity = 10000
+
+# Eviction strategy: "batch" for aggressive batch eviction, "gradual" for item-by-item
+eviction_strategy = "gradual"
+
+# Batch size for batch eviction (number of items to evict at once)
+batch_eviction_size = 100
+
+# Minimum items to keep in cache during aggressive eviction
+min_items_threshold = 10
+
+# Frequency threshold multiplier for admission policy (higher = more selective)
+admission_threshold_multiplier = 1.0
+
+# Enable adaptive eviction based on memory pressure
+adaptive_eviction = true

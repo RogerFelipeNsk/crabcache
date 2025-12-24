@@ -426,6 +426,114 @@ impl Config {
             self.logging.format = log_format;
             println!("Log format from environment: {}", self.logging.format);
         }
+        
+        // Memory and shard configuration
+        if let Ok(num_shards) = std::env::var("CRABCACHE_NUM_SHARDS") {
+            if let Ok(shards) = num_shards.parse::<usize>() {
+                self.num_shards = Some(shards);
+                println!("Number of shards from environment: {}", shards);
+            }
+        }
+        
+        if let Ok(max_memory) = std::env::var("CRABCACHE_MAX_MEMORY_PER_SHARD") {
+            if let Ok(memory) = max_memory.parse::<usize>() {
+                self.max_memory_per_shard = memory;
+                println!("Max memory per shard from environment: {}", memory);
+            }
+        }
+        
+        // Eviction configuration
+        if let Ok(enabled) = std::env::var("CRABCACHE_EVICTION_ENABLED") {
+            if let Ok(eviction_enabled) = enabled.parse::<bool>() {
+                self.eviction.enabled = eviction_enabled;
+                println!("Eviction enabled from environment: {}", eviction_enabled);
+            }
+        }
+        
+        if let Ok(max_capacity) = std::env::var("CRABCACHE_EVICTION_MAX_CAPACITY") {
+            if let Ok(capacity) = max_capacity.parse::<usize>() {
+                self.eviction.max_capacity = capacity;
+                println!("Eviction max capacity from environment: {}", capacity);
+            }
+        }
+        
+        if let Ok(window_ratio) = std::env::var("CRABCACHE_EVICTION_WINDOW_RATIO") {
+            if let Ok(ratio) = window_ratio.parse::<f64>() {
+                self.eviction.window_ratio = ratio;
+                println!("Eviction window ratio from environment: {}", ratio);
+            }
+        }
+        
+        if let Ok(high_watermark) = std::env::var("CRABCACHE_EVICTION_HIGH_WATERMARK") {
+            if let Ok(watermark) = high_watermark.parse::<f64>() {
+                self.eviction.memory_high_watermark = watermark;
+                println!("Eviction high watermark from environment: {}", watermark);
+            }
+        }
+        
+        if let Ok(low_watermark) = std::env::var("CRABCACHE_EVICTION_LOW_WATERMARK") {
+            if let Ok(watermark) = low_watermark.parse::<f64>() {
+                self.eviction.memory_low_watermark = watermark;
+                println!("Eviction low watermark from environment: {}", watermark);
+            }
+        }
+        
+        if let Ok(sketch_width) = std::env::var("CRABCACHE_EVICTION_SKETCH_WIDTH") {
+            if let Ok(width) = sketch_width.parse::<usize>() {
+                self.eviction.sketch_width = width;
+                println!("Eviction sketch width from environment: {}", width);
+            }
+        }
+        
+        if let Ok(sketch_depth) = std::env::var("CRABCACHE_EVICTION_SKETCH_DEPTH") {
+            if let Ok(depth) = sketch_depth.parse::<usize>() {
+                self.eviction.sketch_depth = depth;
+                println!("Eviction sketch depth from environment: {}", depth);
+            }
+        }
+        
+        if let Ok(reset_interval) = std::env::var("CRABCACHE_EVICTION_RESET_INTERVAL") {
+            if let Ok(interval) = reset_interval.parse::<u64>() {
+                self.eviction.reset_interval_secs = interval;
+                println!("Eviction reset interval from environment: {}s", interval);
+            }
+        }
+        
+        // New eviction strategy configurations
+        if let Ok(strategy) = std::env::var("CRABCACHE_EVICTION_STRATEGY") {
+            if ["batch", "gradual"].contains(&strategy.as_str()) {
+                self.eviction.eviction_strategy = strategy.clone();
+                println!("Eviction strategy from environment: {}", strategy);
+            }
+        }
+        
+        if let Ok(batch_size) = std::env::var("CRABCACHE_EVICTION_BATCH_SIZE") {
+            if let Ok(size) = batch_size.parse::<usize>() {
+                self.eviction.batch_eviction_size = size;
+                println!("Eviction batch size from environment: {}", size);
+            }
+        }
+        
+        if let Ok(min_threshold) = std::env::var("CRABCACHE_EVICTION_MIN_ITEMS") {
+            if let Ok(threshold) = min_threshold.parse::<usize>() {
+                self.eviction.min_items_threshold = threshold;
+                println!("Eviction min items threshold from environment: {}", threshold);
+            }
+        }
+        
+        if let Ok(multiplier) = std::env::var("CRABCACHE_EVICTION_ADMISSION_MULTIPLIER") {
+            if let Ok(mult) = multiplier.parse::<f64>() {
+                self.eviction.admission_threshold_multiplier = mult;
+                println!("Eviction admission multiplier from environment: {}", mult);
+            }
+        }
+        
+        if let Ok(adaptive) = std::env::var("CRABCACHE_EVICTION_ADAPTIVE") {
+            if let Ok(enabled) = adaptive.parse::<bool>() {
+                self.eviction.adaptive_eviction = enabled;
+                println!("Adaptive eviction from environment: {}", enabled);
+            }
+        }
     }
 
     /// Get number of shards (CPU count if not specified)

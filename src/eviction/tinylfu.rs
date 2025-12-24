@@ -151,13 +151,16 @@ impl TinyLFU {
         Self::new(config).expect("Default config should be valid")
     }
     
-    /// Check if an item should be admitted to the cache
+    /// Check if an item should be admitted to the cache (improved with threshold multiplier)
     fn should_admit(&self, candidate_key: &str, victim_key: &str) -> bool {
         let candidate_freq = self.frequency_sketch.estimate(candidate_key);
         let victim_freq = self.frequency_sketch.estimate(victim_key);
         
-        // Admit if candidate has higher or equal frequency
-        candidate_freq >= victim_freq
+        // Apply admission threshold multiplier for more selective admission
+        let threshold = (victim_freq as f64 * self.config.admission_threshold_multiplier) as u32;
+        
+        // Admit if candidate has higher frequency than the adjusted threshold
+        candidate_freq >= threshold
     }
     
     /// Record access to a key in the frequency sketch (optimized)
@@ -215,11 +218,58 @@ impl TinyLFU {
         self.metrics.set_main_size(self.main_lru.len());
     }
     
-    /// Force eviction of items to free space
+    /// Force eviction of items to free space (improved with strategy support)
     pub fn evict_items(&mut self, count: usize) -> Vec<(String, Vec<u8>)> {
         let mut evicted = Vec::with_capacity(count);
         
-        // First evict from main LRU
+        // Respect minimum items threshold
+        let current_size = self.len();
+        if current_size <= self.config.min_items_threshold {
+            return evicted; // Don't evict if we're at minimum threshold
+        }
+        
+        let max_evictable = current_size - self.config.min_items_threshold;
+        let actual_count = count.min(max_evictable);
+        
+        if self.config.is_batch_eviction() {
+            // Batch eviction: remove items in larger batches for better performance
+            self.evict_batch(actual_count, &mut evicted);
+        } else {
+            // Gradual eviction: remove items one by one with more careful selection
+            self.evict_gradual(actual_count, &mut evicted);
+        }
+        
+        self.update_size_metrics();
+        evicted
+    }
+    
+    /// Batch eviction strategy - fast but less precise
+    fn evict_batch(&mut self, count: usize, evicted: &mut Vec<(String, Vec<u8>)>) {
+        // Prioritize evicting from main LRU first (older, less frequently accessed)
+        let main_evict_count = count.min(self.main_lru.len());
+        for _ in 0..main_evict_count {
+            if let Some(item) = self.main_lru.remove_lru() {
+                evicted.push(item);
+                self.metrics.record_eviction();
+            }
+        }
+        
+        // If we still need to evict more, evict from window LRU
+        let remaining = count - evicted.len();
+        for _ in 0..remaining {
+            if let Some(item) = self.window_lru.remove_lru() {
+                evicted.push(item);
+                self.metrics.record_eviction();
+            } else {
+                break; // No more items to evict
+            }
+        }
+    }
+    
+    /// Gradual eviction strategy - slower but more precise
+    fn evict_gradual(&mut self, count: usize, evicted: &mut Vec<(String, Vec<u8>)>) {
+        // For gradual eviction, we're more selective about what to evict
+        // Start with main LRU (established items with lower frequency)
         for _ in 0..count {
             if let Some(item) = self.main_lru.remove_lru() {
                 evicted.push(item);
@@ -231,9 +281,41 @@ impl TinyLFU {
                 break; // No more items to evict
             }
         }
+    }
+    
+    /// Adaptive eviction based on memory pressure
+    pub fn adaptive_evict(&mut self, memory_pressure: f64) -> Vec<(String, Vec<u8>)> {
+        if !self.config.adaptive_eviction {
+            return Vec::new();
+        }
         
-        self.update_size_metrics();
-        evicted
+        let current_size = self.len();
+        if current_size <= self.config.min_items_threshold {
+            return Vec::new();
+        }
+        
+        // Calculate eviction count based on memory pressure
+        let pressure_factor = if memory_pressure > self.config.memory_high_watermark {
+            // High pressure: more aggressive eviction
+            let excess_pressure = memory_pressure - self.config.memory_high_watermark;
+            let max_pressure = 1.0 - self.config.memory_high_watermark;
+            1.0 + (excess_pressure / max_pressure) * 2.0 // Up to 3x more aggressive
+        } else {
+            // Normal pressure: standard eviction
+            1.0
+        };
+        
+        let base_evict_count = if self.config.is_batch_eviction() {
+            self.config.batch_eviction_size
+        } else {
+            10 // Gradual eviction with small batches under pressure
+        };
+        
+        let evict_count = ((base_evict_count as f64) * pressure_factor) as usize;
+        let max_evictable = current_size - self.config.min_items_threshold;
+        let actual_count = evict_count.min(max_evictable);
+        
+        self.evict_items(actual_count)
     }
     
     /// Batch PUT operations for better performance

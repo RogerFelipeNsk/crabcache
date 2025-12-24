@@ -29,6 +29,21 @@ pub struct EvictionConfig {
     
     /// Enable/disable TinyLFU algorithm
     pub enabled: bool,
+    
+    /// Eviction strategy: "batch" for aggressive batch eviction, "gradual" for item-by-item
+    pub eviction_strategy: String,
+    
+    /// Batch size for batch eviction (number of items to evict at once)
+    pub batch_eviction_size: usize,
+    
+    /// Minimum items to keep in cache during aggressive eviction
+    pub min_items_threshold: usize,
+    
+    /// Frequency threshold multiplier for admission policy (higher = more selective)
+    pub admission_threshold_multiplier: f64,
+    
+    /// Enable adaptive eviction based on memory pressure
+    pub adaptive_eviction: bool,
 }
 
 impl Default for EvictionConfig {
@@ -42,6 +57,11 @@ impl Default for EvictionConfig {
             reset_interval_secs: 3600,    // 1 hour
             max_capacity: 10000,       // 10K items per shard
             enabled: true,
+            eviction_strategy: "gradual".to_string(), // Default to gradual eviction
+            batch_eviction_size: 100,  // Evict 100 items at once in batch mode
+            min_items_threshold: 10,   // Keep at least 10 items
+            admission_threshold_multiplier: 1.0, // Standard admission policy
+            adaptive_eviction: true,   // Enable adaptive eviction
         }
     }
 }
@@ -78,6 +98,22 @@ impl EvictionConfig {
             return Err("max_capacity must be greater than 0".to_string());
         }
         
+        if !["batch", "gradual"].contains(&self.eviction_strategy.as_str()) {
+            return Err("eviction_strategy must be 'batch' or 'gradual'".to_string());
+        }
+        
+        if self.batch_eviction_size == 0 {
+            return Err("batch_eviction_size must be greater than 0".to_string());
+        }
+        
+        if self.min_items_threshold >= self.max_capacity {
+            return Err("min_items_threshold must be less than max_capacity".to_string());
+        }
+        
+        if self.admission_threshold_multiplier < 0.0 {
+            return Err("admission_threshold_multiplier must be non-negative".to_string());
+        }
+        
         Ok(())
     }
     
@@ -89,6 +125,25 @@ impl EvictionConfig {
     /// Calculate main cache size based on total capacity
     pub fn main_size(&self) -> usize {
         self.max_capacity - self.window_size()
+    }
+    
+    /// Check if using batch eviction strategy
+    pub fn is_batch_eviction(&self) -> bool {
+        self.eviction_strategy == "batch"
+    }
+    
+    /// Check if using gradual eviction strategy
+    pub fn is_gradual_eviction(&self) -> bool {
+        self.eviction_strategy == "gradual"
+    }
+    
+    /// Get effective batch size based on strategy
+    pub fn effective_batch_size(&self) -> usize {
+        if self.is_batch_eviction() {
+            self.batch_eviction_size
+        } else {
+            1 // Gradual eviction processes one item at a time
+        }
     }
 }
 

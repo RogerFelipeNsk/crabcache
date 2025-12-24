@@ -149,49 +149,84 @@ impl ProtocolParser {
         // Convert bytes to string for parsing
         let input = str::from_utf8(bytes)?.trim();
         
-        // Split command into parts
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        if parts.is_empty() {
+        // Handle empty input
+        if input.is_empty() {
             return Err("Empty command".into());
         }
         
-        let cmd = parts[0].to_uppercase();
+        // Find the first space to separate command from arguments
+        let (cmd_str, args) = if let Some(space_pos) = input.find(' ') {
+            (&input[..space_pos], &input[space_pos + 1..])
+        } else {
+            (input, "")
+        };
+        
+        let cmd = cmd_str.to_uppercase();
         
         match cmd.as_str() {
             "PING" => Ok(Command::Ping),
             "PUT" => {
-                if parts.len() < 3 {
+                if args.is_empty() {
                     return Err("PUT requires key and value".into());
                 }
-                let key = Bytes::from(parts[1].to_string());
-                let value = Bytes::from(parts[2].to_string());
-                let ttl = if parts.len() > 3 {
-                    Some(parts[3].parse::<u64>()?)
+                
+                // Find the key (first argument)
+                let (key_str, remaining) = if let Some(space_pos) = args.find(' ') {
+                    (&args[..space_pos], &args[space_pos + 1..])
+                } else {
+                    return Err("PUT requires key and value".into());
+                };
+                
+                if remaining.is_empty() {
+                    return Err("PUT requires key and value".into());
+                }
+                
+                // For PUT, the value is everything after the key until the next space (if TTL is provided)
+                let (value_str, ttl_str) = if let Some(space_pos) = remaining.find(' ') {
+                    (&remaining[..space_pos], Some(&remaining[space_pos + 1..]))
+                } else {
+                    (remaining, None)
+                };
+                
+                let key = Bytes::from(key_str.to_string());
+                let value = Bytes::from(value_str.to_string());
+                
+                // Parse TTL if provided
+                let ttl = if let Some(ttl_str) = ttl_str {
+                    ttl_str.trim().parse::<u64>().ok()
                 } else {
                     None
                 };
+                
                 Ok(Command::Put { key, value, ttl })
             }
             "GET" => {
-                if parts.len() < 2 {
+                if args.is_empty() {
                     return Err("GET requires key".into());
                 }
-                let key = Bytes::from(parts[1].to_string());
+                let key = Bytes::from(args.trim().to_string());
                 Ok(Command::Get { key })
             }
             "DEL" => {
-                if parts.len() < 2 {
+                if args.is_empty() {
                     return Err("DEL requires key".into());
                 }
-                let key = Bytes::from(parts[1].to_string());
+                let key = Bytes::from(args.trim().to_string());
                 Ok(Command::Del { key })
             }
             "EXPIRE" => {
-                if parts.len() < 3 {
+                if args.is_empty() {
                     return Err("EXPIRE requires key and ttl".into());
                 }
-                let key = Bytes::from(parts[1].to_string());
-                let ttl = parts[2].parse::<u64>()?;
+                
+                let (key_str, ttl_str) = if let Some(space_pos) = args.find(' ') {
+                    (&args[..space_pos], &args[space_pos + 1..])
+                } else {
+                    return Err("EXPIRE requires key and ttl".into());
+                };
+                
+                let key = Bytes::from(key_str.to_string());
+                let ttl = ttl_str.trim().parse::<u64>()?;
                 Ok(Command::Expire { key, ttl })
             }
             "STATS" => Ok(Command::Stats),

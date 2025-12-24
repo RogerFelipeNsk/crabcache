@@ -1,6 +1,6 @@
 [package]
 name = "crabcache"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 authors = ["Roger Felipe <rogerfelipe.nsk@gmail.com>"]
 description = "Ultra-high-performance cache server written in Rust - Educational project"

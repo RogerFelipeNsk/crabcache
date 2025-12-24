@@ -33,17 +33,17 @@ FROM debian:bookworm-slim
 
 # Metadata labels
 LABEL maintainer="Roger Felipe <rogerfelipe.nsk@gmail.com>"
-LABEL version="0.0.1"
-LABEL description="Ultra-high-performance cache server written in Rust - Educational project"
+LABEL version="0.0.2"
+LABEL description="Ultra-high-performance cache server with configurable eviction strategies - Educational project"
 LABEL org.opencontainers.image.title="CrabCache"
-LABEL org.opencontainers.image.description="Ultra-high-performance cache server with pipelining support - Educational project"
-LABEL org.opencontainers.image.version="0.0.1"
+LABEL org.opencontainers.image.description="Ultra-high-performance cache server with TinyLFU eviction strategies and pipelining support - Educational project"
+LABEL org.opencontainers.image.version="0.0.2"
 LABEL org.opencontainers.image.authors="Roger Felipe <rogerfelipe.nsk@gmail.com>"
 LABEL org.opencontainers.image.url="https://github.com/RogerFelipeNsk/crabcache"
 LABEL org.opencontainers.image.documentation="https://github.com/RogerFelipeNsk/crabcache/blob/main/README.md"
 LABEL org.opencontainers.image.source="https://github.com/RogerFelipeNsk/crabcache"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.created="2025-12-23"
+LABEL org.opencontainers.image.created="2025-12-24"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \

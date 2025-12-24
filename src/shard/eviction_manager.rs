@@ -163,7 +163,7 @@ impl EvictionShardManager {
             let memory_stat = &memory_stats[i];
             
             let mut shard_stat = serde_json::Map::new();
-            shard_stat.insert("shard_id".to_string(), shard_stat.get("shard_id").unwrap_or(&serde_json::Value::Number(i.into())).clone());
+            shard_stat.insert("shard_id".to_string(), serde_json::Value::Number(i.into()));
             shard_stat.insert("cache_hits".to_string(), eviction_metrics.cache_hits.into());
             shard_stat.insert("cache_misses".to_string(), eviction_metrics.cache_misses.into());
             shard_stat.insert("hit_ratio".to_string(), 
@@ -177,6 +177,10 @@ impl EvictionShardManager {
             shard_stat.insert("memory_limit".to_string(), memory_stat.memory_limit.into());
             shard_stat.insert("memory_pressure".to_string(), 
                             serde_json::Number::from_f64(memory_stat.pressure_level).unwrap().into());
+            
+            // Add items count from TinyLFU cache
+            let items_count = shard.eviction_cache.read().unwrap().len();
+            shard_stat.insert("items".to_string(), items_count.into());
             
             shard_stats.push(serde_json::Value::Object(shard_stat));
         }
