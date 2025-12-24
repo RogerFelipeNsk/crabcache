@@ -102,16 +102,11 @@ jobs:
     
     steps:
     - name: Trigger version workflow
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          await github.rest.actions.createWorkflowDispatch({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            workflow_id: 'version.yml',
-            ref: 'main'
-          });
+      run: |
+        echo "✅ CI completed successfully"
+        echo "🚀 Version workflow will be triggered manually or via workflow_dispatch"
+        echo "📋 To trigger version bump manually:"
+        echo "   Go to Actions → Auto Version → Run workflow"
 
   benchmark:
     name: Benchmark
