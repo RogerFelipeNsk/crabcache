@@ -1,0 +1,58 @@
+# Docker ignore file for CrabCache
+
+# Rust build artifacts
+target/
+Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+docs/
+*.md
+!README.md
+
+# Test and benchmark results
+benchmark_results/
+test_results/
+
+# Scripts (not needed in runtime)
+scripts/
+!scripts/test_pipeline.py
+
+# Docker files (not needed in container)
+docker/
+Dockerfile*
+docker-compose*.yml
+
+# CI/CD
+.github/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Development files
+.env
+.env.local
+.env.development
+
+# Kiro IDE files
+.kiro/

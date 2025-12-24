@@ -1,12 +1,12 @@
 [package]
 name = "crabcache"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
-authors = ["CrabCache Team"]
-description = "Predictable, Memory-Efficient Cache Engine"
+authors = ["Roger Felipe <rogerfelipe.nsk@gmail.com>"]
+description = "Ultra-high-performance cache server written in Rust - Educational project"
 license = "MIT"
-repository = "https://github.com/your-org/crabcache"
-keywords = ["cache", "redis", "performance", "rust"]
+repository = "https://github.com/RogerFelipeNsk/crabcache"
+keywords = ["cache", "redis", "performance", "rust", "educational"]
 categories = ["caching", "database"]
 
 [dependencies]

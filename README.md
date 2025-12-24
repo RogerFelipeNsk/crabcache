@@ -1,29 +1,35 @@
 # 🦀 CrabCache
 
-[![Rust](https://img.shields.io/badge/rust-1.92+-orange.svg)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Performance](https://img.shields.io/badge/performance-219%2C540%2B%20ops%2Fsec-green.svg)](#performance)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker/Dockerfile)
+<div align="center">
+  <img src="assets/logo.png" alt="CrabCache Logo" width="200" height="200">
+  
+  [![Rust](https://img.shields.io/badge/rust-1.92+-orange.svg)](https://www.rust-lang.org)
+  [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+  [![Version](https://img.shields.io/badge/version-0.0.1-green.svg)](#version)
+  [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker/Dockerfile)
+  [![GitHub](https://img.shields.io/badge/github-RogerFelipeNsk%2Fcrabcache-black.svg)](https://github.com/RogerFelipeNsk/crabcache)
+</div>
+
+> **Importante**: Este sistema foi desenvolvido através de VibeCoding para fins de estudo. As informações e benchmarks apresentados podem não refletir performance real em produção e devem ser validados independentemente.
 
 **CrabCache** é um sistema de cache moderno escrito em Rust, projetado para ser mais previsível que Redis e Dragonfly, com melhor eficiência de memória e verdadeiro suporte multi-core.
 
 ## 🚀 Características Principais
 
 ### ⚡ Performance Extrema
-- **219,540+ ops/sec** com pipelining (batch de 16 comandos)
-- **12.8x melhoria** sobre comandos únicos
-- **5.9x mais rápido** que Redis com pipelining
-- **P99 < 0.02ms** latência ultra-baixa
-- **Zero-copy operations** com SIMD otimizado
-- **Lock-free data structures** para máxima concorrência
+- **Projeto Educacional**: Desenvolvido para aprendizado de Rust e sistemas de cache
+- **Pipeline Processing**: Suporte a processamento em lote de comandos
+- **Arquitetura Moderna**: Implementação com foco em aprendizado de conceitos avançados
+- **Zero-copy operations** com SIMD otimizado (conceitual)
+- **Lock-free data structures** para estudo de concorrência
 
 ### 🚀 Pipelining Avançado
-- **Processamento em lote** de até 1000 comandos
+- **Processamento em lote** de múltiplos comandos
 - **Auto-detecção de protocolo** (texto/binário)
-- **Batching otimizado** com tamanho ideal de 16 comandos
+- **Batching otimizado** para demonstração de conceitos
 - **Fallback inteligente** para comandos únicos
 - **Configuração flexível** via TOML e variáveis de ambiente
-- **Métricas de pipeline** integradas
+- **Métricas de pipeline** para monitoramento educacional
 
 ### 🧠 Eviction Inteligente
 - **Algoritmo TinyLFU** com Count-Min Sketch
@@ -55,48 +61,52 @@
 
 ## 📈 Performance Benchmarks
 
-### Resultados Atuais com Pipelining (Dezembro 2025)
+> **⚠️ Aviso Educacional**: Os benchmarks apresentados foram obtidos em ambiente de desenvolvimento para fins de aprendizado. Resultados podem variar significativamente em diferentes ambientes e devem ser validados independentemente.
+
+### Resultados Educacionais com Pipelining (Dezembro 2025)
 
 ```
-🚀 CrabCache Pipeline Performance Results
-=========================================
-Single Commands:                17,086 ops/sec
-Pipeline Batch (4 commands):   139,355 ops/sec  (8.2x improvement)
-Pipeline Batch (8 commands):   170,265 ops/sec  (10.0x improvement)
-Pipeline Batch (16 commands):  219,540 ops/sec  (12.8x improvement) 🏆
-Mixed Workload Pipeline:       205,724 ops/sec  (12.0x improvement)
+🦀 CrabCache Educational Performance Results
+============================================
+Single Commands:                ~17,000 ops/sec (ambiente de teste)
+Pipeline Batch (4 commands):   ~139,000 ops/sec (demonstração)
+Pipeline Batch (8 commands):   ~170,000 ops/sec (conceitual)
+Pipeline Batch (16 commands):  ~219,000 ops/sec (teórico) 
+Mixed Workload Pipeline:       ~205,000 ops/sec (simulado)
 
-Latency Results (Pipeline):
-Average Latency:                 0.00ms  (sub-millisecond!)
-P99 Latency (Pipeline):          0.02ms  (ultra-low)
-P99 Latency (Single):            0.20ms
+Latency Results (Ambiente de Desenvolvimento):
+Average Latency:                 ~0.01ms (local)
+P99 Latency (Pipeline):          ~0.02ms (teste)
+P99 Latency (Single):            ~0.20ms (medido)
 
 System Metrics:
-Cache Hit Ratio:                 98.3%
-Success Rate:                    100.0%
-Memory Efficiency:               Optimized
-Concurrent Connections:          1000+
-Optimal Batch Size:              16 commands
+Cache Hit Ratio:                 Variável
+Success Rate:                    Dependente do ambiente
+Memory Efficiency:               Em desenvolvimento
+Concurrent Connections:          Limitado por recursos
+Optimal Batch Size:              16 comandos (configurável)
 ```
 
-### Comparação com Redis (com Pipelining)
+### Comparação Educacional com Redis
 
-| Métrica | CrabCache | Redis | Vantagem |
-|---------|-----------|-------|----------|
-| **Pipeline Ops/sec** | **219,540** | 37,498 | **5.9x FASTER** 🏆 |
-| **Mixed Workload** | **205,724** | ~30,000 | **6.9x FASTER** 🏆 |
-| **Average Latency** | **0.00ms** | ~0.13ms | **100x BETTER** |
-| **P99 Latency** | **0.02ms** | ~0.5ms | **25x BETTER** |
-| Cache Hit Ratio | 98.3% | 87.3% | **1.1x** |
-| Concurrent Connections | 1000+ | 500 | **2x** |
+> **Nota**: Esta comparação é puramente educacional e baseada em testes locais limitados.
 
-### Recursos de Performance
+| Métrica | CrabCache (Educacional) | Redis (Referência) | Observação |
+|---------|-------------------------|-------------------|------------|
+| **Pipeline Ops/sec** | ~219,000 | ~37,500 | **Ambiente controlado** |
+| **Mixed Workload** | ~205,000 | ~30,000 | **Teste local** |
+| **Average Latency** | ~0.01ms | ~0.13ms | **Desenvolvimento** |
+| **P99 Latency** | ~0.02ms | ~0.5ms | **Não validado** |
+| Cache Hit Ratio | Variável | Estabelecido | **Em estudo** |
+| Concurrent Connections | Limitado | Produção | **Educacional** |
 
-- **🚀 Suporte a Pipelining**: Processamento em lote com melhoria de 12.8x
-- **⚡ Latência Ultra-Baixa**: Tempos de resposta sub-milissegundo
-- **🔥 Alto Throughput**: 200,000+ operações por segundo
-- **📊 Performance Consistente**: Latências P99 previsíveis abaixo de 0.02ms
-- **🎯 Batching Otimizado**: Otimização automática do tamanho do lote (16 comandos ideal)
+### Recursos de Performance (Educacionais)
+
+- **🧪 Suporte a Pipelining**: Implementação para aprendizado de batch processing
+- **⚡ Latência Baixa**: Conceitos de otimização em ambiente controlado
+- **🔥 Throughput**: Demonstração de técnicas de alta performance
+- **📊 Métricas**: Sistema de monitoramento para fins educacionais
+- **🎯 Batching**: Estudo de otimização de tamanho de lote
 
 ## 🛠️ Instalação
 
@@ -396,6 +406,29 @@ python3 scripts/benchmark_comparison.py
 - [ ] **Streams**: Redis Streams compatibility
 - [ ] **Modules**: Sistema de plugins
 
+## 📚 Documentação
+
+### Documentação Principal
+- **[Guia de Instalação](docs/INDEX.md)** - Instruções detalhadas de instalação e configuração
+- **[Notas da Versão](docs/RELEASE_NOTES_v0.0.1.md)** - Detalhes da versão educacional atual
+- **[Resumo do Projeto](docs/PROJECT_SUMMARY.md)** - Visão geral completa do projeto educacional
+
+### Arquitetura e Implementação
+- **[Sistema de Eviction](docs/EVICTION_SYSTEM.md)** - Algoritmo TinyLFU e Count-Min Sketch
+- **[Persistência WAL](docs/WAL_PERSISTENCE.md)** - Write-Ahead Log para durabilidade
+- **[Sistema de Segurança](docs/SECURITY_SYSTEM.md)** - Autenticação e controle de acesso
+- **[Pipeline Processing](docs/PIPELINING_EXPLAINED.md)** - Processamento em lote para performance
+
+### Performance e Análise
+- **[Análise de Performance](docs/PERFORMANCE_ANALYSIS.md)** - Benchmarks e otimizações
+- **[Relatório de Pipeline](docs/PIPELINE_PERFORMANCE_REPORT.md)** - Resultados de performance do pipeline
+- **[Plano de Execução](docs/CrabCache-ExecutionPlan.md)** - Roadmap de desenvolvimento
+
+### Guias de Uso
+- **[API Reference](docs/API.md)** - Documentação completa da API
+- **[Docker Guide](docs/DOCKER_HUB_PUBLICATION_GUIDE.md)** - Guia de uso com Docker
+- **[Contribuição](docs/CONTRIBUTING.md)** - Como contribuir para o projeto educacional
+
 ## 🤝 Contribuindo
 
 ### Desenvolvimento
@@ -466,10 +499,9 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 📞 Suporte
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/crabcache/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/crabcache/discussions)
-- **Email**: support@crabcache.io
-- **Discord**: [CrabCache Community](https://discord.gg/crabcache)
+- **Issues**: [GitHub Issues](https://github.com/RogerFelipeNsk/crabcache/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/RogerFelipeNsk/crabcache/discussions)
+- **Email**: rogerfelipensk@gmail.com
 
 ---
 

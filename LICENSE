@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 CrabCache Contributors
+Copyright (c) 2025 Roger Felipe
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,28 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+EDUCATIONAL NOTICE:
+
+This software is developed for educational purposes as part of a learning 
+project in Rust systems programming and cache architecture design. 
+
+While the implementation demonstrates various advanced concepts and techniques,
+it should be considered educational material rather than production-ready 
+software. Any performance claims, benchmarks, or comparisons presented in 
+this project are based on controlled development environments and should be 
+independently validated before any production consideration.
+
+The primary goal of this project is to provide a comprehensive learning 
+resource for:
+- Rust systems programming
+- Cache architecture and algorithms
+- High-performance computing concepts
+- DevOps and containerization practices
+- Software engineering best practices
+
+Users are encouraged to study, modify, and experiment with this code for 
+educational purposes, but should exercise appropriate caution and validation 
+if considering any production use.
