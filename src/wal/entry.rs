@@ -1,8 +1,8 @@
 //! WAL entry format and serialization
 
+use crc32fast::Hasher;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crc32fast::Hasher;
 
 /// WAL operation types
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -41,27 +41,27 @@ impl WALEntry {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_millis() as u64;
-        
+
         let mut entry = Self {
             timestamp,
             shard_id,
             operation,
             checksum: 0,
         };
-        
+
         // Calculate checksum
         entry.checksum = entry.calculate_checksum();
         entry
     }
-    
+
     /// Calculate CRC32 checksum for the entry
     fn calculate_checksum(&self) -> u32 {
         let mut hasher = Hasher::new();
-        
+
         // Hash timestamp, shard_id, and operation data
         hasher.update(&self.timestamp.to_le_bytes());
         hasher.update(&(self.shard_id as u32).to_le_bytes());
-        
+
         match &self.operation {
             Operation::Put { key, value, ttl } => {
                 hasher.update(b"PUT");
@@ -81,26 +81,26 @@ impl WALEntry {
                 hasher.update(&ttl.to_le_bytes());
             }
         }
-        
+
         hasher.finalize()
     }
-    
+
     /// Validate entry checksum
     pub fn validate_checksum(&self) -> bool {
         let expected = self.calculate_checksum();
         self.checksum == expected
     }
-    
+
     /// Serialize entry to bytes
     pub fn serialize(&self) -> Result<Vec<u8>, bincode::Error> {
         bincode::serialize(self)
     }
-    
+
     /// Deserialize entry from bytes
     pub fn deserialize(data: &[u8]) -> Result<Self, bincode::Error> {
         bincode::deserialize(data)
     }
-    
+
     /// Get entry size in bytes (for length prefixing)
     pub fn serialized_size(&self) -> Result<usize, bincode::Error> {
         Ok(self.serialize()?.len())
@@ -123,7 +123,7 @@ pub struct SegmentHeader {
 impl SegmentHeader {
     /// Current WAL format version
     pub const VERSION: u32 = 1;
-    
+
     /// Create new segment header
     pub fn new() -> Self {
         Self {
@@ -136,13 +136,13 @@ impl SegmentHeader {
             checksum: 0,
         }
     }
-    
+
     /// Update entry count and recalculate checksum
     pub fn update_entry_count(&mut self, count: u64) {
         self.entry_count = count;
         self.checksum = self.calculate_checksum();
     }
-    
+
     /// Calculate header checksum
     fn calculate_checksum(&self) -> u32 {
         let mut hasher = Hasher::new();
@@ -151,18 +151,18 @@ impl SegmentHeader {
         hasher.update(&self.entry_count.to_le_bytes());
         hasher.finalize()
     }
-    
+
     /// Validate header checksum
     pub fn validate_checksum(&self) -> bool {
         let expected = self.calculate_checksum();
         self.checksum == expected
     }
-    
+
     /// Serialize header to bytes
     pub fn serialize(&self) -> Result<Vec<u8>, bincode::Error> {
         bincode::serialize(self)
     }
-    
+
     /// Deserialize header from bytes
     pub fn deserialize(data: &[u8]) -> Result<Self, bincode::Error> {
         bincode::deserialize(data)
@@ -180,23 +180,23 @@ mod tests {
             value: b"test_value".to_vec(),
             ttl: Some(3600),
         };
-        
+
         let entry = WALEntry::new(0, operation);
         assert!(entry.validate_checksum());
-        
+
         // Test serialization roundtrip
         let serialized = entry.serialize().unwrap();
         let deserialized = WALEntry::deserialize(&serialized).unwrap();
         assert!(deserialized.validate_checksum());
         assert_eq!(entry.operation, deserialized.operation);
     }
-    
+
     #[test]
     fn test_segment_header() {
         let mut header = SegmentHeader::new();
         header.update_entry_count(100);
         assert!(header.validate_checksum());
-        
+
         // Test serialization roundtrip
         let serialized = header.serialize().unwrap();
         let deserialized = SegmentHeader::deserialize(&serialized).unwrap();

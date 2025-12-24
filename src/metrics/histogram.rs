@@ -16,7 +16,7 @@ impl LatencyHistogram {
 
     pub fn record(&mut self, latency_ms: f64) {
         self.samples.push_back(latency_ms);
-        
+
         // Keep only the most recent samples
         if self.samples.len() > self.max_samples {
             self.samples.pop_front();
@@ -34,7 +34,7 @@ impl LatencyHistogram {
 
         let mut sorted: Vec<f64> = self.samples.iter().cloned().collect();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        
+
         let index = ((p / 100.0) * (sorted.len() - 1) as f64) as usize;
         sorted[index.min(sorted.len() - 1)]
     }
@@ -43,7 +43,7 @@ impl LatencyHistogram {
         if self.samples.is_empty() {
             return 0.0;
         }
-        
+
         self.samples.iter().sum::<f64>() / self.samples.len() as f64
     }
 

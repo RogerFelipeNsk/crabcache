@@ -1,8 +1,8 @@
+use super::histogram::LatencyHistogram;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use super::histogram::LatencyHistogram;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalMetrics {
@@ -118,7 +118,13 @@ impl MetricsCollector {
         }
     }
 
-    pub fn record_operation(&mut self, shard_id: usize, operation: &str, hit: bool, latency_ms: f64) {
+    pub fn record_operation(
+        &mut self,
+        shard_id: usize,
+        operation: &str,
+        hit: bool,
+        latency_ms: f64,
+    ) {
         if shard_id < self.shard_metrics.len() {
             let shard = &self.shard_metrics[shard_id];
             shard.operations_count.fetch_add(1, Ordering::Relaxed);
@@ -130,10 +136,18 @@ impl MetricsCollector {
             }
 
             match operation {
-                "GET" => { shard.get_operations.fetch_add(1, Ordering::Relaxed); },
-                "PUT" => { shard.put_operations.fetch_add(1, Ordering::Relaxed); },
-                "DEL" => { shard.del_operations.fetch_add(1, Ordering::Relaxed); },
-                "EXPIRE" => { shard.expire_operations.fetch_add(1, Ordering::Relaxed); },
+                "GET" => {
+                    shard.get_operations.fetch_add(1, Ordering::Relaxed);
+                }
+                "PUT" => {
+                    shard.put_operations.fetch_add(1, Ordering::Relaxed);
+                }
+                "DEL" => {
+                    shard.del_operations.fetch_add(1, Ordering::Relaxed);
+                }
+                "EXPIRE" => {
+                    shard.expire_operations.fetch_add(1, Ordering::Relaxed);
+                }
                 _ => {}
             }
 
@@ -146,19 +160,25 @@ impl MetricsCollector {
 
     pub fn record_eviction(&self, shard_id: usize, count: u64) {
         if shard_id < self.shard_metrics.len() {
-            self.shard_metrics[shard_id].evictions.fetch_add(count, Ordering::Relaxed);
+            self.shard_metrics[shard_id]
+                .evictions
+                .fetch_add(count, Ordering::Relaxed);
         }
     }
 
     pub fn update_shard_memory(&self, shard_id: usize, memory_bytes: u64) {
         if shard_id < self.shard_metrics.len() {
-            self.shard_metrics[shard_id].memory_used.store(memory_bytes, Ordering::Relaxed);
+            self.shard_metrics[shard_id]
+                .memory_used
+                .store(memory_bytes, Ordering::Relaxed);
         }
     }
 
     pub fn update_shard_items(&self, shard_id: usize, items_count: u64) {
         if shard_id < self.shard_metrics.len() {
-            self.shard_metrics[shard_id].items_count.store(items_count, Ordering::Relaxed);
+            self.shard_metrics[shard_id]
+                .items_count
+                .store(items_count, Ordering::Relaxed);
         }
     }
 
@@ -173,7 +193,7 @@ impl MetricsCollector {
 
     pub fn get_stats(&self) -> StatsResponse {
         let uptime = self.start_time.elapsed().as_secs();
-        
+
         // Calculate totals
         let mut total_operations = 0u64;
         let mut total_hits = 0u64;
@@ -181,7 +201,8 @@ impl MetricsCollector {
         let mut total_memory = 0u64;
         let mut total_items = 0u64;
 
-        let serializable_shards: Vec<SerializableShardMetrics> = self.shard_metrics
+        let serializable_shards: Vec<SerializableShardMetrics> = self
+            .shard_metrics
             .iter()
             .map(|shard| {
                 let metrics = shard.to_serializable();
@@ -226,7 +247,7 @@ impl MetricsCollector {
 
     fn calculate_combined_latency(&self) -> LatencyMetrics {
         let mut all_samples = Vec::new();
-        
+
         for histogram in self.latency_histograms.values() {
             all_samples.extend(histogram.get_samples());
         }

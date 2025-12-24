@@ -1,10 +1,10 @@
 //! WAL persistence example
 
-use crabcache::shard::WALShardManager;
-use crabcache::eviction::EvictionConfig;
-use crabcache::wal::{WALConfig, SyncPolicy};
-use crabcache::protocol::commands::{Command, Response};
 use bytes::Bytes;
+use crabcache::eviction::EvictionConfig;
+use crabcache::protocol::commands::{Command, Response};
+use crabcache::shard::WALShardManager;
+use crabcache::wal::{SyncPolicy, WALConfig};
 use tempfile::TempDir;
 
 #[tokio::main]
@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Create temporary directory for WAL
     let temp_dir = TempDir::new()?;
     let wal_dir = temp_dir.path().to_path_buf();
-    
+
     println!("📁 WAL Directory: {:?}", wal_dir);
 
     // Configure WAL
@@ -37,14 +37,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     };
 
     println!("⚙️  Creating WAL-enabled shard manager...");
-    
+
     // Create WAL-enabled manager
     let (manager, recovery_stats) = WALShardManager::new_with_recovery(
-        2,                    // 2 shards
-        1024 * 1024,         // 1MB per shard
+        2,           // 2 shards
+        1024 * 1024, // 1MB per shard
         eviction_config,
         Some(wal_config),
-    ).await?;
+    )
+    .await?;
 
     if let Some(stats) = recovery_stats {
         println!("📊 Recovery Stats: {:?}", stats);
@@ -166,9 +167,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Simulate recovery by creating a new manager
     println!("\n🔄 Testing recovery...");
     println!("🔄 Creating new manager to test recovery...");
-    
+
     let (recovery_manager, recovery_stats) = WALShardManager::new_with_recovery(
-        2,                    // Same configuration
+        2, // Same configuration
         1024 * 1024,
         EvictionConfig {
             max_capacity: 1000,
@@ -181,12 +182,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             flush_interval_ms: 1000,
             sync_policy: SyncPolicy::Sync,
         }),
-    ).await?;
+    )
+    .await?;
 
     if let Some(stats) = recovery_stats {
         println!("📊 Recovery Stats: {:?}", stats);
         if stats.entries_recovered > 0 {
-            println!("✅ Successfully recovered {} operations!", stats.entries_recovered);
+            println!(
+                "✅ Successfully recovered {} operations!",
+                stats.entries_recovered
+            );
         }
     }
 

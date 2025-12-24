@@ -1,11 +1,11 @@
 //! High-performance protocol serializer with zero-copy optimizations
 
 use super::commands::{Command, Response};
-use bytes::{Bytes, BytesMut, BufMut};
 use crate::utils::varint;
+use bytes::{BufMut, Bytes, BytesMut};
 
 /// High-performance protocol serializer for CrabCache binary protocol
-/// 
+///
 /// Binary Protocol Format:
 /// - Command Type (1 byte)
 /// - Key Length (varint) + Key Data
@@ -36,32 +36,32 @@ impl ProtocolSerializer {
         // Use text format for backward compatibility with existing tests
         Self::serialize_command_text(command)
     }
-    
+
     /// Serialize a response to bytes (uses text format for compatibility)
     pub fn serialize_response(response: &Response) -> crate::Result<Bytes> {
         // Use text format for backward compatibility with existing tests
         Self::serialize_response_text(response)
     }
-    
+
     /// Serialize a command to bytes using optimized binary format
     pub fn serialize_command_binary(command: &Command) -> crate::Result<Bytes> {
         let mut buf = BytesMut::new();
-        
+
         match command {
             Command::Ping => {
                 buf.put_u8(CMD_PING);
             }
             Command::Put { key, value, ttl } => {
                 buf.put_u8(CMD_PUT);
-                
+
                 // Key length + key data (zero-copy reference)
                 varint::encode_varint(key.len() as u64, &mut buf);
                 buf.extend_from_slice(key);
-                
+
                 // Value length + value data (zero-copy reference)
                 varint::encode_varint(value.len() as u64, &mut buf);
                 buf.extend_from_slice(value);
-                
+
                 // TTL (optional)
                 if let Some(ttl_val) = ttl {
                     buf.put_u8(1); // TTL present flag
@@ -93,14 +93,14 @@ impl ProtocolSerializer {
                 buf.put_u8(CMD_METRICS);
             }
         }
-        
+
         Ok(buf.freeze())
     }
-    
+
     /// Serialize a response to bytes using optimized binary format
     pub fn serialize_response_binary(response: &Response) -> crate::Result<Bytes> {
         let mut buf = BytesMut::new();
-        
+
         match response {
             Response::Ok => {
                 buf.put_u8(RESP_OK);
@@ -129,10 +129,10 @@ impl ProtocolSerializer {
                 buf.extend_from_slice(stats_bytes);
             }
         }
-        
+
         Ok(buf.freeze())
     }
-    
+
     /// Text-based serialization for backward compatibility
     pub fn serialize_command_text(command: &Command) -> crate::Result<Bytes> {
         let serialized = match command {
@@ -161,10 +161,10 @@ impl ProtocolSerializer {
             Command::Stats => "STATS\r\n".to_string(),
             Command::Metrics => "METRICS\r\n".to_string(),
         };
-        
+
         Ok(Bytes::from(serialized))
     }
-    
+
     /// Text-based response serialization for backward compatibility
     pub fn serialize_response_text(response: &Response) -> crate::Result<Bytes> {
         let serialized = match response {
@@ -178,7 +178,7 @@ impl ProtocolSerializer {
             }
             Response::Stats(stats) => format!("STATS: {}\r\n", stats),
         };
-        
+
         Ok(Bytes::from(serialized))
     }
 }

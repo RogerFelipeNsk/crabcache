@@ -1,10 +1,10 @@
 //! Native client implementation for CrabCache
-//! 
+//!
 //! This module provides a high-performance native client that uses
 //! exclusively the binary protocol for maximum performance.
 
-pub mod pool;
 pub mod native;
+pub mod pool;
 
 pub use native::NativeClient;
 pub use pool::{ConnectionPool, PoolConfig, PooledConnection};
@@ -60,7 +60,7 @@ impl ClientMetrics {
             self.successful_requests as f64 / self.total_requests as f64 * 100.0
         }
     }
-    
+
     pub fn average_latency_ms(&self) -> f64 {
         if self.successful_requests == 0 {
             0.0
@@ -68,7 +68,7 @@ impl ClientMetrics {
             self.total_latency_ms as f64 / self.successful_requests as f64
         }
     }
-    
+
     pub fn binary_protocol_rate(&self) -> f64 {
         if self.total_requests == 0 {
             0.0
@@ -83,22 +83,22 @@ impl ClientMetrics {
 pub enum ClientError {
     #[error("Connection failed: {0}")]
     ConnectionFailed(String),
-    
+
     #[error("Protocol error: {0}")]
     ProtocolError(String),
-    
+
     #[error("Timeout error: {0}")]
     TimeoutError(String),
-    
+
     #[error("Pool exhausted")]
     PoolExhausted,
-    
+
     #[error("Binary protocol required but not supported")]
     BinaryProtocolRequired,
-    
+
     #[error("Pipeline error: {0}")]
     PipelineError(String),
-    
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 }

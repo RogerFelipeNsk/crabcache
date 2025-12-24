@@ -222,7 +222,7 @@ impl Dashboard {
             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
         )
     }
-    
+
     fn generate_shard_rows(shards: &[super::collector::SerializableShardMetrics]) -> String {
         shards
             .iter()
@@ -233,7 +233,7 @@ impl Dashboard {
                 } else {
                     0.0
                 };
-                
+
                 let hit_ratio_class = if hit_ratio >= 90.0 {
                     "status-good"
                 } else if hit_ratio >= 70.0 {
@@ -241,7 +241,7 @@ impl Dashboard {
                 } else {
                     "status-error"
                 };
-                
+
                 format!(
                     r#"<tr>
                         <td><strong>Shard {}</strong></td>

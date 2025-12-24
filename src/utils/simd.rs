@@ -1,5 +1,5 @@
 //! SIMD-accelerated operations for CrabCache
-//! 
+//!
 //! This module provides vectorized operations using SIMD instructions
 //! for parsing, key comparison, and hash calculation to maximize performance.
 
@@ -21,18 +21,18 @@ impl SIMDParser {
                 return Self::parse_commands_scalar(data);
             }
         }
-        
+
         // For now, implement basic SIMD-accelerated parsing
         // TODO: Implement full vectorized parsing in Phase 3.2
         Self::parse_commands_scalar(data)
     }
-    
+
     /// Compare two keys using SIMD acceleration
     pub fn compare_keys_simd(key1: &[u8], key2: &[u8]) -> bool {
         if key1.len() != key2.len() {
             return false;
         }
-        
+
         // Use SIMD for keys >= 16 bytes on x86_64
         #[cfg(target_arch = "x86_64")]
         {
@@ -40,11 +40,11 @@ impl SIMDParser {
                 return unsafe { Self::compare_keys_sse2(key1, key2) };
             }
         }
-        
+
         // Fallback to regular comparison
         key1 == key2
     }
-    
+
     /// Calculate hash using SIMD-optimized algorithm
     pub fn hash_key_simd(key: &[u8]) -> u64 {
         #[cfg(target_arch = "x86_64")]
@@ -53,10 +53,10 @@ impl SIMDParser {
                 return unsafe { Self::hash_key_sse2(key) };
             }
         }
-        
+
         Self::hash_key_scalar(key)
     }
-    
+
     /// Validate UTF-8 using SIMD acceleration
     pub fn validate_utf8_simd(data: &[u8]) -> bool {
         #[cfg(target_arch = "x86_64")]
@@ -65,31 +65,31 @@ impl SIMDParser {
                 return unsafe { Self::validate_utf8_sse2(data) };
             }
         }
-        
+
         std::str::from_utf8(data).is_ok()
     }
-    
+
     // Private SIMD implementations (x86_64 only)
-    
+
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse2")]
     unsafe fn compare_keys_sse2(key1: &[u8], key2: &[u8]) -> bool {
         let len = key1.len();
         let chunks = len / 16;
         let remainder = len % 16;
-        
+
         // Compare 16-byte chunks
         for i in 0..chunks {
             let offset = i * 16;
             let a = _mm_loadu_si128(key1.as_ptr().add(offset) as *const __m128i);
             let b = _mm_loadu_si128(key2.as_ptr().add(offset) as *const __m128i);
             let cmp = _mm_cmpeq_epi8(a, b);
-            
+
             if _mm_movemask_epi8(cmp) != 0xFFFF {
                 return false;
             }
         }
-        
+
         // Compare remainder bytes
         if remainder > 0 {
             let offset = chunks * 16;
@@ -99,25 +99,25 @@ impl SIMDParser {
                 }
             }
         }
-        
+
         true
     }
-    
+
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse2")]
     unsafe fn hash_key_sse2(key: &[u8]) -> u64 {
         let mut hash = 0xcbf29ce484222325u64; // FNV-1a offset basis
         const FNV_PRIME: u64 = 0x100000001b3;
-        
+
         let len = key.len();
         let chunks = len / 16;
         let remainder = len % 16;
-        
+
         // Process 16-byte chunks
         for i in 0..chunks {
             let offset = i * 16;
             let chunk = _mm_loadu_si128(key.as_ptr().add(offset) as *const __m128i);
-            
+
             // Extract bytes and hash them
             let bytes: [u8; 16] = std::mem::transmute(chunk);
             for &byte in &bytes {
@@ -125,7 +125,7 @@ impl SIMDParser {
                 hash = hash.wrapping_mul(FNV_PRIME);
             }
         }
-        
+
         // Process remainder
         if remainder > 0 {
             let offset = chunks * 16;
@@ -134,10 +134,10 @@ impl SIMDParser {
                 hash = hash.wrapping_mul(FNV_PRIME);
             }
         }
-        
+
         hash
     }
-    
+
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse2")]
     unsafe fn validate_utf8_sse2(data: &[u8]) -> bool {
@@ -146,30 +146,30 @@ impl SIMDParser {
         // TODO: Implement full SIMD UTF-8 validation
         std::str::from_utf8(data).is_ok()
     }
-    
+
     // Scalar fallback implementations
-    
+
     fn parse_commands_scalar(data: &[u8]) -> crate::Result<Vec<Command>> {
         // For now, parse single command
         // TODO: Implement multi-command parsing
         if data.is_empty() {
             return Ok(Vec::new());
         }
-        
+
         let command = crate::protocol::binary::BinaryProtocol::parse_command(data)?;
         Ok(vec![command])
     }
-    
+
     fn hash_key_scalar(key: &[u8]) -> u64 {
         // FNV-1a hash
         let mut hash = 0xcbf29ce484222325u64;
         const FNV_PRIME: u64 = 0x100000001b3;
-        
+
         for &byte in key {
             hash ^= byte as u64;
             hash = hash.wrapping_mul(FNV_PRIME);
         }
-        
+
         hash
     }
 }
@@ -202,7 +202,7 @@ impl SIMDMetrics {
             avx2_available: false,
         }
     }
-    
+
     pub fn simd_utilization(&self) -> f64 {
         let total_ops = self.vectorized_comparisons + self.fallback_operations;
         if total_ops == 0 {
@@ -254,7 +254,7 @@ impl CPUFeatures {
             avx512f: false,
         }
     }
-    
+
     /// Print CPU capabilities
     pub fn print_capabilities() {
         let caps = Self::detect();
@@ -267,7 +267,7 @@ impl CPUFeatures {
         println!("  AVX: {}", if caps.avx { "✅" } else { "❌" });
         println!("  AVX2: {}", if caps.avx2 { "✅" } else { "❌" });
         println!("  AVX-512F: {}", if caps.avx512f { "✅" } else { "❌" });
-        
+
         let recommended = if caps.avx2 {
             "AVX2 (Excellent performance)"
         } else if caps.sse4_2 {
@@ -277,7 +277,7 @@ impl CPUFeatures {
         } else {
             "No SIMD (Scalar fallback)"
         };
-        
+
         println!("  Recommended: {}", recommended);
     }
 }
@@ -318,7 +318,7 @@ impl SIMDCapabilities {
             "Scalar"
         }
     }
-    
+
     /// Estimate performance multiplier
     pub fn performance_multiplier(&self) -> f64 {
         if self.avx512f {
@@ -340,63 +340,66 @@ impl SIMDCapabilities {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_cpu_feature_detection() {
         let caps = CPUFeatures::detect();
-        
+
         // At least SSE2 should be available on x86_64
         #[cfg(target_arch = "x86_64")]
         assert!(caps.sse2);
-        
+
         println!("Detected capabilities: {:?}", caps);
         println!("Best instruction set: {}", caps.best_instruction_set());
-        println!("Performance multiplier: {:.1}x", caps.performance_multiplier());
+        println!(
+            "Performance multiplier: {:.1}x",
+            caps.performance_multiplier()
+        );
     }
-    
+
     #[test]
     fn test_key_comparison() {
         let key1 = b"test_key_1234567890";
         let key2 = b"test_key_1234567890";
         let key3 = b"different_key_12345";
-        
+
         assert!(SIMDParser::compare_keys_simd(key1, key2));
         assert!(!SIMDParser::compare_keys_simd(key1, key3));
-        
+
         // Test short keys
         let short1 = b"abc";
         let short2 = b"abc";
         let short3 = b"def";
-        
+
         assert!(SIMDParser::compare_keys_simd(short1, short2));
         assert!(!SIMDParser::compare_keys_simd(short1, short3));
     }
-    
+
     #[test]
     fn test_hash_consistency() {
         let key = b"test_key_for_hashing";
-        
+
         let hash1 = SIMDParser::hash_key_simd(key);
         let hash2 = SIMDParser::hash_key_simd(key);
-        
+
         assert_eq!(hash1, hash2);
-        
+
         // Different keys should have different hashes (with high probability)
         let different_key = b"different_key_hash";
         let hash3 = SIMDParser::hash_key_simd(different_key);
-        
+
         assert_ne!(hash1, hash3);
     }
-    
+
     #[test]
     fn test_simd_metrics() {
         let mut metrics = SIMDMetrics::new();
-        
+
         metrics.vectorized_comparisons = 80;
         metrics.fallback_operations = 20;
-        
+
         assert_eq!(metrics.simd_utilization(), 80.0);
-        
+
         println!("SIMD utilization: {:.1}%", metrics.simd_utilization());
         println!("SSE2 available: {}", metrics.sse2_available);
         println!("AVX2 available: {}", metrics.avx2_available);

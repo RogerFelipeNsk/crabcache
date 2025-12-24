@@ -1,9 +1,9 @@
 //! Write-Ahead Log implementation for durability
 
 pub mod entry;
-pub mod writer;
 pub mod reader;
+pub mod writer;
 
-pub use entry::{WALEntry, Operation, SegmentHeader};
-pub use writer::{WALWriter, WALConfig, SyncPolicy, WALError};
-pub use reader::{WALReader, RecoveryStats, WALReplayTarget};
+pub use entry::{Operation, SegmentHeader, WALEntry};
+pub use reader::{RecoveryStats, WALReader, WALReplayTarget};
+pub use writer::{SyncPolicy, WALConfig, WALError, WALWriter};

@@ -1,13 +1,13 @@
 //! WAL writer implementation
 
-use crate::wal::entry::{WALEntry, SegmentHeader, Operation};
+use crate::wal::entry::{Operation, SegmentHeader, WALEntry};
 use std::fs::{File, OpenOptions};
-use std::io::{Write, BufWriter, Seek, SeekFrom};
+use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{mpsc, Mutex};
 use tokio::time::{interval, Duration};
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 
 /// WAL writer configuration
 #[derive(Debug, Clone)]
@@ -40,8 +40,8 @@ impl Default for WALConfig {
         Self {
             wal_dir: PathBuf::from("./data/wal"),
             max_segment_size: 64 * 1024 * 1024, // 64MB
-            buffer_size: 4096, // 4KB
-            flush_interval_ms: 1000, // 1 second
+            buffer_size: 4096,                  // 4KB
+            flush_interval_ms: 1000,            // 1 second
             sync_policy: SyncPolicy::Async,
         }
     }
@@ -98,7 +98,7 @@ impl WALWriter {
 
         let (write_tx, write_rx) = mpsc::unbounded_channel();
         let current_segment = Arc::new(Mutex::new(None));
-        
+
         // Start background writer task
         let background_task = tokio::spawn(Self::background_writer(
             config.clone(),
@@ -115,32 +115,41 @@ impl WALWriter {
     }
 
     /// Write operation to WAL (async, non-blocking)
-    pub async fn write_operation(&self, shard_id: usize, operation: Operation) -> Result<(), WALError> {
+    pub async fn write_operation(
+        &self,
+        shard_id: usize,
+        operation: Operation,
+    ) -> Result<(), WALError> {
         let entry = WALEntry::new(shard_id, operation);
-        
+
         let (response_tx, response_rx) = tokio::sync::oneshot::channel();
         let request = WriteRequest {
             entry,
             response_tx: Some(response_tx),
         };
 
-        self.write_tx.send(request)
+        self.write_tx
+            .send(request)
             .map_err(|_| WALError::ChannelClosed)?;
 
-        response_rx.await
-            .map_err(|_| WALError::ChannelClosed)?
+        response_rx.await.map_err(|_| WALError::ChannelClosed)?
     }
 
     /// Write operation to WAL (fire-and-forget)
-    pub fn write_operation_async(&self, shard_id: usize, operation: Operation) -> Result<(), WALError> {
+    pub fn write_operation_async(
+        &self,
+        shard_id: usize,
+        operation: Operation,
+    ) -> Result<(), WALError> {
         let entry = WALEntry::new(shard_id, operation);
-        
+
         let request = WriteRequest {
             entry,
             response_tx: None,
         };
 
-        self.write_tx.send(request)
+        self.write_tx
+            .send(request)
             .map_err(|_| WALError::ChannelClosed)?;
 
         Ok(())
@@ -150,24 +159,27 @@ impl WALWriter {
     pub async fn flush(&self) -> Result<(), WALError> {
         // Create a oneshot channel for the flush response
         let (response_tx, response_rx) = tokio::sync::oneshot::channel();
-        
+
         // Send a special flush request
-        let flush_entry = WALEntry::new(usize::MAX, Operation::Put {
-            key: "__flush__".to_string(),
-            value: vec![],
-            ttl: None,
-        });
-        
+        let flush_entry = WALEntry::new(
+            usize::MAX,
+            Operation::Put {
+                key: "__flush__".to_string(),
+                value: vec![],
+                ttl: None,
+            },
+        );
+
         let request = WriteRequest {
             entry: flush_entry,
             response_tx: Some(response_tx),
         };
 
-        self.write_tx.send(request)
+        self.write_tx
+            .send(request)
             .map_err(|_| WALError::ChannelClosed)?;
 
-        response_rx.await
-            .map_err(|_| WALError::ChannelClosed)?
+        response_rx.await.map_err(|_| WALError::ChannelClosed)?
     }
 
     /// Background writer task
@@ -186,7 +198,7 @@ impl WALWriter {
                     match request {
                         Some(req) => {
                             // Check for flush requests
-                            if req.entry.shard_id == usize::MAX && 
+                            if req.entry.shard_id == usize::MAX &&
                                matches!(req.entry.operation, Operation::Put { ref key, .. } if key == "__flush__") {
                                 // This is a flush request, process pending writes and respond
                                 Self::process_writes(&config, &current_segment, &mut pending_writes).await;
@@ -196,7 +208,7 @@ impl WALWriter {
                             } else {
                                 // Regular write request
                                 pending_writes.push(req);
-                                
+
                                 // Batch writes for efficiency
                                 if pending_writes.len() >= 10 {
                                     Self::process_writes(&config, &current_segment, &mut pending_writes).await;
@@ -210,7 +222,7 @@ impl WALWriter {
                         }
                     }
                 }
-                
+
                 // Periodic flush
                 _ = flush_timer.tick() => {
                     if !pending_writes.is_empty() {
@@ -234,10 +246,11 @@ impl WALWriter {
         }
 
         let mut segment_guard = current_segment.lock().await;
-        
+
         for request in pending_writes.drain(..) {
-            let result = Self::write_entry_to_segment(config, &mut segment_guard, &request.entry).await;
-            
+            let result =
+                Self::write_entry_to_segment(config, &mut segment_guard, &request.entry).await;
+
             if let Some(response_tx) = request.response_tx {
                 let _ = response_tx.send(result);
             }
@@ -258,8 +271,12 @@ impl WALWriter {
         entry: &WALEntry,
     ) -> Result<(), WALError> {
         // Ensure we have a current segment
-        if current_segment.is_none() || 
-           current_segment.as_ref().unwrap().needs_rotation(config.max_segment_size) {
+        if current_segment.is_none()
+            || current_segment
+                .as_ref()
+                .unwrap()
+                .needs_rotation(config.max_segment_size)
+        {
             *current_segment = Some(Self::create_new_segment(config).await?);
         }
 
@@ -273,16 +290,16 @@ impl WALWriter {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_millis();
-        
+
         let filename = format!("wal-{:016x}.log", timestamp);
         let path = config.wal_dir.join(filename);
-        
+
         let file = OpenOptions::new()
             .create(true)
             .write(true)
             .append(false)
             .open(&path)?;
-        
+
         let mut segment = SegmentWriter {
             file: BufWriter::with_capacity(config.buffer_size, file),
             path: path.clone(),
@@ -294,7 +311,7 @@ impl WALWriter {
         // Write header placeholder (will be updated on close)
         let header_bytes = segment.header.serialize()?;
         let header_len = header_bytes.len() as u32;
-        
+
         segment.file.write_all(&header_len.to_le_bytes())?;
         segment.file.write_all(&header_bytes)?;
         segment.current_size = 4 + header_bytes.len() as u64;
@@ -309,15 +326,19 @@ impl SegmentWriter {
     fn write_entry(&mut self, entry: &WALEntry) -> Result<(), WALError> {
         let entry_bytes = entry.serialize()?;
         let entry_len = entry_bytes.len() as u32;
-        
+
         // Write length prefix + entry
         self.file.write_all(&entry_len.to_le_bytes())?;
         self.file.write_all(&entry_bytes)?;
-        
+
         self.current_size += 4 + entry_bytes.len() as u64;
         self.entry_count += 1;
-        
-        debug!("Wrote WAL entry: shard={}, size={}", entry.shard_id, entry_bytes.len());
+
+        debug!(
+            "Wrote WAL entry: shard={}, size={}",
+            entry.shard_id,
+            entry_bytes.len()
+        );
         Ok(())
     }
 
@@ -329,7 +350,7 @@ impl SegmentWriter {
     /// Flush segment to disk
     fn flush(&mut self, sync_policy: SyncPolicy) -> Result<(), WALError> {
         self.file.flush()?;
-        
+
         match sync_policy {
             SyncPolicy::None => {}
             SyncPolicy::Async => {
@@ -341,7 +362,7 @@ impl SegmentWriter {
                 self.file.get_ref().sync_all()?;
             }
         }
-        
+
         Ok(())
     }
 
@@ -350,12 +371,12 @@ impl SegmentWriter {
         // Update header
         self.header.update_entry_count(self.entry_count);
         let header_bytes = self.header.serialize()?;
-        
+
         // Seek to beginning and rewrite header
         self.file.seek(SeekFrom::Start(4))?; // Skip length prefix
         self.file.write_all(&header_bytes)?;
         self.file.seek(SeekFrom::End(0))?; // Return to end
-        
+
         Ok(())
     }
 }
@@ -375,17 +396,17 @@ mod tests {
         };
 
         let writer = WALWriter::new(config).await.unwrap();
-        
+
         // Write some operations
         let op1 = Operation::Put {
             key: "key1".to_string(),
             value: b"value1".to_vec(),
             ttl: None,
         };
-        
+
         writer.write_operation(0, op1).await.unwrap();
         writer.flush().await.unwrap();
-        
+
         // Check that segment file was created
         let entries: Vec<_> = std::fs::read_dir(temp_dir.path()).unwrap().collect();
         assert!(!entries.is_empty());

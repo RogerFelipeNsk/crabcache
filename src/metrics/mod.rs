@@ -1,12 +1,12 @@
 pub mod collector;
-pub mod prometheus;
 pub mod dashboard;
 pub mod histogram;
+pub mod prometheus;
 
-pub use collector::{MetricsCollector, ShardMetrics, GlobalMetrics};
-pub use prometheus::PrometheusExporter;
+pub use collector::{GlobalMetrics, MetricsCollector, ShardMetrics};
 pub use dashboard::Dashboard;
 pub use histogram::LatencyHistogram;
+pub use prometheus::PrometheusExporter;
 
 use std::sync::Arc;
 use tokio::sync::RwLock;

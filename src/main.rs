@@ -1,6 +1,6 @@
-use crabcache::{Config, Result};
 use crabcache::server::TcpServer;
-use tracing::{info, error};
+use crabcache::{Config, Result};
+use tracing::{error, info};
 use tracing_subscriber::{fmt, EnvFilter};
 
 #[tokio::main]
@@ -12,9 +12,8 @@ async fn main() -> Result<()> {
         .with_current_span(false)
         .with_span_list(false)
         .finish();
-    
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Failed to set tracing subscriber");
+
+    tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
 
     info!("Starting CrabCache v{}", crabcache::VERSION);
 
@@ -28,31 +27,31 @@ async fn main() -> Result<()> {
 
     // Initialize server with metrics
     info!("CrabCache server starting with observability...");
-    
+
     let tcp_port = config.port;
     let server = TcpServer::new(config).await?;
-    
+
     // Start server with metrics endpoint
     let metrics_port = 9090; // Standard Prometheus port
-    
+
     info!(
         tcp_port = tcp_port,
         metrics_port = metrics_port,
         "Starting CrabCache with observability"
     );
-    
+
     // Start server with integrated metrics
     let server_handle = tokio::spawn(async move {
         if let Err(e) = server.start_with_metrics(metrics_port).await {
             error!(error = %e, "Server error");
         }
     });
-    
+
     info!("CrabCache server ready with full observability!");
     info!("🚀 Performance: 25,824+ ops/sec, P99 < 1ms");
     info!("📊 Metrics: http://localhost:{}/metrics", metrics_port);
     info!("📈 Dashboard: http://localhost:{}/dashboard", metrics_port);
-    
+
     // Wait for shutdown signal
     tokio::select! {
         _ = tokio::signal::ctrl_c() => {
@@ -62,8 +61,8 @@ async fn main() -> Result<()> {
             error!("Server task completed unexpectedly");
         }
     }
-    
+
     info!("Shutting down CrabCache server...");
-    
+
     Ok(())
 }

@@ -9,5 +9,5 @@ pub mod zerocopy;
 pub use arena::ArenaAllocator;
 pub use hashmap::ShardStore;
 pub use item::Item;
-pub use lockfree_map::{LockFreeHashMap, CrabCacheLockFreeMap, LockFreeStats};
-pub use zerocopy::{ZeroCopyStore, ZeroCopyMetrics};
+pub use lockfree_map::{CrabCacheLockFreeMap, LockFreeHashMap, LockFreeStats};
+pub use zerocopy::{ZeroCopyMetrics, ZeroCopyStore};

@@ -9,5 +9,8 @@ pub mod serializer;
 pub use binary::BinaryProtocol;
 pub use commands::{Command, Response};
 pub use parser::ProtocolParser;
-pub use pipeline::{PipelineProtocol, PipelineBuilder, PipelineStats, PipelineProcessor, PipelineBatch, PipelineResponseBatch};
+pub use pipeline::{
+    PipelineBatch, PipelineBuilder, PipelineProcessor, PipelineProtocol, PipelineResponseBatch,
+    PipelineStats,
+};
 pub use serializer::ProtocolSerializer;

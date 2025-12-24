@@ -1,7 +1,7 @@
 //! Eviction metrics collection and reporting
 
-use std::sync::atomic::{AtomicU64, Ordering};
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Thread-safe eviction metrics
 #[derive(Debug, Default)]
@@ -50,79 +50,79 @@ impl EvictionMetrics {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Record a cache hit
     pub fn record_hit(&self) {
         self.total_requests.fetch_add(1, Ordering::Relaxed);
         self.cache_hits.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record a cache miss
     pub fn record_miss(&self) {
         self.total_requests.fetch_add(1, Ordering::Relaxed);
         self.cache_misses.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record an eviction
     pub fn record_eviction(&self) {
         self.evictions.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record multiple evictions
     pub fn record_evictions(&self, count: usize) {
         self.evictions.fetch_add(count as u64, Ordering::Relaxed);
     }
-    
+
     /// Record a promotion from Window to Main LRU
     pub fn record_promotion(&self) {
         self.window_promotions.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record an accepted admission
     pub fn record_admission_accepted(&self) {
         self.admissions_accepted.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record a rejected admission
     pub fn record_admission_rejected(&self) {
         self.admissions_rejected.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record a frequency sketch reset
     pub fn record_sketch_reset(&self) {
         self.sketch_resets.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Update window size
     pub fn set_window_size(&self, size: usize) {
         self.window_size.store(size as u64, Ordering::Relaxed);
     }
-    
+
     /// Update main size
     pub fn set_main_size(&self, size: usize) {
         self.main_size.store(size as u64, Ordering::Relaxed);
     }
-    
+
     /// Get total requests
     pub fn total_requests(&self) -> u64 {
         self.total_requests.load(Ordering::Relaxed)
     }
-    
+
     /// Get cache hits
     pub fn cache_hits(&self) -> u64 {
         self.cache_hits.load(Ordering::Relaxed)
     }
-    
+
     /// Get cache misses
     pub fn cache_misses(&self) -> u64 {
         self.cache_misses.load(Ordering::Relaxed)
     }
-    
+
     /// Get evictions
     pub fn evictions(&self) -> u64 {
         self.evictions.load(Ordering::Relaxed)
     }
-    
+
     /// Calculate hit ratio
     pub fn hit_ratio(&self) -> f64 {
         let total = self.total_requests.load(Ordering::Relaxed);
@@ -133,20 +133,20 @@ impl EvictionMetrics {
             hits as f64 / total as f64
         }
     }
-    
+
     /// Calculate admission ratio
     pub fn admission_ratio(&self) -> f64 {
         let accepted = self.admissions_accepted.load(Ordering::Relaxed);
         let rejected = self.admissions_rejected.load(Ordering::Relaxed);
         let total = accepted + rejected;
-        
+
         if total == 0 {
             0.0
         } else {
             accepted as f64 / total as f64
         }
     }
-    
+
     /// Get a snapshot of all metrics
     pub fn snapshot(&self) -> EvictionMetricsSnapshot {
         EvictionMetricsSnapshot {
@@ -164,7 +164,7 @@ impl EvictionMetrics {
             admission_ratio: self.admission_ratio(),
         }
     }
-    
+
     /// Reset all metrics to zero
     pub fn reset(&self) {
         self.total_requests.store(0, Ordering::Relaxed);
@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn test_record_hit() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.record_hit();
         assert_eq!(metrics.total_requests(), 1);
         assert_eq!(metrics.cache_hits(), 1);
@@ -226,7 +226,7 @@ mod tests {
     #[test]
     fn test_record_miss() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.record_miss();
         assert_eq!(metrics.total_requests(), 1);
         assert_eq!(metrics.cache_hits(), 0);
@@ -237,14 +237,14 @@ mod tests {
     #[test]
     fn test_hit_ratio_calculation() {
         let metrics = EvictionMetrics::new();
-        
+
         // 3 hits, 2 misses = 60% hit ratio
         metrics.record_hit();
         metrics.record_hit();
         metrics.record_hit();
         metrics.record_miss();
         metrics.record_miss();
-        
+
         assert_eq!(metrics.total_requests(), 5);
         assert_eq!(metrics.cache_hits(), 3);
         assert_eq!(metrics.cache_misses(), 2);
@@ -254,34 +254,34 @@ mod tests {
     #[test]
     fn test_admission_ratio() {
         let metrics = EvictionMetrics::new();
-        
+
         // 2 accepted, 3 rejected = 40% admission ratio
         metrics.record_admission_accepted();
         metrics.record_admission_accepted();
         metrics.record_admission_rejected();
         metrics.record_admission_rejected();
         metrics.record_admission_rejected();
-        
+
         assert!((metrics.admission_ratio() - 0.4).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_eviction_recording() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.record_eviction();
         metrics.record_evictions(5);
-        
+
         assert_eq!(metrics.evictions(), 6);
     }
 
     #[test]
     fn test_size_updates() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.set_window_size(10);
         metrics.set_main_size(100);
-        
+
         let snapshot = metrics.snapshot();
         assert_eq!(snapshot.window_size, 10);
         assert_eq!(snapshot.main_size, 100);
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn test_snapshot() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.record_hit();
         metrics.record_miss();
         metrics.record_eviction();
@@ -299,7 +299,7 @@ mod tests {
         metrics.record_sketch_reset();
         metrics.set_window_size(5);
         metrics.set_main_size(50);
-        
+
         let snapshot = metrics.snapshot();
         assert_eq!(snapshot.total_requests, 2);
         assert_eq!(snapshot.cache_hits, 1);
@@ -316,15 +316,15 @@ mod tests {
     #[test]
     fn test_reset() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.record_hit();
         metrics.record_eviction();
         metrics.set_window_size(10);
-        
+
         assert_ne!(metrics.total_requests(), 0);
-        
+
         metrics.reset();
-        
+
         assert_eq!(metrics.total_requests(), 0);
         assert_eq!(metrics.cache_hits(), 0);
         assert_eq!(metrics.evictions(), 0);
@@ -335,12 +335,12 @@ mod tests {
     #[test]
     fn test_clone() {
         let metrics = EvictionMetrics::new();
-        
+
         metrics.record_hit();
         metrics.record_eviction();
-        
+
         let cloned = metrics.clone();
-        
+
         assert_eq!(cloned.total_requests(), metrics.total_requests());
         assert_eq!(cloned.cache_hits(), metrics.cache_hits());
         assert_eq!(cloned.evictions(), metrics.evictions());

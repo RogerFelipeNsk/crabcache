@@ -1,7 +1,7 @@
 //! Pipeline protocol implementation for batch command processing
 
 use crate::protocol::commands::{Command, Response};
-use crate::protocol::{ProtocolParser, ProtocolSerializer, BinaryProtocol};
+use crate::protocol::{BinaryProtocol, ProtocolParser, ProtocolSerializer};
 use std::collections::VecDeque;
 use tracing::{debug, warn};
 
@@ -73,12 +73,16 @@ impl PipelineProcessor {
             use_binary_protocol = first_byte >= 0x01 && first_byte <= 0x06;
         }
 
-        debug!("Parsing batch with {} bytes, binary={}", data.len(), use_binary_protocol);
+        debug!(
+            "Parsing batch with {} bytes, binary={}",
+            data.len(),
+            use_binary_protocol
+        );
 
         // Parse commands until buffer is exhausted or max batch size reached
         while offset < data.len() && commands.len() < self.max_batch_size {
             let remaining = &data[offset..];
-            
+
             if remaining.is_empty() {
                 break;
             }
@@ -107,10 +111,15 @@ impl PipelineProcessor {
         // Update statistics
         self.stats.total_batches += 1;
         self.stats.total_commands += commands.len() as u64;
-        self.stats.avg_batch_size = self.stats.total_commands as f64 / self.stats.total_batches as f64;
+        self.stats.avg_batch_size =
+            self.stats.total_commands as f64 / self.stats.total_batches as f64;
         self.stats.max_batch_size = self.stats.max_batch_size.max(commands.len());
 
-        debug!("Parsed batch: {} commands, binary={}", commands.len(), use_binary_protocol);
+        debug!(
+            "Parsed batch: {} commands, binary={}",
+            commands.len(),
+            use_binary_protocol
+        );
 
         Ok(PipelineBatch {
             commands,
@@ -124,7 +133,7 @@ impl PipelineProcessor {
     fn parse_binary_command(&self, data: &[u8]) -> Result<(Command, usize), String> {
         match BinaryProtocol::parse_command(data) {
             Ok(command) => {
-                // Calculate bytes consumed (simplified - in real implementation, 
+                // Calculate bytes consumed (simplified - in real implementation,
                 // BinaryProtocol should return bytes consumed)
                 let bytes_consumed = self.estimate_binary_command_size(&command);
                 Ok((command, bytes_consumed))
@@ -164,7 +173,10 @@ impl PipelineProcessor {
     }
 
     /// Serialize batch of responses
-    pub fn serialize_response_batch(&self, batch: &PipelineResponseBatch) -> Result<Vec<u8>, String> {
+    pub fn serialize_response_batch(
+        &self,
+        batch: &PipelineResponseBatch,
+    ) -> Result<Vec<u8>, String> {
         if batch.responses.is_empty() {
             return Ok(Vec::new());
         }
@@ -186,8 +198,11 @@ impl PipelineProcessor {
             }
         }
 
-        debug!("Serialized response batch: {} responses, {} bytes", 
-               batch.responses.len(), buffer.len());
+        debug!(
+            "Serialized response batch: {} responses, {} bytes",
+            batch.responses.len(),
+            buffer.len()
+        );
 
         Ok(buffer)
     }
@@ -209,8 +224,8 @@ impl PipelineProcessor {
 
         // Adjust based on average batch size and error rate
         if self.stats.total_batches > 100 {
-            let error_rate = (self.stats.parse_errors + self.stats.processing_errors) as f64 
-                           / self.stats.total_batches as f64;
+            let error_rate = (self.stats.parse_errors + self.stats.processing_errors) as f64
+                / self.stats.total_batches as f64;
 
             if error_rate < 0.01 {
                 // Low error rate, can increase batch size
@@ -285,10 +300,10 @@ impl PipelineBuilder {
 pub trait PipelineProtocol {
     /// Parse batch of commands from buffer
     fn parse_batch(&self, data: &[u8]) -> Result<Vec<Command>, String>;
-    
+
     /// Serialize batch of responses to buffer
     fn serialize_batch(&self, responses: &[Response]) -> Result<Vec<u8>, String>;
-    
+
     /// Get protocol name
     fn protocol_name(&self) -> &'static str;
 }
@@ -317,7 +332,7 @@ impl PipelineProtocol for BinaryPipelineProtocol {
 
     fn serialize_batch(&self, responses: &[Response]) -> Result<Vec<u8>, String> {
         let mut buffer = Vec::new();
-        
+
         for response in responses {
             let response_bytes = BinaryProtocol::serialize_response(response);
             buffer.extend_from_slice(&response_bytes);
@@ -343,7 +358,7 @@ impl PipelineProtocol for TextPipelineProtocol {
             if let Some(newline_pos) = data[offset..].iter().position(|&b| b == b'\n') {
                 let command_end = offset + newline_pos;
                 let command_bytes = &data[offset..command_end];
-                
+
                 match ProtocolParser::parse_command(command_bytes) {
                     Ok(command) => {
                         commands.push(command);
@@ -361,7 +376,7 @@ impl PipelineProtocol for TextPipelineProtocol {
 
     fn serialize_batch(&self, responses: &[Response]) -> Result<Vec<u8>, String> {
         let mut buffer = Vec::new();
-        
+
         for response in responses {
             let response_bytes = ProtocolSerializer::serialize_response(response)
                 .map_err(|e| format!("Serialization error: {}", e))?;
@@ -391,24 +406,30 @@ mod tests {
     #[test]
     fn test_pipeline_builder() {
         let mut builder = PipelineBuilder::new(3, false);
-        
+
         assert!(builder.is_empty());
         assert!(!builder.is_full());
-        
+
         builder.add_command(Command::Ping).unwrap();
-        builder.add_command(Command::Get { key: Bytes::from("test") }).unwrap();
-        builder.add_command(Command::Put { 
-            key: Bytes::from("key"), 
-            value: Bytes::from("value"), 
-            ttl: None 
-        }).unwrap();
-        
+        builder
+            .add_command(Command::Get {
+                key: Bytes::from("test"),
+            })
+            .unwrap();
+        builder
+            .add_command(Command::Put {
+                key: Bytes::from("key"),
+                value: Bytes::from("value"),
+                ttl: None,
+            })
+            .unwrap();
+
         assert!(builder.is_full());
         assert_eq!(builder.len(), 3);
-        
+
         // Should fail to add more commands
         assert!(builder.add_command(Command::Ping).is_err());
-        
+
         let batch = builder.build();
         assert_eq!(batch.commands.len(), 3);
     }
@@ -416,10 +437,10 @@ mod tests {
     #[test]
     fn test_text_pipeline_protocol() {
         let protocol = TextPipelineProtocol;
-        
+
         let batch_data = b"PING\nGET test\nPUT key value\n";
         let commands = protocol.parse_batch(batch_data).unwrap();
-        
+
         assert_eq!(commands.len(), 3);
         assert!(matches!(commands[0], Command::Ping));
         assert!(matches!(commands[1], Command::Get { .. }));
@@ -429,13 +450,13 @@ mod tests {
     #[test]
     fn test_pipeline_stats() {
         let mut processor = PipelineProcessor::new(10);
-        
+
         // Simulate processing some batches
         processor.stats.total_batches = 5;
         processor.stats.total_commands = 50;
         processor.stats.avg_batch_size = 10.0;
         processor.stats.max_batch_size = 15;
-        
+
         let optimal_size = processor.get_optimal_batch_size();
         assert!(optimal_size > 0);
         assert!(optimal_size <= processor.max_batch_size);

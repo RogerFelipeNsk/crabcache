@@ -11,17 +11,17 @@ pub struct ConnectionMetrics {
     pub total_connections: AtomicU64,
     pub active_connections: AtomicUsize,
     pub total_commands: AtomicU64,
-    
+
     // Performance metrics
     pub total_latency_ns: AtomicU64,
     pub min_latency_ns: AtomicU64,
     pub max_latency_ns: AtomicU64,
-    
+
     // Error metrics
     pub parse_errors: AtomicU64,
     pub processing_errors: AtomicU64,
     pub network_errors: AtomicU64,
-    
+
     // Buffer pool metrics
     pub buffer_pool_hits: AtomicU64,
     pub buffer_pool_misses: AtomicU64,
@@ -44,96 +44,101 @@ impl ConnectionMetrics {
             buffer_pool_misses: AtomicU64::new(0),
         }
     }
-    
+
     /// Record a new connection
     pub fn connection_opened(&self) {
         self.total_connections.fetch_add(1, Ordering::Relaxed);
         self.active_connections.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record connection closed
     pub fn connection_closed(&self) {
         self.active_connections.fetch_sub(1, Ordering::Relaxed);
     }
-    
+
     /// Record command processing time
     pub fn record_command_latency(&self, duration: Duration) {
         let latency_ns = duration.as_nanos() as u64;
-        
+
         self.total_commands.fetch_add(1, Ordering::Relaxed);
-        self.total_latency_ns.fetch_add(latency_ns, Ordering::Relaxed);
-        
+        self.total_latency_ns
+            .fetch_add(latency_ns, Ordering::Relaxed);
+
         // Update min latency
         let mut current_min = self.min_latency_ns.load(Ordering::Relaxed);
         while latency_ns < current_min {
             match self.min_latency_ns.compare_exchange_weak(
-                current_min, 
-                latency_ns, 
-                Ordering::Relaxed, 
-                Ordering::Relaxed
+                current_min,
+                latency_ns,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
             ) {
                 Ok(_) => break,
                 Err(x) => current_min = x,
             }
         }
-        
+
         // Update max latency
         let mut current_max = self.max_latency_ns.load(Ordering::Relaxed);
         while latency_ns > current_max {
             match self.max_latency_ns.compare_exchange_weak(
-                current_max, 
-                latency_ns, 
-                Ordering::Relaxed, 
-                Ordering::Relaxed
+                current_max,
+                latency_ns,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
             ) {
                 Ok(_) => break,
                 Err(x) => current_max = x,
             }
         }
     }
-    
+
     /// Record parse error
     pub fn record_parse_error(&self) {
         self.parse_errors.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record processing error
     pub fn record_processing_error(&self) {
         self.processing_errors.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record network error
     pub fn record_network_error(&self) {
         self.network_errors.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record buffer pool hit
     pub fn record_buffer_pool_hit(&self) {
         self.buffer_pool_hits.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Record buffer pool miss
     pub fn record_buffer_pool_miss(&self) {
         self.buffer_pool_misses.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     /// Get current metrics snapshot
     pub fn snapshot(&self) -> MetricsSnapshot {
         let total_commands = self.total_commands.load(Ordering::Relaxed);
         let total_latency_ns = self.total_latency_ns.load(Ordering::Relaxed);
-        
+
         MetricsSnapshot {
             total_connections: self.total_connections.load(Ordering::Relaxed),
             active_connections: self.active_connections.load(Ordering::Relaxed),
             total_commands,
-            avg_latency_ns: if total_commands > 0 { 
-                total_latency_ns / total_commands 
-            } else { 
-                0 
+            avg_latency_ns: if total_commands > 0 {
+                total_latency_ns / total_commands
+            } else {
+                0
             },
             min_latency_ns: {
                 let min = self.min_latency_ns.load(Ordering::Relaxed);
-                if min == u64::MAX { 0 } else { min }
+                if min == u64::MAX {
+                    0
+                } else {
+                    min
+                }
             },
             max_latency_ns: self.max_latency_ns.load(Ordering::Relaxed),
             parse_errors: self.parse_errors.load(Ordering::Relaxed),
@@ -172,17 +177,17 @@ impl MetricsSnapshot {
     pub fn avg_latency_ms(&self) -> f64 {
         self.avg_latency_ns as f64 / 1_000_000.0
     }
-    
+
     /// Get min latency in milliseconds
     pub fn min_latency_ms(&self) -> f64 {
         self.min_latency_ns as f64 / 1_000_000.0
     }
-    
+
     /// Get max latency in milliseconds
     pub fn max_latency_ms(&self) -> f64 {
         self.max_latency_ns as f64 / 1_000_000.0
     }
-    
+
     /// Get buffer pool hit rate
     pub fn buffer_pool_hit_rate(&self) -> f64 {
         let total = self.buffer_pool_hits + self.buffer_pool_misses;
@@ -192,7 +197,7 @@ impl MetricsSnapshot {
             0.0
         }
     }
-    
+
     /// Get error rate
     pub fn error_rate(&self) -> f64 {
         let total_errors = self.parse_errors + self.processing_errors + self.network_errors;

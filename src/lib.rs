@@ -5,6 +5,7 @@
 
 pub mod client;
 pub mod config;
+pub mod eviction;
 pub mod metrics;
 pub mod protocol;
 pub mod router;
@@ -12,10 +13,9 @@ pub mod security;
 pub mod server;
 pub mod shard;
 pub mod store;
-pub mod eviction;
 pub mod ttl;
-pub mod wal;
 pub mod utils;
+pub mod wal;
 
 pub use config::Config;
 

@@ -1,12 +1,12 @@
 //! Security module for CrabCache
 
 pub mod auth;
-pub mod rate_limit;
 pub mod ip_filter;
+pub mod rate_limit;
 
 pub use auth::{AuthManager, AuthResult};
-pub use rate_limit::{RateLimiter, RateLimitResult};
 pub use ip_filter::{IpFilter, IpFilterResult};
+pub use rate_limit::{RateLimitResult, RateLimiter};
 
 use std::net::IpAddr;
 
@@ -28,7 +28,7 @@ impl SecurityContext {
             rate_limit_key: client_ip.to_string(),
         }
     }
-    
+
     pub fn authenticate(&mut self, user_id: String) {
         self.authenticated = true;
         self.user_id = Some(user_id);
@@ -54,7 +54,7 @@ impl SecurityManager {
             ip_filter,
         }
     }
-    
+
     /// Check if connection is allowed
     pub async fn check_connection(&self, context: &SecurityContext) -> SecurityCheckResult {
         // Check IP filter first
@@ -66,7 +66,7 @@ impl SecurityManager {
                 }
             }
         }
-        
+
         // Check rate limiting
         if let Some(ref rate_limiter) = self.rate_limiter {
             match rate_limiter.check_rate(&context.rate_limit_key).await {
@@ -76,12 +76,16 @@ impl SecurityManager {
                 }
             }
         }
-        
+
         SecurityCheckResult::Allowed
     }
-    
+
     /// Authenticate a command
-    pub fn authenticate_command(&self, context: &mut SecurityContext, auth_token: Option<&str>) -> SecurityCheckResult {
+    pub fn authenticate_command(
+        &self,
+        context: &mut SecurityContext,
+        auth_token: Option<&str>,
+    ) -> SecurityCheckResult {
         if let Some(ref auth_manager) = self.auth_manager {
             match auth_manager.authenticate(auth_token) {
                 AuthResult::Authenticated(user_id) => {
@@ -111,7 +115,7 @@ impl SecurityCheckResult {
     pub fn is_allowed(&self) -> bool {
         matches!(self, SecurityCheckResult::Allowed)
     }
-    
+
     pub fn error_message(&self) -> &'static str {
         match self {
             SecurityCheckResult::Allowed => "OK",

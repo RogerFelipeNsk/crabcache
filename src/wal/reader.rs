@@ -1,11 +1,11 @@
 //! WAL reader implementation for recovery
 
-use crate::wal::entry::{WALEntry, SegmentHeader, Operation};
+use crate::wal::entry::{Operation, SegmentHeader, WALEntry};
 use crate::wal::writer::WALError;
 use std::fs::File;
-use std::io::{Read, BufReader, Seek, SeekFrom};
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 
 /// WAL reader for recovery operations
 pub struct WALReader {
@@ -71,12 +71,10 @@ impl WALReader {
         }
 
         stats.recovery_time_ms = start_time.elapsed().as_millis() as u64;
-        
+
         info!(
             "WAL recovery completed: {} entries from {} segments in {}ms",
-            stats.entries_recovered,
-            stats.segments_processed,
-            stats.recovery_time_ms
+            stats.entries_recovered, stats.segments_processed, stats.recovery_time_ms
         );
 
         Ok((all_entries, stats))
@@ -95,12 +93,14 @@ impl WALReader {
         if !header.validate_checksum() {
             warn!("Invalid header checksum in segment: {:?}", segment_path);
             return Err(WALError::Serialization(bincode::Error::new(
-                bincode::ErrorKind::Custom("Invalid header checksum".to_string())
+                bincode::ErrorKind::Custom("Invalid header checksum".to_string()),
             )));
         }
 
-        debug!("Segment header: {} entries, created at {}", 
-               header.entry_count, header.created_at);
+        debug!(
+            "Segment header: {} entries, created at {}",
+            header.entry_count, header.created_at
+        );
 
         // Read entries
         let mut entries_read = 0;
@@ -143,12 +143,14 @@ impl WALReader {
         for entry in std::fs::read_dir(&self.wal_dir)? {
             let entry = entry?;
             let path = entry.path();
-            
-            if path.is_file() && 
-               path.extension().map_or(false, |ext| ext == "log") &&
-               path.file_name()
-                   .and_then(|name| name.to_str())
-                   .map_or(false, |name| name.starts_with("wal-")) {
+
+            if path.is_file()
+                && path.extension().map_or(false, |ext| ext == "log")
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .map_or(false, |name| name.starts_with("wal-"))
+            {
                 segments.push(path);
             }
         }
@@ -187,11 +189,12 @@ impl WALReader {
         }
 
         let entry_len = u32::from_le_bytes(len_bytes) as usize;
-        
+
         // Sanity check entry length
-        if entry_len > 10 * 1024 * 1024 { // 10MB max entry size
+        if entry_len > 10 * 1024 * 1024 {
+            // 10MB max entry size
             return Err(WALError::Serialization(bincode::Error::new(
-                bincode::ErrorKind::Custom("Entry too large".to_string())
+                bincode::ErrorKind::Custom("Entry too large".to_string()),
             )));
         }
 
@@ -210,14 +213,19 @@ impl WALReader {
         M: WALReplayTarget,
     {
         let (entries, mut stats) = self.recover_all().await?;
-        
+
         info!("Replaying {} operations to shard manager", entries.len());
-        
+
         for entry in entries {
-            match manager.replay_operation(entry.shard_id, &entry.operation).await {
+            match manager
+                .replay_operation(entry.shard_id, &entry.operation)
+                .await
+            {
                 Ok(()) => {
-                    debug!("Replayed operation: shard={}, op={:?}", 
-                           entry.shard_id, entry.operation);
+                    debug!(
+                        "Replayed operation: shard={}, op={:?}",
+                        entry.shard_id, entry.operation
+                    );
                 }
                 Err(e) => {
                     warn!("Failed to replay operation: {}", e);
@@ -226,23 +234,25 @@ impl WALReader {
             }
         }
 
-        info!("WAL replay completed: {} operations replayed", 
-              stats.entries_recovered - stats.entries_skipped);
-        
+        info!(
+            "WAL replay completed: {} operations replayed",
+            stats.entries_recovered - stats.entries_skipped
+        );
+
         Ok(stats)
     }
 
     /// Clean up old WAL segments (for maintenance)
     pub async fn cleanup_old_segments(&self, keep_segments: usize) -> Result<usize, WALError> {
         let mut segments = self.get_segment_files()?;
-        
+
         if segments.len() <= keep_segments {
             return Ok(0);
         }
 
         // Sort by creation time (oldest first)
         segments.sort();
-        
+
         let to_remove = segments.len() - keep_segments;
         let mut removed = 0;
 
@@ -266,22 +276,26 @@ impl WALReader {
 #[async_trait::async_trait]
 pub trait WALReplayTarget {
     type Error: std::fmt::Display;
-    
+
     /// Replay a single operation to the specified shard
-    async fn replay_operation(&self, shard_id: usize, operation: &Operation) -> Result<(), Self::Error>;
+    async fn replay_operation(
+        &self,
+        shard_id: usize,
+        operation: &Operation,
+    ) -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::wal::writer::{WALWriter, WALConfig};
+    use crate::wal::writer::{WALConfig, WALWriter};
     use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_wal_recovery() {
         let temp_dir = TempDir::new().unwrap();
         let wal_dir = temp_dir.path().to_path_buf();
-        
+
         // Write some operations
         {
             let config = WALConfig {
@@ -289,32 +303,32 @@ mod tests {
                 max_segment_size: 1024,
                 ..Default::default()
             };
-            
+
             let writer = WALWriter::new(config).await.unwrap();
-            
+
             let op1 = Operation::Put {
                 key: "key1".to_string(),
                 value: b"value1".to_vec(),
                 ttl: None,
             };
-            
+
             let op2 = Operation::Delete {
                 key: "key2".to_string(),
             };
-            
+
             writer.write_operation(0, op1).await.unwrap();
             writer.write_operation(1, op2).await.unwrap();
             writer.flush().await.unwrap();
         }
-        
+
         // Read them back
         let reader = WALReader::new(&wal_dir);
         let (entries, stats) = reader.recover_all().await.unwrap();
-        
+
         assert_eq!(entries.len(), 2);
         assert_eq!(stats.entries_recovered, 2);
         assert_eq!(stats.segments_processed, 1);
-        
+
         // Verify operations
         match &entries[0].operation {
             Operation::Put { key, value, .. } => {
@@ -323,7 +337,7 @@ mod tests {
             }
             _ => panic!("Expected Put operation"),
         }
-        
+
         match &entries[1].operation {
             Operation::Delete { key } => {
                 assert_eq!(key, "key2");

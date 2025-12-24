@@ -23,18 +23,18 @@ impl IpFilter {
             allowed_networks: Vec::new(),
             allow_all_when_empty,
         };
-        
+
         for ip_str in allowed_ips {
             filter.add_allowed_ip(&ip_str)?;
         }
-        
+
         Ok(filter)
     }
-    
+
     /// Add an allowed IP address or network
     pub fn add_allowed_ip(&mut self, ip_str: &str) -> Result<(), String> {
         let ip_str = ip_str.trim();
-        
+
         if ip_str.contains('/') {
             // CIDR notation
             let network = IpNetwork::from_str(ip_str)
@@ -48,23 +48,26 @@ impl IpFilter {
             self.allowed_ips.insert(ip);
             debug!("Added allowed IP: {}", ip);
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if an IP address is allowed
     pub fn check_ip(&self, ip: IpAddr) -> IpFilterResult {
         // If no IPs are configured and allow_all_when_empty is true, allow all
-        if self.allowed_ips.is_empty() && self.allowed_networks.is_empty() && self.allow_all_when_empty {
+        if self.allowed_ips.is_empty()
+            && self.allowed_networks.is_empty()
+            && self.allow_all_when_empty
+        {
             return IpFilterResult::Allowed;
         }
-        
+
         // Check exact IP matches
         if self.allowed_ips.contains(&ip) {
             debug!("IP {} allowed (exact match)", ip);
             return IpFilterResult::Allowed;
         }
-        
+
         // Check network matches
         for network in &self.allowed_networks {
             if network.contains(ip) {
@@ -72,21 +75,21 @@ impl IpFilter {
                 return IpFilterResult::Allowed;
             }
         }
-        
+
         warn!("IP {} blocked (not in allowed list)", ip);
         IpFilterResult::Blocked
     }
-    
+
     /// Get number of allowed IPs
     pub fn allowed_ip_count(&self) -> usize {
         self.allowed_ips.len()
     }
-    
+
     /// Get number of allowed networks
     pub fn allowed_network_count(&self) -> usize {
         self.allowed_networks.len()
     }
-    
+
     /// Check if filter allows all IPs
     pub fn allows_all(&self) -> bool {
         self.allowed_ips.is_empty() && self.allowed_networks.is_empty() && self.allow_all_when_empty
@@ -114,10 +117,13 @@ impl IpNetwork {
                 }
             }
         }
-        
-        Ok(Self { network, prefix_len })
+
+        Ok(Self {
+            network,
+            prefix_len,
+        })
     }
-    
+
     pub fn contains(&self, ip: IpAddr) -> bool {
         match (self.network, ip) {
             (IpAddr::V4(net), IpAddr::V4(addr)) => {
@@ -139,18 +145,19 @@ impl IpNetwork {
 
 impl FromStr for IpNetwork {
     type Err = String;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.split('/').collect();
         if parts.len() != 2 {
             return Err("CIDR notation must contain exactly one '/'".to_string());
         }
-        
-        let network = IpAddr::from_str(parts[0])
-            .map_err(|e| format!("Invalid network address: {}", e))?;
-        let prefix_len = parts[1].parse::<u8>()
+
+        let network =
+            IpAddr::from_str(parts[0]).map_err(|e| format!("Invalid network address: {}", e))?;
+        let prefix_len = parts[1]
+            .parse::<u8>()
             .map_err(|e| format!("Invalid prefix length: {}", e))?;
-        
+
         Self::new(network, prefix_len)
     }
 }
@@ -179,25 +186,19 @@ impl IpFilterResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_ip_filter_allow_all() {
         let filter = IpFilter::new(vec![], true).unwrap();
-        
-        let test_ips = [
-            "127.0.0.1",
-            "192.168.1.1",
-            "10.0.0.1",
-            "::1",
-            "2001:db8::1",
-        ];
-        
+
+        let test_ips = ["127.0.0.1", "192.168.1.1", "10.0.0.1", "::1", "2001:db8::1"];
+
         for ip_str in &test_ips {
             let ip = IpAddr::from_str(ip_str).unwrap();
             assert_eq!(filter.check_ip(ip), IpFilterResult::Allowed);
         }
     }
-    
+
     #[test]
     fn test_ip_filter_specific_ips() {
         let allowed = vec![
@@ -206,51 +207,84 @@ mod tests {
             "::1".to_string(),
         ];
         let filter = IpFilter::new(allowed, false).unwrap();
-        
+
         // Allowed IPs
-        assert_eq!(filter.check_ip("127.0.0.1".parse().unwrap()), IpFilterResult::Allowed);
-        assert_eq!(filter.check_ip("192.168.1.100".parse().unwrap()), IpFilterResult::Allowed);
-        assert_eq!(filter.check_ip("::1".parse().unwrap()), IpFilterResult::Allowed);
-        
+        assert_eq!(
+            filter.check_ip("127.0.0.1".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+        assert_eq!(
+            filter.check_ip("192.168.1.100".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+        assert_eq!(
+            filter.check_ip("::1".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+
         // Blocked IPs
-        assert_eq!(filter.check_ip("192.168.1.1".parse().unwrap()), IpFilterResult::Blocked);
-        assert_eq!(filter.check_ip("10.0.0.1".parse().unwrap()), IpFilterResult::Blocked);
+        assert_eq!(
+            filter.check_ip("192.168.1.1".parse().unwrap()),
+            IpFilterResult::Blocked
+        );
+        assert_eq!(
+            filter.check_ip("10.0.0.1".parse().unwrap()),
+            IpFilterResult::Blocked
+        );
     }
-    
+
     #[test]
     fn test_ip_filter_cidr() {
-        let allowed = vec![
-            "192.168.1.0/24".to_string(),
-            "10.0.0.0/8".to_string(),
-        ];
+        let allowed = vec!["192.168.1.0/24".to_string(), "10.0.0.0/8".to_string()];
         let filter = IpFilter::new(allowed, false).unwrap();
-        
+
         // Should allow IPs in the networks
-        assert_eq!(filter.check_ip("192.168.1.1".parse().unwrap()), IpFilterResult::Allowed);
-        assert_eq!(filter.check_ip("192.168.1.254".parse().unwrap()), IpFilterResult::Allowed);
-        assert_eq!(filter.check_ip("10.1.2.3".parse().unwrap()), IpFilterResult::Allowed);
-        assert_eq!(filter.check_ip("10.255.255.255".parse().unwrap()), IpFilterResult::Allowed);
-        
+        assert_eq!(
+            filter.check_ip("192.168.1.1".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+        assert_eq!(
+            filter.check_ip("192.168.1.254".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+        assert_eq!(
+            filter.check_ip("10.1.2.3".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+        assert_eq!(
+            filter.check_ip("10.255.255.255".parse().unwrap()),
+            IpFilterResult::Allowed
+        );
+
         // Should block IPs outside the networks
-        assert_eq!(filter.check_ip("192.168.2.1".parse().unwrap()), IpFilterResult::Blocked);
-        assert_eq!(filter.check_ip("172.16.1.1".parse().unwrap()), IpFilterResult::Blocked);
-        assert_eq!(filter.check_ip("127.0.0.1".parse().unwrap()), IpFilterResult::Blocked);
+        assert_eq!(
+            filter.check_ip("192.168.2.1".parse().unwrap()),
+            IpFilterResult::Blocked
+        );
+        assert_eq!(
+            filter.check_ip("172.16.1.1".parse().unwrap()),
+            IpFilterResult::Blocked
+        );
+        assert_eq!(
+            filter.check_ip("127.0.0.1".parse().unwrap()),
+            IpFilterResult::Blocked
+        );
     }
-    
+
     #[test]
     fn test_ip_network_contains() {
         let network = IpNetwork::from_str("192.168.1.0/24").unwrap();
-        
+
         assert!(network.contains("192.168.1.1".parse().unwrap()));
         assert!(network.contains("192.168.1.254".parse().unwrap()));
         assert!(!network.contains("192.168.2.1".parse().unwrap()));
         assert!(!network.contains("10.0.0.1".parse().unwrap()));
     }
-    
+
     #[test]
     fn test_ipv6_network() {
         let network = IpNetwork::from_str("2001:db8::/32").unwrap();
-        
+
         assert!(network.contains("2001:db8::1".parse().unwrap()));
         assert!(network.contains("2001:db8:1::1".parse().unwrap()));
         assert!(!network.contains("2001:db9::1".parse().unwrap()));
