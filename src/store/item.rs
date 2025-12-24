@@ -1,7 +1,7 @@
 //! Cache item implementation with binary layout
 
 use crate::utils::varint::{decode_varint, encode_varint, varint_size};
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// A cache item with binary layout
@@ -97,7 +97,7 @@ impl Item {
     }
 
     /// Deserialize item from binary format
-    pub fn from_binary(mut data: Bytes) -> Result<Self, String> {
+    pub fn from_binary(data: Bytes) -> Result<Self, String> {
         if data.is_empty() {
             return Err("Empty data".to_string());
         }

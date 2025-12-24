@@ -83,7 +83,7 @@ impl ShardManager {
                 let mut total_max_memory = 0;
 
                 for shard in &self.shards {
-                    let (shard_id, key_count, memory_used, max_memory) = shard.get_stats().await;
+                    let (_shard_id, key_count, memory_used, max_memory) = shard.get_stats().await;
                     total_keys += key_count;
                     total_memory += memory_used;
                     total_max_memory += max_memory;

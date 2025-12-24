@@ -253,7 +253,6 @@ impl WALReplayTarget for WALShardManager {
 mod tests {
     use super::*;
     use crate::wal::SyncPolicy;
-    use std::path::PathBuf;
     use tempfile::TempDir;
 
     #[tokio::test]

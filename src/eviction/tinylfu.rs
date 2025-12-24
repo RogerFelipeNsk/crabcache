@@ -5,7 +5,7 @@
 //! based on both frequency and recency.
 
 use super::{
-    CacheItem, CountMinSketch, EvictionConfig, EvictionMetrics, EvictionPolicy, WindowLRU,
+    CountMinSketch, EvictionConfig, EvictionMetrics, EvictionPolicy, WindowLRU,
 };
 use std::collections::HashMap;
 use std::time::{Duration, Instant};

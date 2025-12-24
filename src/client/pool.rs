@@ -134,7 +134,7 @@ impl ConnectionPool {
     }
 
     /// Return a connection to the pool
-    async fn return_connection(&self, mut conn: PoolConnection) {
+    async fn return_connection(&self, conn: PoolConnection) {
         // Update metrics
         {
             let mut metrics = self.metrics.lock().unwrap();

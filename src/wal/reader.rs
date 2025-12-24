@@ -3,9 +3,9 @@
 use crate::wal::entry::{Operation, SegmentHeader, WALEntry};
 use crate::wal::writer::WALError;
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 /// WAL reader for recovery operations
 pub struct WALReader {

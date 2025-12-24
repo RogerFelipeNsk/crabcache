@@ -3,11 +3,11 @@
 use crate::wal::entry::{Operation, SegmentHeader, WALEntry};
 use std::fs::{File, OpenOptions};
 use std::io::{BufWriter, Seek, SeekFrom, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::{interval, Duration};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 /// WAL writer configuration
 #[derive(Debug, Clone)]

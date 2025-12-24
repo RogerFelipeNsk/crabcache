@@ -3,7 +3,7 @@
 //! This module implements a zero-copy storage system using arena allocation
 //! and direct memory references to eliminate unnecessary data copying.
 
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
