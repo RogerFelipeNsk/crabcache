@@ -4,6 +4,7 @@
 //! than Redis and Dragonfly, with better memory efficiency and true multi-core support.
 
 pub mod client;
+pub mod cluster;
 pub mod config;
 pub mod eviction;
 pub mod metrics;
