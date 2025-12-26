@@ -10,8 +10,8 @@ pub mod simd_parser;
 pub mod zero_copy_buffer;
 
 pub use advanced_pipeline::{
-    AdvancedPipelineProcessor, AdvancedPipelineConfig, AdvancedPipelineMetrics,
-    ParallelBatchParser, AdaptiveBatchSizer, CommandAffinityAnalyzer,
+    AdaptiveBatchSizer, AdvancedPipelineConfig, AdvancedPipelineMetrics, AdvancedPipelineProcessor,
+    CommandAffinityAnalyzer, ParallelBatchParser,
 };
 pub use binary::BinaryProtocol;
 pub use commands::{Command, Response};
@@ -22,4 +22,4 @@ pub use pipeline::{
 };
 pub use serializer::ProtocolSerializer;
 pub use simd_parser::SIMDParser;
-pub use zero_copy_buffer::{ZeroCopyBufferPool, ZeroCopySerializer, ZeroCopyConfig};
+pub use zero_copy_buffer::{ZeroCopyBufferPool, ZeroCopyConfig, ZeroCopySerializer};

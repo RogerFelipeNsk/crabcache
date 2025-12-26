@@ -95,7 +95,9 @@ where
                     }
                     Err(_) => {
                         // Another thread created bucket, clean up and retry
-                        unsafe { Box::from_raw(new_bucket) };
+                        unsafe {
+                            let _ = Box::from_raw(new_bucket);
+                        };
                         self.metrics.cas_failures.fetch_add(1, Ordering::Relaxed);
                         continue;
                     }
@@ -270,7 +272,9 @@ where
 
         // No empty slots, this is a simplified implementation
         // In a real implementation, we'd resize the entries vector
-        unsafe { Box::from_raw(new_entry) };
+        unsafe {
+            let _ = Box::from_raw(new_entry);
+        };
         None
     }
 

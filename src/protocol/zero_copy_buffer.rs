@@ -1,13 +1,13 @@
 //! Zero-copy buffer operations for maximum performance
-//! 
+//!
 //! This module implements zero-copy buffer management to minimize memory
 //! allocations and copies, targeting 300,000+ ops/sec performance
 
 use crate::protocol::{Command, Response};
-use bytes::{Bytes, BytesMut, BufMut};
-use std::sync::Arc;
+use bytes::{BufMut, Bytes, BytesMut};
 use std::collections::VecDeque;
 use std::ptr;
+use std::sync::Arc;
 
 /// Zero-copy buffer pool for reusing memory allocations
 pub struct ZeroCopyBufferPool {
@@ -115,8 +115,9 @@ impl ZeroCopyBufferPool {
             return;
         }
 
-        if self.buffer_pool.len() < self.config.max_pool_size 
-            && buffer.capacity() <= self.config.max_buffer_size {
+        if self.buffer_pool.len() < self.config.max_pool_size
+            && buffer.capacity() <= self.config.max_buffer_size
+        {
             self.buffer_pool.push_back(buffer);
             self.stats.current_pool_size = self.buffer_pool.len();
         }
@@ -125,7 +126,7 @@ impl ZeroCopyBufferPool {
     /// Allocate aligned buffer for optimal SIMD performance
     fn allocate_aligned_buffer(&self, size: usize) -> BytesMut {
         let aligned_size = self.align_size(size);
-        
+
         // For now, use regular allocation (in production, we'd use aligned_alloc)
         BytesMut::with_capacity(aligned_size)
     }
@@ -183,14 +184,17 @@ impl ZeroCopySerializer {
     }
 
     /// Serialize batch of responses with zero-copy optimization
-    pub fn serialize_response_batch_zero_copy(&mut self, responses: &[Response]) -> Result<Bytes, String> {
+    pub fn serialize_response_batch_zero_copy(
+        &mut self,
+        responses: &[Response],
+    ) -> Result<Bytes, String> {
         if responses.is_empty() {
             return Ok(Bytes::new());
         }
 
         // Estimate required buffer size
         let estimated_size = self.estimate_response_batch_size(responses);
-        
+
         // Get buffer from pool
         let mut buffer = {
             let mut pool = self.buffer_pool.lock().unwrap();
@@ -213,7 +217,11 @@ impl ZeroCopySerializer {
     }
 
     /// Serialize single response with zero-copy
-    fn serialize_response_zero_copy(&self, response: &Response, buffer: &mut BytesMut) -> Result<(), String> {
+    fn serialize_response_zero_copy(
+        &self,
+        response: &Response,
+        buffer: &mut BytesMut,
+    ) -> Result<(), String> {
         match response {
             Response::Ok => {
                 buffer.put_slice(b"OK\n");
@@ -244,18 +252,18 @@ impl ZeroCopySerializer {
     /// Estimate buffer size needed for response batch
     fn estimate_response_batch_size(&self, responses: &[Response]) -> usize {
         let mut total_size = 0;
-        
+
         for response in responses {
             total_size += match response {
-                Response::Ok => 3,  // "OK\n"
-                Response::Pong => 5, // "PONG\n"
+                Response::Ok => 3,                         // "OK\n"
+                Response::Pong => 5,                       // "PONG\n"
                 Response::Value(value) => value.len() + 1, // value + "\n"
-                Response::Null => 5, // "NULL\n"
+                Response::Null => 5,                       // "NULL\n"
                 Response::Error(msg) => 6 + msg.len() + 1, // "ERROR " + msg + "\n"
                 Response::Stats(stats) => stats.len() + 1, // stats + "\n"
             };
         }
-        
+
         // Add 10% buffer for safety
         total_size + (total_size / 10)
     }
@@ -269,12 +277,12 @@ impl ZeroCopySerializer {
             if let Some(newline_pos) = data[offset..].iter().position(|&b| b == b'\n') {
                 let command_end = offset + newline_pos;
                 let command_bytes = &data[offset..command_end];
-                
+
                 // Parse command with zero-copy (reuse byte slices)
                 if let Ok(command) = self.parse_single_command_zero_copy(command_bytes) {
                     commands.push(command);
                 }
-                
+
                 offset = command_end + 1;
             } else {
                 break;
@@ -316,13 +324,16 @@ impl ZeroCopySerializer {
             _ => {}
         }
 
-        Err(format!("Unknown command: {}", String::from_utf8_lossy(data)))
+        Err(format!(
+            "Unknown command: {}",
+            String::from_utf8_lossy(data)
+        ))
     }
 
     /// Parse GET command with zero-copy
     fn parse_get_zero_copy(&self, args: &[u8]) -> Result<Command, String> {
         let key_end = args.iter().position(|&b| b == b' ').unwrap_or(args.len());
-        
+
         if key_end == 0 {
             return Err("GET command missing key".to_string());
         }
@@ -334,23 +345,29 @@ impl ZeroCopySerializer {
 
     /// Parse PUT command with zero-copy
     fn parse_put_zero_copy(&self, args: &[u8]) -> Result<Command, String> {
-        let space_pos = args.iter().position(|&b| b == b' ')
+        let space_pos = args
+            .iter()
+            .position(|&b| b == b' ')
             .ok_or("PUT command missing value")?;
-        
+
         if space_pos == 0 {
             return Err("PUT command missing key".to_string());
         }
 
         let key = Bytes::copy_from_slice(&args[..space_pos]);
         let value = Bytes::copy_from_slice(&args[space_pos + 1..]);
-        
-        Ok(Command::Put { key, value, ttl: None })
+
+        Ok(Command::Put {
+            key,
+            value,
+            ttl: None,
+        })
     }
 
     /// Parse DEL command with zero-copy
     fn parse_del_zero_copy(&self, args: &[u8]) -> Result<Command, String> {
         let key_end = args.iter().position(|&b| b == b' ').unwrap_or(args.len());
-        
+
         if key_end == 0 {
             return Err("DEL command missing key".to_string());
         }
@@ -398,13 +415,14 @@ impl MemoryMappedBuffer {
             use std::io::Write;
 
             // Create temporary file
-            let mut temp_file = tempfile::tempfile()
-                .map_err(|e| format!("Failed to create temp file: {}", e))?;
-            
+            let mut temp_file =
+                tempfile::tempfile().map_err(|e| format!("Failed to create temp file: {}", e))?;
+
             // Write zeros to set file size
-            temp_file.write_all(&vec![0u8; size])
+            temp_file
+                .write_all(&vec![0u8; size])
                 .map_err(|e| format!("Failed to write to temp file: {}", e))?;
-            
+
             // Memory map the file
             let mmap = unsafe {
                 MmapOptions::new()
@@ -441,7 +459,7 @@ impl MemoryMappedBuffer {
                     ptr::copy_nonoverlapping(
                         data.as_ptr(),
                         mmap.as_mut_ptr().add(self.position),
-                        data.len()
+                        data.len(),
                     );
                 }
             }
@@ -502,18 +520,18 @@ mod tests {
     fn test_zero_copy_buffer_pool() {
         let config = ZeroCopyConfig::default();
         let mut pool = ZeroCopyBufferPool::new(config);
-        
+
         // Get a buffer
         let buffer1 = pool.get_buffer(1024);
         assert!(buffer1.capacity() >= 1024);
-        
+
         // Return it
         pool.return_buffer(buffer1);
-        
+
         // Get another buffer (should reuse)
         let buffer2 = pool.get_buffer(1024);
         assert!(buffer2.capacity() >= 1024);
-        
+
         // Check reuse efficiency
         let efficiency = pool.get_reuse_efficiency();
         assert!(efficiency > 0.0);
@@ -524,20 +542,20 @@ mod tests {
         let config = ZeroCopyConfig::default();
         let pool = Arc::new(std::sync::Mutex::new(ZeroCopyBufferPool::new(config)));
         let mut serializer = ZeroCopySerializer::new(pool);
-        
+
         // Test response serialization
         let responses = vec![
             Response::Ok,
             Response::Pong,
             Response::Value(Bytes::from("test_value")),
         ];
-        
+
         let result = serializer.serialize_response_batch_zero_copy(&responses);
         assert!(result.is_ok());
-        
+
         let serialized = result.unwrap();
         assert!(!serialized.is_empty());
-        
+
         // Check stats
         let stats = serializer.get_stats();
         assert_eq!(stats.responses_serialized, 3);
@@ -548,25 +566,25 @@ mod tests {
         let config = ZeroCopyConfig::default();
         let pool = Arc::new(std::sync::Mutex::new(ZeroCopyBufferPool::new(config)));
         let mut serializer = ZeroCopySerializer::new(pool);
-        
+
         let test_data = b"PING\nGET test_key\nPUT key value\nDEL old_key\n";
-        
+
         let result = serializer.parse_command_batch_zero_copy(test_data);
         assert!(result.is_ok());
-        
+
         let commands = result.unwrap();
         assert_eq!(commands.len(), 4);
-        
+
         // Verify commands
         match &commands[0] {
-            Command::Ping => {},
+            Command::Ping => {}
             _ => panic!("Expected PING command"),
         }
-        
+
         match &commands[1] {
             Command::Get { key } => {
                 assert_eq!(key.as_ref(), b"test_key");
-            },
+            }
             _ => panic!("Expected GET command"),
         }
     }
@@ -574,16 +592,16 @@ mod tests {
     #[test]
     fn test_memory_mapped_buffer() {
         let mut buffer = MemoryMappedBuffer::new(4096).unwrap();
-        
+
         // Write some data
         let test_data = b"Hello, World!";
         let written = buffer.write(test_data).unwrap();
         assert_eq!(written, test_data.len());
-        
+
         // Read it back
         let read_data = buffer.read(0, test_data.len()).unwrap();
         assert_eq!(read_data, test_data);
-        
+
         // Check position
         assert_eq!(buffer.position(), test_data.len());
     }
@@ -593,24 +611,27 @@ mod tests {
         let config = ZeroCopyConfig::default();
         let pool = Arc::new(std::sync::Mutex::new(ZeroCopyBufferPool::new(config)));
         let mut serializer = ZeroCopySerializer::new(pool);
-        
+
         // Create large batch of commands
         let mut large_batch = Vec::new();
         for i in 0..10000 {
             large_batch.extend_from_slice(format!("GET key_{}\n", i).as_bytes());
         }
-        
+
         let start = std::time::Instant::now();
         let result = serializer.parse_command_batch_zero_copy(&large_batch);
         let parse_time = start.elapsed();
-        
+
         assert!(result.is_ok());
         let commands = result.unwrap();
         assert_eq!(commands.len(), 10000);
-        
+
         let ops_per_second = commands.len() as f64 / parse_time.as_secs_f64();
-        println!("Zero-copy parsing performance: {:.0} ops/sec", ops_per_second);
-        
+        println!(
+            "Zero-copy parsing performance: {:.0} ops/sec",
+            ops_per_second
+        );
+
         // Should achieve high performance
         assert!(ops_per_second > 500_000.0);
     }

@@ -1,5 +1,5 @@
 //! Advanced pipeline processing for Phase 6.1
-//! 
+//!
 //! This module implements advanced pipelining features:
 //! - Parallel batch parsing
 //! - Adaptive batch sizing
@@ -7,15 +7,15 @@
 //! - SIMD-optimized protocol parsing
 //! - Smart command grouping
 
-use crate::protocol::{Command, Response, PipelineBatch, PipelineResponseBatch};
 use crate::protocol::simd_parser::SIMDParser;
-use crate::protocol::zero_copy_buffer::{ZeroCopyBufferPool, ZeroCopySerializer, ZeroCopyConfig};
+use crate::protocol::zero_copy_buffer::{ZeroCopyBufferPool, ZeroCopyConfig, ZeroCopySerializer};
+use crate::protocol::{Command, PipelineBatch, PipelineResponseBatch, Response};
+use bytes::Bytes;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::{mpsc, RwLock};
 use tracing::debug;
-use bytes::Bytes;
-use std::time::Instant;
 
 /// Advanced pipeline processor with parallel processing capabilities
 pub struct AdvancedPipelineProcessor {
@@ -117,13 +117,15 @@ impl AdvancedPipelineProcessor {
         let batch_sizer = Arc::new(RwLock::new(AdaptiveBatchSizer::new(config.max_batch_size)));
         let affinity_analyzer = Arc::new(CommandAffinityAnalyzer::new());
         let metrics = Arc::new(RwLock::new(AdvancedPipelineMetrics::default()));
-        
+
         // Initialize SIMD parser
         let simd_parser = Arc::new(RwLock::new(SIMDParser::new()));
-        
+
         // Initialize zero-copy components
         let zero_copy_config = ZeroCopyConfig::default();
-        let buffer_pool = Arc::new(std::sync::Mutex::new(ZeroCopyBufferPool::new(zero_copy_config)));
+        let buffer_pool = Arc::new(std::sync::Mutex::new(ZeroCopyBufferPool::new(
+            zero_copy_config,
+        )));
         let zero_copy_serializer = Arc::new(RwLock::new(ZeroCopySerializer::new(buffer_pool)));
 
         Self {
@@ -138,9 +140,12 @@ impl AdvancedPipelineProcessor {
     }
 
     /// Process batch with advanced optimizations
-    pub async fn process_batch_advanced(&self, data: &[u8]) -> Result<PipelineResponseBatch, String> {
+    pub async fn process_batch_advanced(
+        &self,
+        data: &[u8],
+    ) -> Result<PipelineResponseBatch, String> {
         let start_time = Instant::now();
-        
+
         // Parse batch with SIMD optimization if enabled
         let batch = if self.config.enable_simd {
             let mut simd_parser = self.simd_parser.write().await;
@@ -169,7 +174,9 @@ impl AdvancedPipelineProcessor {
         // Analyze command affinity for optimization
         let command_groups = if self.config.enable_adaptive_sizing {
             let commands_clone = batch.commands.clone();
-            self.affinity_analyzer.group_commands_by_affinity(commands_clone).await
+            self.affinity_analyzer
+                .group_commands_by_affinity(commands_clone)
+                .await
         } else {
             vec![CommandGroup::single(batch.commands.clone())]
         };
@@ -180,7 +187,8 @@ impl AdvancedPipelineProcessor {
 
         // Update metrics with SIMD and zero-copy stats
         let processing_time = start_time.elapsed();
-        self.update_metrics_advanced(command_count, processing_time).await;
+        self.update_metrics_advanced(command_count, processing_time)
+            .await;
 
         // Adapt batch size based on performance
         if self.config.enable_adaptive_sizing {
@@ -215,11 +223,11 @@ impl AdvancedPipelineProcessor {
             if let Some(newline_pos) = data[offset..].iter().position(|&b| b == b'\n') {
                 let command_end = offset + newline_pos;
                 let command_bytes = &data[offset..command_end];
-                
+
                 if let Ok(command) = self.parse_single_command(command_bytes) {
                     commands.push(command);
                 }
-                
+
                 offset = command_end + 1;
             } else {
                 break;
@@ -236,9 +244,8 @@ impl AdvancedPipelineProcessor {
 
     /// Parse single command (placeholder)
     fn parse_single_command(&self, data: &[u8]) -> Result<Command, String> {
-        let command_str = std::str::from_utf8(data)
-            .map_err(|e| format!("Invalid UTF-8: {}", e))?;
-        
+        let command_str = std::str::from_utf8(data).map_err(|e| format!("Invalid UTF-8: {}", e))?;
+
         let parts: Vec<&str> = command_str.split_whitespace().collect();
         if parts.is_empty() {
             return Err("Empty command".to_string());
@@ -262,35 +269,42 @@ impl AdvancedPipelineProcessor {
     }
 
     /// Process command groups (placeholder)
-    async fn process_command_groups(&self, groups: Vec<CommandGroup>) -> Result<Vec<Response>, String> {
+    async fn process_command_groups(
+        &self,
+        groups: Vec<CommandGroup>,
+    ) -> Result<Vec<Response>, String> {
         let mut all_responses = Vec::new();
-        
+
         for group in groups {
             for _command in group.commands {
                 // Placeholder - will integrate with actual command processing
                 all_responses.push(Response::Ok);
             }
         }
-        
+
         Ok(all_responses)
     }
 
     /// Update performance metrics with advanced stats
-    async fn update_metrics_advanced(&self, command_count: usize, processing_time: std::time::Duration) {
+    async fn update_metrics_advanced(
+        &self,
+        command_count: usize,
+        processing_time: std::time::Duration,
+    ) {
         let mut metrics = self.metrics.write().await;
-        
+
         metrics.total_batches += 1;
         metrics.total_commands += command_count as u64;
         metrics.avg_batch_size = metrics.total_commands as f64 / metrics.total_batches as f64;
-        
+
         let processing_time_ms = processing_time.as_secs_f64() * 1000.0;
         metrics.avg_latency_ms = (metrics.avg_latency_ms + processing_time_ms) / 2.0;
-        
+
         // Calculate throughput (commands per second)
         if processing_time.as_secs_f64() > 0.0 {
             metrics.current_throughput = command_count as f64 / processing_time.as_secs_f64();
         }
-        
+
         // Update SIMD usage stats
         if self.config.enable_simd {
             let simd_parser = self.simd_parser.read().await;
@@ -298,18 +312,18 @@ impl AdvancedPipelineProcessor {
                 metrics.simd_usage_percent = 100.0;
             }
         }
-        
+
         // Update zero-copy stats
         if self.config.enable_zero_copy {
             let zero_copy_serializer = self.zero_copy_serializer.read().await;
             metrics.zero_copy_percent = zero_copy_serializer.get_zero_copy_efficiency() * 100.0;
         }
-        
+
         metrics.last_update = Some(Instant::now());
-        
+
         debug!(
             "Advanced pipeline metrics: {} commands in {:.2}ms, throughput: {:.0} ops/sec, SIMD: {:.1}%, Zero-copy: {:.1}%",
-            command_count, processing_time_ms, metrics.current_throughput, 
+            command_count, processing_time_ms, metrics.current_throughput,
             metrics.simd_usage_percent, metrics.zero_copy_percent
         );
     }
@@ -317,7 +331,7 @@ impl AdvancedPipelineProcessor {
     /// Adapt batch size based on performance
     async fn adapt_batch_size(&self, processing_time: std::time::Duration, batch_size: usize) {
         let mut sizer = self.batch_sizer.write().await;
-        
+
         let performance = BatchPerformance {
             batch_size,
             processing_time_ms: processing_time.as_secs_f64() * 1000.0,
@@ -327,7 +341,7 @@ impl AdvancedPipelineProcessor {
                 0.0
             },
         };
-        
+
         sizer.update_performance(performance);
     }
 
@@ -368,15 +382,15 @@ impl ParallelBatchParser {
     pub fn new(thread_count: usize) -> Self {
         let (task_sender, task_receiver) = mpsc::unbounded_channel();
         let (result_sender, result_receiver) = mpsc::unbounded_channel();
-        
+
         // Spawn parser threads (simplified implementation)
         for thread_id in 0..thread_count {
             let _task_rx = task_receiver;
             let _result_tx = result_sender.clone();
-            
+
             // Simplified: In production, we'd spawn actual worker threads
             debug!("Parser thread {} configured", thread_id);
-            
+
             // For this example, we'll use a single receiver
             break;
         }
@@ -398,7 +412,7 @@ impl ParallelBatchParser {
         // Split data into chunks for parallel processing
         let chunk_size = data.len() / self.thread_count;
         let mut tasks = Vec::new();
-        
+
         for i in 0..self.thread_count {
             let start = i * chunk_size;
             let end = if i == self.thread_count - 1 {
@@ -406,7 +420,7 @@ impl ParallelBatchParser {
             } else {
                 (i + 1) * chunk_size
             };
-            
+
             if start < data.len() {
                 let chunk_data = data[start..end].to_vec();
                 let task = ParseTask {
@@ -414,7 +428,7 @@ impl ParallelBatchParser {
                     data: chunk_data,
                     offset: start,
                 };
-                
+
                 tasks.push(task);
             }
         }
@@ -436,11 +450,11 @@ impl ParallelBatchParser {
             if let Some(newline_pos) = data[offset..].iter().position(|&b| b == b'\n') {
                 let command_end = offset + newline_pos;
                 let command_bytes = &data[offset..command_end];
-                
+
                 if let Ok(command) = Self::parse_single_command(command_bytes) {
                     commands.push(command);
                 }
-                
+
                 offset = command_end + 1;
             } else {
                 break;
@@ -457,9 +471,8 @@ impl ParallelBatchParser {
 
     /// Parse single command
     fn parse_single_command(data: &[u8]) -> Result<Command, String> {
-        let command_str = std::str::from_utf8(data)
-            .map_err(|e| format!("Invalid UTF-8: {}", e))?;
-        
+        let command_str = std::str::from_utf8(data).map_err(|e| format!("Invalid UTF-8: {}", e))?;
+
         let parts: Vec<&str> = command_str.split_whitespace().collect();
         if parts.is_empty() {
             return Err("Empty command".to_string());
@@ -486,7 +499,7 @@ impl ParallelBatchParser {
     fn parse_task(task: ParseTask) -> ParseResult {
         let commands = Self::parse_chunk(&task.data);
         let bytes_consumed = task.data.len();
-        
+
         ParseResult {
             id: task.id,
             commands,
@@ -503,11 +516,11 @@ impl ParallelBatchParser {
             if let Some(newline_pos) = data[offset..].iter().position(|&b| b == b'\n') {
                 let command_end = offset + newline_pos;
                 let command_bytes = &data[offset..command_end];
-                
+
                 if let Ok(command) = Self::parse_single_command(command_bytes) {
                     commands.push(command);
                 }
-                
+
                 offset = command_end + 1;
             } else {
                 break;
@@ -566,7 +579,7 @@ impl AdaptiveBatchSizer {
     /// Update performance and adapt batch size
     pub fn update_performance(&mut self, performance: BatchPerformance) {
         self.performance_history.push_back(performance.clone());
-        
+
         // Limit history size
         if self.performance_history.len() > self.history_limit {
             self.performance_history.pop_front();
@@ -574,7 +587,7 @@ impl AdaptiveBatchSizer {
 
         // Adapt batch size based on performance
         self.adapt_batch_size(&performance);
-        
+
         debug!(
             "Batch size adapted: {} -> {} (perf: {:.0} ops/sec)",
             performance.batch_size, self.current_size, performance.ops_per_second
@@ -588,7 +601,7 @@ impl AdaptiveBatchSizer {
         }
 
         let avg_performance = self.get_average_performance();
-        
+
         match self.strategy {
             AdaptationStrategy::Conservative => {
                 if current_perf.ops_per_second > avg_performance * 1.1 {
@@ -628,10 +641,12 @@ impl AdaptiveBatchSizer {
             return 0.0;
         }
 
-        let sum: f64 = self.performance_history.iter()
+        let sum: f64 = self
+            .performance_history
+            .iter()
             .map(|p| p.ops_per_second)
             .sum();
-        
+
         sum / self.performance_history.len() as f64
     }
 
@@ -710,10 +725,10 @@ mod tests {
     async fn test_advanced_pipeline_processor() {
         let config = AdvancedPipelineConfig::default();
         let processor = AdvancedPipelineProcessor::new(config);
-        
+
         let test_data = b"PING\nGET test\nPUT key value\n";
         let result = processor.process_batch_advanced(test_data).await;
-        
+
         assert!(result.is_ok());
         let response_batch = result.unwrap();
         assert_eq!(response_batch.responses.len(), 3);
@@ -722,13 +737,13 @@ mod tests {
     #[test]
     fn test_adaptive_batch_sizer() {
         let mut sizer = AdaptiveBatchSizer::new(64);
-        
+
         let good_performance = BatchPerformance {
             batch_size: 16,
             processing_time_ms: 1.0,
             ops_per_second: 16000.0,
         };
-        
+
         sizer.update_performance(good_performance);
         assert!(sizer.get_optimal_size() >= 16);
     }
@@ -737,10 +752,10 @@ mod tests {
     async fn test_parallel_batch_parser() {
         let parser = ParallelBatchParser::new(2);
         let test_data = b"PING\nGET test\nPUT key value\n";
-        
+
         let result = parser.parse_batch_parallel(test_data).await;
         assert!(result.is_ok());
-        
+
         let batch = result.unwrap();
         assert_eq!(batch.commands.len(), 3);
     }

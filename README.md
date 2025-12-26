@@ -250,6 +250,81 @@ cargo build --release
 ./target/release/crabcache
 ```
 
+## 👨‍💻 Desenvolvimento
+
+### Verificação Rápida (Recomendado)
+
+Para desenvolvimento rápido, use a verificação essencial antes de commits:
+
+```bash
+# Verificação rápida (30 segundos)
+make check
+# ou
+./scripts/quick-check.sh
+```
+
+### Validação Completa do CI
+
+Antes de fazer push para main, execute todas as verificações do CI:
+
+```bash
+# Validação completa (2-5 minutos)
+make check-full
+# ou
+./scripts/pre-push-check.sh
+```
+
+### Comandos de Desenvolvimento
+
+```bash
+# Formatação
+make fmt
+
+# Build
+make build
+
+# Testes
+make test
+
+# Linting
+make lint
+
+# Documentação
+make docs
+
+# Instalar dependências de desenvolvimento
+make install-deps
+
+# Configurar git hooks automáticos
+make setup-hooks
+```
+
+### Fluxo de Trabalho Recomendado
+
+```bash
+# 1. Faça suas alterações
+vim src/some_file.rs
+
+# 2. Verificação rápida durante desenvolvimento
+make check
+
+# 3. Antes de push para main
+make check-full
+
+# 4. Se tudo passou, pode fazer push
+git add .
+git commit -m "feat: sua alteração"
+git push origin main
+```
+
+**Por que usar esses scripts?**
+- ✅ Evita falhas no CI
+- ✅ Garante qualidade do código
+- ✅ Economiza tempo de desenvolvimento
+- ✅ Mantém o histórico limpo
+
+Veja mais detalhes em [`scripts/README.md`](scripts/README.md).
+
 ## 🔧 Configuração
 
 ### Arquivo TOML

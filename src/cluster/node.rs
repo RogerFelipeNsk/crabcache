@@ -1,5 +1,5 @@
 //! Cluster node management and representation
-//! 
+//!
 //! This module defines the core node structures and capabilities
 //! for distributed CrabCache clustering.
 
@@ -18,20 +18,15 @@ impl NodeId {
     pub fn generate() -> Self {
         Self(Uuid::new_v4())
     }
-    
+
     /// Create node ID from string
     pub fn from_string(s: &str) -> Result<Self, uuid::Error> {
         Ok(Self(Uuid::parse_str(s)?))
     }
-    
+
     /// Get the underlying UUID
     pub fn as_uuid(&self) -> Uuid {
         self.0
-    }
-    
-    /// Convert to string representation
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
     }
 }
 
@@ -49,7 +44,7 @@ impl ShardId {
     pub fn new(id: u32) -> Self {
         Self(id)
     }
-    
+
     pub fn as_u32(&self) -> u32 {
         self.0
     }
@@ -83,15 +78,18 @@ impl NodeStatus {
     pub fn can_serve_reads(&self) -> bool {
         matches!(self, NodeStatus::Active | NodeStatus::Leaving)
     }
-    
+
     /// Check if node can serve write requests
     pub fn can_serve_writes(&self) -> bool {
         matches!(self, NodeStatus::Active)
     }
-    
+
     /// Check if node is healthy
     pub fn is_healthy(&self) -> bool {
-        matches!(self, NodeStatus::Active | NodeStatus::Joining | NodeStatus::Recovering)
+        matches!(
+            self,
+            NodeStatus::Active | NodeStatus::Joining | NodeStatus::Recovering
+        )
     }
 }
 
@@ -206,19 +204,20 @@ impl NodeStats {
         let cpu_weight = 0.4;
         let memory_weight = 0.3;
         let throughput_weight = 0.3;
-        
+
         let throughput_utilization = self.current_ops_per_sec / 500_000.0; // Assume 500k max
-        
-        (self.cpu_utilization * cpu_weight + 
-         self.memory_utilization * memory_weight + 
-         throughput_utilization * throughput_weight).min(1.0)
+
+        (self.cpu_utilization * cpu_weight
+            + self.memory_utilization * memory_weight
+            + throughput_utilization * throughput_weight)
+            .min(1.0)
     }
-    
+
     /// Check if node is overloaded
     pub fn is_overloaded(&self, threshold: f64) -> bool {
         self.load_factor() > threshold
     }
-    
+
     /// Get error rate
     pub fn error_rate(&self) -> f64 {
         if self.total_requests == 0 {
@@ -273,68 +272,68 @@ impl ClusterNode {
             metadata: HashMap::new(),
         }
     }
-    
+
     /// Update node statistics
     pub fn update_stats(&mut self, stats: NodeStats) {
         self.stats = stats;
         self.last_heartbeat = Instant::now();
     }
-    
+
     /// Check if node is considered alive based on heartbeat
     pub fn is_alive(&self, timeout: std::time::Duration) -> bool {
         self.last_heartbeat.elapsed() < timeout
     }
-    
+
     /// Mark node as failed
     pub fn mark_failed(&mut self) {
         self.status = NodeStatus::Failed;
     }
-    
+
     /// Mark node as active
     pub fn mark_active(&mut self) {
         self.status = NodeStatus::Active;
         self.last_heartbeat = Instant::now();
     }
-    
+
     /// Add shard to this node
     pub fn add_shard(&mut self, shard_id: ShardId) {
         if !self.shards.contains(&shard_id) {
             self.shards.push(shard_id);
         }
     }
-    
+
     /// Remove shard from this node
     pub fn remove_shard(&mut self, shard_id: ShardId) {
         self.shards.retain(|&s| s != shard_id);
     }
-    
+
     /// Check if node has a specific shard
     pub fn has_shard(&self, shard_id: ShardId) -> bool {
         self.shards.contains(&shard_id)
     }
-    
+
     /// Get node's current load factor
     pub fn load_factor(&self) -> f64 {
         self.stats.load_factor()
     }
-    
+
     /// Check if node can accept more load
     pub fn can_accept_load(&self, threshold: f64) -> bool {
         self.status.can_serve_writes() && !self.stats.is_overloaded(threshold)
     }
-    
+
     /// Get node's effective capacity based on current load
     pub fn effective_capacity(&self) -> u64 {
         let load_factor = self.load_factor();
         let remaining_capacity = 1.0 - load_factor;
         (self.capabilities.max_ops_per_sec as f64 * remaining_capacity) as u64
     }
-    
+
     /// Set metadata value
     pub fn set_metadata(&mut self, key: String, value: String) {
         self.metadata.insert(key, value);
     }
-    
+
     /// Get metadata value
     pub fn get_metadata(&self, key: &str) -> Option<&String> {
         self.metadata.get(key)
@@ -408,10 +407,10 @@ mod tests {
         stats.cpu_utilization = 0.5;
         stats.memory_utilization = 0.3;
         stats.current_ops_per_sec = 250_000.0; // 50% of 500k max
-        
+
         let load_factor = stats.load_factor();
         assert!(load_factor > 0.0 && load_factor <= 1.0);
-        
+
         // Should be around 0.45 (weighted average)
         assert!((load_factor - 0.45).abs() < 0.1);
     }
@@ -422,7 +421,7 @@ mod tests {
         stats.cpu_utilization = 0.9;
         stats.memory_utilization = 0.8;
         stats.current_ops_per_sec = 450_000.0;
-        
+
         assert!(stats.is_overloaded(0.8));
         assert!(!stats.is_overloaded(0.95));
     }
@@ -433,9 +432,9 @@ mod tests {
         let addr = "127.0.0.1:8000".parse().unwrap();
         let cluster_addr = "127.0.0.1:8001".parse().unwrap();
         let caps = NodeCapabilities::default();
-        
+
         let node = ClusterNode::new(id, addr, cluster_addr, caps);
-        
+
         assert_eq!(node.id, id);
         assert_eq!(node.address, addr);
         assert_eq!(node.cluster_address, cluster_addr);
@@ -449,25 +448,25 @@ mod tests {
         let addr = "127.0.0.1:8000".parse().unwrap();
         let cluster_addr = "127.0.0.1:8001".parse().unwrap();
         let caps = NodeCapabilities::default();
-        
+
         let mut node = ClusterNode::new(id, addr, cluster_addr, caps);
-        
+
         let shard1 = ShardId::new(1);
         let shard2 = ShardId::new(2);
-        
+
         // Add shards
         node.add_shard(shard1);
         node.add_shard(shard2);
         assert_eq!(node.shards.len(), 2);
         assert!(node.has_shard(shard1));
         assert!(node.has_shard(shard2));
-        
+
         // Remove shard
         node.remove_shard(shard1);
         assert_eq!(node.shards.len(), 1);
         assert!(!node.has_shard(shard1));
         assert!(node.has_shard(shard2));
-        
+
         // Adding duplicate shard should not increase count
         node.add_shard(shard2);
         assert_eq!(node.shards.len(), 1);
@@ -479,16 +478,16 @@ mod tests {
         let addr = "127.0.0.1:8000".parse().unwrap();
         let cluster_addr = "127.0.0.1:8001".parse().unwrap();
         let caps = NodeCapabilities::default();
-        
+
         let node = ClusterNode::new(id, addr, cluster_addr, caps);
-        
+
         // Node should be alive immediately after creation
         assert!(node.is_alive(Duration::from_secs(10)));
-        
+
         // Simulate old heartbeat
         let mut old_node = node.clone();
         old_node.last_heartbeat = Instant::now() - Duration::from_secs(20);
-        
+
         assert!(!old_node.is_alive(Duration::from_secs(10)));
     }
 
@@ -498,23 +497,23 @@ mod tests {
         let addr = "127.0.0.1:8000".parse().unwrap();
         let cluster_addr = "127.0.0.1:8001".parse().unwrap();
         let caps = NodeCapabilities::default();
-        
+
         let mut node = ClusterNode::new(id, addr, cluster_addr, caps);
         node.mark_active();
-        
+
         // Low load - should accept more
         node.stats.cpu_utilization = 0.3;
         node.stats.memory_utilization = 0.2;
         node.stats.current_ops_per_sec = 100_000.0;
-        
+
         assert!(node.can_accept_load(0.8));
         assert!(node.effective_capacity() > 300_000);
-        
+
         // High load - should not accept more
         node.stats.cpu_utilization = 0.9;
         node.stats.memory_utilization = 0.8;
         node.stats.current_ops_per_sec = 450_000.0;
-        
+
         assert!(!node.can_accept_load(0.8));
         assert!(node.effective_capacity() < 100_000);
     }
@@ -525,13 +524,13 @@ mod tests {
         let addr = "127.0.0.1:8000".parse().unwrap();
         let cluster_addr = "127.0.0.1:8001".parse().unwrap();
         let caps = NodeCapabilities::default();
-        
+
         let mut node = ClusterNode::new(id, addr, cluster_addr, caps);
-        
+
         // Set and get metadata
         node.set_metadata("region".to_string(), "us-west-1".to_string());
         node.set_metadata("zone".to_string(), "us-west-1a".to_string());
-        
+
         assert_eq!(node.get_metadata("region"), Some(&"us-west-1".to_string()));
         assert_eq!(node.get_metadata("zone"), Some(&"us-west-1a".to_string()));
         assert_eq!(node.get_metadata("nonexistent"), None);
@@ -544,27 +543,27 @@ mod tests {
         let addr = "127.0.0.1:8000".parse().unwrap();
         let cluster_addr = "127.0.0.1:8001".parse().unwrap();
         let caps = NodeCapabilities::default();
-        
+
         let node1a = ClusterNode::new(id1, addr, cluster_addr, caps.clone());
         let node1b = ClusterNode::new(id1, addr, cluster_addr, caps.clone());
         let node2 = ClusterNode::new(id2, addr, cluster_addr, caps);
-        
+
         // Nodes with same ID should be equal
         assert_eq!(node1a, node1b);
         assert_ne!(node1a, node2);
-        
+
         // Hash should be based on ID
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher1a = DefaultHasher::new();
         let mut hasher1b = DefaultHasher::new();
         let mut hasher2 = DefaultHasher::new();
-        
+
         node1a.hash(&mut hasher1a);
         node1b.hash(&mut hasher1b);
         node2.hash(&mut hasher2);
-        
+
         assert_eq!(hasher1a.finish(), hasher1b.finish());
         assert_ne!(hasher1a.finish(), hasher2.finish());
     }
