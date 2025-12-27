@@ -52,6 +52,16 @@ jobs:
       with:
         targets: ${{ matrix.target }}
     
+    - name: Install Protocol Buffers Compiler
+      run: |
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          brew install protobuf
+        fi
+        protoc --version
+    
     - name: Build release binary
       run: cargo build --release --target ${{ matrix.target }}
     
