@@ -5,7 +5,7 @@ use bytes::{Buf, Bytes};
 use std::time::Instant;
 
 use crate::protocol::protobuf::{
-    generated::{crab_cache_command, CrabCacheCommand, PutCommand, GetCommand, BatchCommand},
+    generated::{crab_cache_command, BatchCommand, CrabCacheCommand, GetCommand, PutCommand},
     ProtobufConfig, ProtobufError, ProtobufMetrics, ProtobufResult,
 };
 use crate::protocol::Command;
