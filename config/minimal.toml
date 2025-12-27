@@ -66,8 +66,8 @@ timeout_ms = 100
 [logging]
 level = "info"
 format = "json"
-file_enabled = false
 enable_file = false
+file_enabled = false
 file_path = "./logs/crabcache.log"
 max_file_size_mb = 100
 max_files = 10

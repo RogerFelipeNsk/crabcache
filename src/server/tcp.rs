@@ -3,7 +3,7 @@
 use crate::metrics::SharedMetrics;
 use crate::protocol::commands::Response;
 use crate::protocol::{
-    BinaryProtocol, PipelineProcessor, PipelineResponseBatch, ProtocolParser, ProtocolSerializer,
+    BinaryProtocol, PipelineProcessor, ProtocolParser, ProtocolSerializer,
 };
 use crate::router::ShardRouter;
 use crate::security::{
@@ -23,9 +23,11 @@ use tracing::{debug, error, info, warn};
 
 mod buffer_pool;
 mod connection_metrics;
+mod streaming_buffer;
 
 use buffer_pool::BufferPool;
 use connection_metrics::{CommandTimer, ConnectionGuard, ConnectionMetrics};
+use streaming_buffer::StreamingBuffer;
 
 /// Enum para diferentes tipos de shard manager
 pub enum ShardManagerType {
@@ -144,9 +146,9 @@ impl TcpServer {
             ShardManagerType::Optimized(Arc::new(optimized_manager))
         };
 
-        // Create buffer pool for reducing allocations
+        // Create buffer pool for reducing allocations - INCREASED SIZE for binary data
         let buffer_pool = Arc::new(BufferPool::new(
-            16384, // 16KB buffers (increased from 8KB for better performance)
+            65536, // 64KB buffers (increased from 16KB for large binary data)
             100,   // Keep up to 100 buffers in pool
         ));
 
@@ -401,7 +403,7 @@ impl TcpServer {
         let mut response_buffer = BytesMut::with_capacity(16384);
 
         // Create pipeline processor if enabled
-        let mut pipeline_processor = if pipeline_enabled {
+        let _pipeline_processor = if pipeline_enabled {
             Some(PipelineProcessor::new(max_pipeline_batch_size))
         } else {
             None
@@ -411,6 +413,9 @@ impl TcpServer {
             "Connection established with pipelining: enabled={}",
             pipeline_enabled
         );
+
+        // IMPROVED: Use streaming buffer for large commands
+        let mut streaming_buffer = StreamingBuffer::new(1024 * 1024); // 1MB max command size
 
         loop {
             // Get buffer from pool (reduces allocations)
@@ -444,130 +449,68 @@ impl TcpServer {
                 }
             };
 
-            // Start timing command processing
-            let _timer = CommandTimer::new(Arc::clone(&metrics));
-
-            // PIPELINE OPTIMIZATION: Process commands in batches when possible
-            if pipeline_enabled && pipeline_processor.is_some() {
-                let processor = pipeline_processor.as_mut().unwrap();
-
-                // Try to parse as pipeline batch
-                match processor.parse_batch(&buffer[..n]) {
-                    Ok(batch) => {
-                        debug!(
-                            "Processing pipeline batch with {} commands",
-                            batch.commands.len()
-                        );
-
-                        // Security check for each command in batch
-                        let mut allowed_commands = Vec::new();
-                        for command in batch.commands {
-                            let auth_result =
-                                security_manager.authenticate_command(&mut security_context, None);
-                            if auth_result.is_allowed() {
-                                allowed_commands.push(command);
-                            } else {
-                                warn!("Command in batch blocked: {}", auth_result.error_message());
-                                // For now, we'll skip blocked commands rather than failing the entire batch
-                            }
-                        }
-
-                        if !allowed_commands.is_empty() {
-                            // Process batch of commands
-                            let responses = shard_manager.process_batch(allowed_commands).await;
-
-                            // Create response batch
-                            let response_batch = PipelineResponseBatch {
-                                responses,
-                                batch_id: batch.batch_id,
-                                use_binary_protocol: batch.use_binary_protocol,
-                            };
-
-                            // Serialize response batch
-                            response_buffer.clear();
-                            match processor.serialize_response_batch(&response_batch) {
-                                Ok(response_bytes) => {
-                                    if let Err(e) = stream.write_all(&response_bytes).await {
-                                        error!("Failed to write pipeline response: {}", e);
-                                        metrics.record_network_error();
-                                        buffer_pool.return_buffer(buffer).await;
-                                        break;
-                                    }
-
-                                    debug!(
-                                        "Sent pipeline response: {} commands processed",
-                                        response_batch.responses.len()
-                                    );
-                                }
-                                Err(e) => {
-                                    error!("Failed to serialize pipeline response: {}", e);
-                                    metrics.record_processing_error();
-                                }
-                            }
-                        }
-                    }
+            // Append new data to streaming buffer
+            if let Err(e) = streaming_buffer.append(&buffer[..n]) {
+                error!("Command too large from {}: {}", client_addr, e);
+                let error_response = Response::Error(format!("Command too large: {}", e));
+                let response_bytes = match ProtocolSerializer::serialize_response(&error_response) {
+                    Ok(bytes) => bytes,
                     Err(_) => {
-                        // Fall back to single command processing
-                        debug!("Pipeline parsing failed, falling back to single command");
-                        if let Err(e) = Self::process_single_command(
-                            &buffer[..n],
-                            &shard_manager,
-                            &mut security_context,
-                            &security_manager,
-                            &mut stream,
-                            &mut response_buffer,
-                            &metrics,
-                            client_addr,
-                        )
-                        .await
-                        {
-                            error!("Single command processing failed: {}", e);
-                            buffer_pool.return_buffer(buffer).await;
+                        buffer_pool.return_buffer(buffer).await;
+                        break;
+                    }
+                };
+                if let Err(e) = stream.write_all(&response_bytes).await {
+                    error!("Failed to write error response: {}", e);
+                }
+                streaming_buffer.clear();
+                buffer_pool.return_buffer(buffer).await;
+                continue;
+            }
+
+            buffer_pool.return_buffer(buffer).await;
+
+            // Process all complete commands in the streaming buffer
+            while streaming_buffer.has_complete_commands() {
+                if let Some(command_data) = streaming_buffer.extract_command() {
+                    // Start timing command processing
+                    let _timer = CommandTimer::new(Arc::clone(&metrics));
+
+                    // Process single command with improved error handling
+                    if let Err(e) = Self::process_single_command_improved(
+                        &command_data,
+                        &shard_manager,
+                        &mut security_context,
+                        &security_manager,
+                        &mut stream,
+                        &mut response_buffer,
+                        &metrics,
+                        client_addr,
+                    )
+                    .await
+                    {
+                        error!("Command processing failed: {}", e);
+                        // Don't break connection on single command failure
+                        // Send error response and continue
+                        let error_response = Response::Error(format!("Processing error: {}", e));
+                        let response_bytes = match ProtocolSerializer::serialize_response(&error_response) {
+                            Ok(bytes) => bytes,
+                            Err(_) => break,
+                        };
+                        if let Err(e) = stream.write_all(&response_bytes).await {
+                            error!("Failed to write error response: {}", e);
                             break;
                         }
                     }
                 }
-            } else {
-                // Single command processing (legacy mode)
-                if let Err(e) = Self::process_single_command(
-                    &buffer[..n],
-                    &shard_manager,
-                    &mut security_context,
-                    &security_manager,
-                    &mut stream,
-                    &mut response_buffer,
-                    &metrics,
-                    client_addr,
-                )
-                .await
-                {
-                    error!("Single command processing failed: {}", e);
-                    buffer_pool.return_buffer(buffer).await;
-                    break;
-                }
             }
-
-            // PERFORMANCE OPTIMIZATION 3: Remove automatic flush for higher throughput
-            // Flush is expensive and not needed for every response
-            // TCP will handle buffering and send data efficiently
-            // if let Err(e) = stream.flush().await {
-            //     error!("Failed to flush response: {}", e);
-            //     metrics.record_network_error();
-            //     buffer_pool.return_buffer(buffer).await;
-            //     break;
-            // }
-
-            // Return buffer to pool for reuse
-            buffer_pool.return_buffer(buffer).await;
-
-            // Timer is automatically recorded when _timer is dropped
         }
 
         Ok(())
     }
 
-    /// Process single command (fallback when pipelining fails)
-    async fn process_single_command(
+    /// Process single command with improved error handling and large data support
+    async fn process_single_command_improved(
         data: &[u8],
         shard_manager: &ShardManagerType,
         security_context: &mut SecurityContext,
@@ -577,22 +520,24 @@ impl TcpServer {
         metrics: &Arc<ConnectionMetrics>,
         client_addr: SocketAddr,
     ) -> crate::Result<()> {
-        // Parse single command with auto-detection
-        let (command, use_binary_protocol) = match Self::parse_command_auto_detect(data) {
+        // Parse single command with auto-detection and improved error handling
+        let (command, protocol_type) = match Self::parse_command_auto_detect(data) {
             Ok(result) => result,
             Err(e) => {
                 warn!("Failed to parse command from {}: {}", client_addr, e);
                 metrics.record_processing_error();
 
-                // Send error response
-                let error_response = Response::Error(format!("Parse error: {}", e));
-                let response_bytes = if data.len() > 0 && data[0] >= 0x01 && data[0] <= 0x06 {
+                // Send detailed error response instead of generic parse error
+                let error_response = Response::Error(format!("PARSE_ERROR: {}", e));
+                let response_bytes = if data.len() >= 4 && &data[0..4] == b"TOON" {
+                    ProtocolSerializer::serialize_response_toon(&error_response)?
+                } else if data.len() > 0 && data[0] >= 0x01 && data[0] <= 0x06 {
                     BinaryProtocol::serialize_response(&error_response)
                 } else {
                     ProtocolSerializer::serialize_response(&error_response)?
                 };
                 stream.write_all(&response_bytes).await?;
-                return Ok(());
+                return Ok(()); // Don't break connection, just return error
             }
         };
 
@@ -604,42 +549,80 @@ impl TcpServer {
                 client_addr,
                 auth_result.error_message()
             );
+            metrics.record_processing_error();
 
-            let error_response = Response::Error(auth_result.error_message().to_string());
-            let response_bytes = if use_binary_protocol {
-                BinaryProtocol::serialize_response(&error_response)
-            } else {
-                ProtocolSerializer::serialize_response(&error_response)?
+            let error_response = Response::Error(format!("AUTH_ERROR: {}", auth_result.error_message()));
+            let response_bytes = match protocol_type {
+                2 => ProtocolSerializer::serialize_response_toon(&error_response)?,
+                1 => BinaryProtocol::serialize_response(&error_response),
+                _ => ProtocolSerializer::serialize_response(&error_response)?,
             };
             stream.write_all(&response_bytes).await?;
             return Ok(());
         }
 
-        // Process single command
+        // Process command
         let response = shard_manager.process_command(command).await;
 
-        // Serialize and send response
+        // Serialize and send response based on detected protocol
         response_buffer.clear();
-        let response_bytes = if use_binary_protocol {
-            BinaryProtocol::serialize_response(&response)
-        } else {
-            ProtocolSerializer::serialize_response(&response)?
+        let response_bytes = match protocol_type {
+            2 => {
+                debug!("Using TOON protocol for response to {}", client_addr);
+                ProtocolSerializer::serialize_response_toon(&response)?
+            },
+            1 => {
+                debug!("Using binary protocol for response to {}", client_addr);
+                BinaryProtocol::serialize_response(&response)
+            },
+            _ => {
+                debug!("Using text protocol for response to {}", client_addr);
+                ProtocolSerializer::serialize_response(&response)?
+            },
         };
 
         stream.write_all(&response_bytes).await?;
+
         debug!(
-            "Processed single command, sent {} bytes",
-            response_bytes.len()
+            "Processed single command from {} (protocol: {})",
+            client_addr, 
+            match protocol_type {
+                2 => "TOON",
+                1 => "binary",
+                _ => "text",
+            }
         );
 
         Ok(())
     }
 
     /// Auto-detect protocol type and parse command accordingly
-    /// Returns (Command, use_binary_protocol)
-    fn parse_command_auto_detect(data: &[u8]) -> crate::Result<(crate::protocol::Command, bool)> {
+    /// Returns (Command, protocol_type) where protocol_type: 0=text, 1=binary, 2=toon
+    fn parse_command_auto_detect(data: &[u8]) -> crate::Result<(crate::protocol::Command, u8)> {
         if data.is_empty() {
             return Err("Empty command".into());
+        }
+
+        // Check for TOON protocol first (highest priority)
+        if data.len() >= 4 && &data[0..4] == b"TOON" {
+            debug!("Detected TOON protocol");
+            match ProtocolParser::parse_command(data) {
+                Ok(command) => return Ok((command, 2)), // TOON protocol
+                Err(e) => {
+                    debug!("TOON parsing failed: {}, falling back", e);
+                }
+            }
+        }
+
+        // Check for Protobuf protocol second
+        if data.len() >= 4 && &data[0..4] == b"CRAB" {
+            debug!("Detected Protobuf protocol");
+            match ProtocolParser::parse_command(data) {
+                Ok(command) => return Ok((command, 1)), // Binary/Protobuf protocol
+                Err(e) => {
+                    debug!("Protobuf parsing failed: {}, falling back", e);
+                }
+            }
         }
 
         // Binary protocol detection: first byte should be a valid command type (0x01-0x06)
@@ -649,7 +632,7 @@ impl TcpServer {
             match BinaryProtocol::parse_command(data) {
                 Ok(command) => {
                     debug!("Using binary protocol for command");
-                    return Ok((command, true));
+                    return Ok((command, 1)); // Binary protocol
                 }
                 Err(_) => {
                     // Binary parsing failed, fall through to text parsing
@@ -662,7 +645,7 @@ impl TcpServer {
         match ProtocolParser::parse_command(data) {
             Ok(command) => {
                 debug!("Using text protocol for command");
-                Ok((command, false))
+                Ok((command, 0)) // Text protocol
             }
             Err(e) => Err(e),
         }

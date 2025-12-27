@@ -5,12 +5,15 @@ FROM rust:1.92-slim AS builder
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
+    protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy dependency files first for better caching
 COPY Cargo.toml ./
+COPY build.rs ./
+COPY proto ./proto
 # Note: Cargo.lock will be generated during build if not present
 
 # Create empty src directory and main.rs for dependency caching
@@ -19,13 +22,15 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs
 # Build dependencies first (this layer will be cached)
 RUN cargo build --release && rm -rf src
 
-# Copy actual source code
+# Copy actual source code and proto files
 COPY src ./src
+COPY proto ./proto
 COPY config ./config
 COPY examples ./examples
 COPY benches ./benches
 
 # Build the application in release mode with optimizations
+# Enable protobuf support with stub implementations for Docker
 RUN cargo build --release
 
 # Runtime stage
@@ -56,7 +61,7 @@ WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/target/release/crabcache /usr/local/bin/crabcache
-COPY --from=builder /app/config ./config
+# Don't copy config files - force environment variable usage
 
 # Create data directory for WAL and logs
 RUN mkdir -p /app/data/wal /app/logs
@@ -79,6 +84,7 @@ ENV CRABCACHE_BIND_ADDR=0.0.0.0
 ENV CRABCACHE_PORT=8000
 ENV CRABCACHE_ENABLE_PIPELINING=true
 ENV CRABCACHE_MAX_BATCH_SIZE=16
+ENV CRABCACHE_ENABLE_WAL=false
 
-# Default command
+# Default command - no config file available, will use defaults + env vars
 CMD ["crabcache"]

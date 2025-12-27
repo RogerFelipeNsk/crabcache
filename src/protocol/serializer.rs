@@ -4,6 +4,9 @@ use super::commands::{Command, Response};
 use crate::utils::varint;
 use bytes::{BufMut, Bytes, BytesMut};
 
+// Import TOON protocol
+use super::toon::encoder::ToonEncoder;
+
 /// High-performance protocol serializer for CrabCache binary protocol
 ///
 /// Binary Protocol Format:
@@ -130,6 +133,32 @@ impl ProtocolSerializer {
             }
         }
 
+        Ok(buf.freeze())
+    }
+
+    /// Serialize a response to bytes using TOON protocol
+    pub fn serialize_response_toon(response: &Response) -> crate::Result<Bytes> {
+        let mut encoder = ToonEncoder::new();
+        let encoded = encoder.encode_response(response)
+            .map_err(|e| format!("TOON encode error: {}", e))?;
+        Ok(encoded.freeze())
+    }
+
+    /// Serialize a command to bytes using TOON protocol
+    pub fn serialize_command_toon(command: &Command) -> crate::Result<Bytes> {
+        let mut encoder = ToonEncoder::new();
+        let encoded = encoder.encode_command(command)
+            .map_err(|e| format!("TOON encode error: {}", e))?;
+        Ok(encoded.freeze())
+    }
+
+    /// Create TOON protocol negotiation response
+    pub fn create_toon_negotiation_response() -> crate::Result<Bytes> {
+        // TOON magic bytes + version + flags to acknowledge TOON support
+        let mut buf = BytesMut::with_capacity(6);
+        buf.extend_from_slice(b"TOON"); // Magic bytes
+        buf.put_u8(1); // Version
+        buf.put_u8(0x0F); // All flags enabled
         Ok(buf.freeze())
     }
 

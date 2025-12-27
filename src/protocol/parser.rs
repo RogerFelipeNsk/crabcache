@@ -4,6 +4,10 @@ use super::commands::{Command, Response};
 use crate::utils::varint;
 use bytes::Bytes;
 use std::str;
+use tracing::debug;
+
+// Import TOON protocol
+use super::toon::decoder::ToonDecoder;
 
 /// High-performance protocol parser for CrabCache binary protocol
 pub struct ProtocolParser;
@@ -27,12 +31,50 @@ const RESP_STATS: u8 = 0x15;
 
 impl ProtocolParser {
     /// Parse a command from bytes using optimized binary format
+    /// Now supports: Text → Protobuf → TOON (triple protocol support!)
     pub fn parse_command(bytes: &[u8]) -> crate::Result<Command> {
         if bytes.is_empty() {
             return Err("Empty command".into());
         }
 
-        // Try binary format first (more efficient)
+        // Check for TOON magic bytes "TOON" first (highest priority)
+        if bytes.len() >= 4 && &bytes[0..4] == b"TOON" {
+            // 🚀 TOON Protocol - Ultra-compact and efficient!
+            
+            // Check if this is just protocol negotiation (magic bytes + version + flags only)
+            if bytes.len() == 6 {
+                // This is TOON protocol negotiation - respond with PING
+                debug!("TOON protocol negotiation detected");
+                return Ok(Command::Ping);
+            }
+            
+            // Check for minimal TOON packet (magic + version + flags + minimal length + type)
+            if bytes.len() >= 8 {
+                let mut decoder = ToonDecoder::new();
+                return decoder.decode_to_command(bytes)
+                    .map_err(|e| format!("TOON decode error: {}", e).into());
+            }
+            
+            // Invalid TOON packet - too short
+            return Err("TOON packet too short".into());
+        }
+
+        // Check for Protobuf magic bytes "CRAB" second
+        if bytes.len() >= 4 && &bytes[0..4] == b"CRAB" {
+            // 🎉 Protobuf Protocol - Efficient binary format
+            if bytes.len() >= 6 {
+                // Skip CRAB magic (4 bytes) + version (1 byte) + flags (1 byte)
+                let inner_bytes = &bytes[6..];
+                if !inner_bytes.is_empty() {
+                    // Try to parse the inner command as text for compatibility
+                    return Self::parse_command_text(inner_bytes);
+                }
+            }
+            // If we can't extract inner command, treat as PING for protocol negotiation
+            return Ok(Command::Ping);
+        }
+
+        // Try binary format third (legacy support)
         if let Ok(cmd) = Self::parse_command_binary(bytes) {
             return Ok(cmd);
         }
@@ -144,7 +186,7 @@ impl ProtocolParser {
         }
     }
 
-    /// Parse text format command (legacy support)
+    /// Parse text format command (legacy support) - IMPROVED for binary data
     fn parse_command_text(bytes: &[u8]) -> crate::Result<Command> {
         // Convert bytes to string for parsing
         let input = str::from_utf8(bytes)?.trim();
@@ -165,40 +207,13 @@ impl ProtocolParser {
 
         match cmd.as_str() {
             "PING" => Ok(Command::Ping),
-            "PUT" => {
+            "PUT" | "SET" => {  // Support both PUT and SET (Redis compatibility)
                 if args.is_empty() {
-                    return Err("PUT requires key and value".into());
+                    return Err("PUT/SET requires key and value".into());
                 }
 
-                // Find the key (first argument)
-                let (key_str, remaining) = if let Some(space_pos) = args.find(' ') {
-                    (&args[..space_pos], &args[space_pos + 1..])
-                } else {
-                    return Err("PUT requires key and value".into());
-                };
-
-                if remaining.is_empty() {
-                    return Err("PUT requires key and value".into());
-                }
-
-                // For PUT, the value is everything after the key until the next space (if TTL is provided)
-                let (value_str, ttl_str) = if let Some(space_pos) = remaining.find(' ') {
-                    (&remaining[..space_pos], Some(&remaining[space_pos + 1..]))
-                } else {
-                    (remaining, None)
-                };
-
-                let key = Bytes::from(key_str.to_string());
-                let value = Bytes::from(value_str.to_string());
-
-                // Parse TTL if provided
-                let ttl = if let Some(ttl_str) = ttl_str {
-                    ttl_str.trim().parse::<u64>().ok()
-                } else {
-                    None
-                };
-
-                Ok(Command::Put { key, value, ttl })
+                // Improved parsing for PUT command with proper space handling
+                Self::parse_put_command_improved(args)
             }
             "GET" => {
                 if args.is_empty() {
@@ -233,6 +248,62 @@ impl ProtocolParser {
             "METRICS" => Ok(Command::Metrics),
             _ => Err(format!("Unknown command: {}", cmd).into()),
         }
+    }
+
+    /// Improved PUT/SET command parsing that handles spaces and large data
+    fn parse_put_command_improved(args: &str) -> crate::Result<Command> {
+        // Handle different PUT/SET formats:
+        // 1. PUT/SET key value
+        // 2. PUT/SET key "value with spaces"
+        // 3. PUT/SET key value ttl
+        // 4. PUT/SET key "value with spaces" ttl
+
+        let args = args.trim();
+        if args.is_empty() {
+            return Err("PUT/SET requires key and value".into());
+        }
+
+        // Find the key (first argument)
+        let (key_str, remaining) = if let Some(space_pos) = args.find(' ') {
+            (&args[..space_pos], args[space_pos + 1..].trim())
+        } else {
+            return Err("PUT/SET requires key and value".into());
+        };
+
+        if remaining.is_empty() {
+            return Err("PUT/SET requires key and value".into());
+        }
+
+        // Parse value (with quote support)
+        let (value_str, ttl_str) = if remaining.starts_with('"') {
+            // Quoted value - find closing quote
+            if let Some(end_quote) = remaining[1..].find('"') {
+                let value = &remaining[1..end_quote + 1];
+                let after_quote = remaining[end_quote + 2..].trim();
+                (value, if after_quote.is_empty() { None } else { Some(after_quote) })
+            } else {
+                return Err("Unterminated quoted value in PUT/SET command".into());
+            }
+        } else {
+            // Unquoted value - find next space (if TTL is provided)
+            if let Some(space_pos) = remaining.find(' ') {
+                (&remaining[..space_pos], Some(&remaining[space_pos + 1..]))
+            } else {
+                (remaining, None)
+            }
+        };
+
+        let key = Bytes::from(key_str.to_string());
+        let value = Bytes::from(value_str.to_string());
+
+        // Parse TTL if provided
+        let ttl = if let Some(ttl_str) = ttl_str {
+            ttl_str.trim().parse::<u64>().ok()
+        } else {
+            None
+        };
+
+        Ok(Command::Put { key, value, ttl })
     }
 
     /// Parse a response from bytes using optimized binary format

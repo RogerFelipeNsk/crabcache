@@ -1,0 +1,174 @@
+// CrabCache Protocol Buffers Schema
+// Phase 8.1 - Protobuf Native Support
+syntax = "proto3";
+
+package crabcache.v1;
+
+// Protocol negotiation message
+message ProtocolNegotiation {
+  string client_version = 1;
+  repeated string supported_protocols = 2;
+  map<string, string> capabilities = 3;
+}
+
+// Main command message
+message CrabCacheCommand {
+  string request_id = 1;
+  uint64 timestamp = 2;
+  oneof command {
+    PutCommand put = 10;
+    GetCommand get = 11;
+    DelCommand del = 12;
+    ExpireCommand expire = 13;
+    StatsCommand stats = 14;
+    MetricsCommand metrics = 15;
+    PingCommand ping = 16;
+    BatchCommand batch = 17;
+  }
+}
+
+// Individual command types
+message PutCommand {
+  bytes key = 1;
+  bytes value = 2;
+  optional uint64 ttl_seconds = 3;
+  map<string, string> metadata = 4;
+}
+
+message GetCommand {
+  bytes key = 1;
+  bool include_metadata = 2;
+}
+
+message DelCommand {
+  bytes key = 1;
+}
+
+message ExpireCommand {
+  bytes key = 1;
+  uint64 ttl_seconds = 2;
+}
+
+message StatsCommand {
+  bool detailed = 1;
+}
+
+message MetricsCommand {
+  repeated string metric_names = 1;
+}
+
+message PingCommand {
+  optional string message = 1;
+}
+
+message BatchCommand {
+  repeated CrabCacheCommand commands = 1;
+  bool atomic = 2;
+}
+
+// Response message
+message CrabCacheResponse {
+  string request_id = 1;
+  uint64 timestamp = 2;
+  ResponseStatus status = 3;
+  oneof response {
+    OkResponse ok = 10;
+    ValueResponse value = 11;
+    NullResponse null = 12;
+    ErrorResponse error = 13;
+    PongResponse pong = 14;
+    StatsResponse stats = 15;
+    MetricsResponse metrics = 16;
+    BatchResponse batch = 17;
+  }
+}
+
+enum ResponseStatus {
+  SUCCESS = 0;
+  NOT_FOUND = 1;
+  ERROR = 2;
+  TIMEOUT = 3;
+  INVALID_REQUEST = 4;
+}
+
+// Individual response types
+message OkResponse {
+  optional string message = 1;
+}
+
+message ValueResponse {
+  bytes value = 1;
+  map<string, string> metadata = 2;
+  optional uint64 ttl_remaining = 3;
+}
+
+message NullResponse {
+  string reason = 1;
+}
+
+message ErrorResponse {
+  string error_code = 1;
+  string message = 2;
+  optional string details = 3;
+}
+
+message PongResponse {
+  optional string message = 1;
+  uint64 server_timestamp = 2;
+}
+
+message StatsResponse {
+  map<string, string> stats = 1;
+  ServerInfo server_info = 2;
+}
+
+message MetricsResponse {
+  repeated Metric metrics = 1;
+}
+
+message BatchResponse {
+  repeated CrabCacheResponse responses = 1;
+  uint32 successful_count = 2;
+  uint32 failed_count = 3;
+}
+
+// Supporting types
+message ServerInfo {
+  string version = 1;
+  uint64 uptime_seconds = 2;
+  uint64 total_connections = 3;
+  uint64 current_connections = 4;
+  ProtocolCapabilities capabilities = 5;
+}
+
+message ProtocolCapabilities {
+  bool supports_batch = 1;
+  bool supports_ttl = 2;
+  bool supports_metadata = 3;
+  bool supports_compression = 4;
+  bool supports_zero_copy = 5;
+  bool supports_simd = 6;
+  uint32 max_batch_size = 7;
+  uint64 max_value_size = 8;
+}
+
+message Metric {
+  string name = 1;
+  oneof value {
+    double gauge = 2;
+    uint64 counter = 3;
+    HistogramValue histogram = 4;
+  }
+  map<string, string> labels = 5;
+  uint64 timestamp = 6;
+}
+
+message HistogramValue {
+  uint64 count = 1;
+  double sum = 2;
+  repeated double buckets = 3;
+}
+
+// Protocol detection magic
+// Wire format will start with these magic bytes: 0x43, 0x52, 0x41, 0x42 ("CRAB")
+// Followed by protocol version and message length

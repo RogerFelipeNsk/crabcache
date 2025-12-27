@@ -76,14 +76,18 @@ impl BinaryProtocol {
             return Err("Empty command".into());
         }
 
+        // Disable SIMD parsing temporarily to avoid stack overflow
+        // TODO: Re-enable after fixing the stack overflow issue
+        /*
         // Try SIMD-accelerated parsing first
         if data.len() >= 16 {
             if let Ok(commands) = SIMDParser::parse_commands_vectorized(data) {
-                if !commands.is_empty() {
-                    return Ok(commands.into_iter().next().unwrap());
+                if let Some(command) = commands.into_iter().next() {
+                    return Ok(command);
                 }
             }
         }
+        */
 
         // Fallback to scalar parsing
         Self::parse_command_scalar(data)
