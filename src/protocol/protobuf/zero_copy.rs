@@ -1,8 +1,8 @@
 //! Zero-Copy Protobuf Operations
 //! Phase 8.1 - Advanced zero-copy optimizations for Protobuf
 
+use crate::protocol::protobuf::{ProtobufConfig, ProtobufResult};
 use bytes::{Bytes, BytesMut};
-use crate::protocol::protobuf::{ProtobufResult, ProtobufConfig};
 
 /// Zero-copy Protobuf processor
 pub struct ProtobufZeroCopy {
@@ -18,7 +18,7 @@ impl ProtobufZeroCopy {
             buffer_pool: Vec::with_capacity(buffer_pool_size),
         }
     }
-    
+
     /// Get a buffer from the pool or create a new one
     pub fn get_buffer(&mut self, size: usize) -> BytesMut {
         if let Some(mut buf) = self.buffer_pool.pop() {
@@ -27,17 +27,17 @@ impl ProtobufZeroCopy {
                 return buf;
             }
         }
-        
+
         BytesMut::with_capacity(size.max(4096))
     }
-    
+
     /// Return a buffer to the pool
     pub fn return_buffer(&mut self, buf: BytesMut) {
         if self.buffer_pool.len() < self.config.buffer_pool_size {
             self.buffer_pool.push(buf);
         }
     }
-    
+
     /// Zero-copy message parsing (placeholder for future optimization)
     pub fn parse_zero_copy(&mut self, data: Bytes) -> ProtobufResult<Bytes> {
         // For now, just return the data as-is

@@ -20,7 +20,7 @@ impl ProtobufBufferPool {
             default_capacity,
         }
     }
-    
+
     /// Get a buffer from the pool
     pub fn get_buffer(&self) -> BytesMut {
         if let Ok(mut buffers) = self.buffers.lock() {
@@ -29,11 +29,11 @@ impl ProtobufBufferPool {
                 return buf;
             }
         }
-        
+
         // Create new buffer if pool is empty
         BytesMut::with_capacity(self.default_capacity)
     }
-    
+
     /// Return a buffer to the pool
     pub fn return_buffer(&self, buf: BytesMut) {
         if let Ok(mut buffers) = self.buffers.lock() {
@@ -42,7 +42,7 @@ impl ProtobufBufferPool {
             }
         }
     }
-    
+
     /// Get pool statistics
     pub fn stats(&self) -> PoolStats {
         if let Ok(buffers) = self.buffers.lock() {

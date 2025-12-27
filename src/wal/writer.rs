@@ -297,6 +297,7 @@ impl WALWriter {
         let file = OpenOptions::new()
             .create(true)
             .write(true)
+            .truncate(true)
             .append(false)
             .open(&path)?;
 

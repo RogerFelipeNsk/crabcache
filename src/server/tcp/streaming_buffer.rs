@@ -1,6 +1,6 @@
 //! Streaming buffer for handling large commands that exceed single buffer size
 
-use bytes::{BytesMut, BufMut};
+use bytes::{BufMut, BytesMut};
 use std::collections::VecDeque;
 
 /// Streaming buffer that can accumulate data across multiple reads
@@ -55,27 +55,27 @@ impl StreamingBuffer {
     pub fn extract_command(&mut self) -> Option<Vec<u8>> {
         if let Some(boundary) = self.command_boundaries.pop_front() {
             // Check if this is a binary protocol packet (TOON, CRAB, or binary command)
-            let is_binary_protocol = self.data.len() >= 4 && 
-                (&self.data[0..4] == b"TOON" || &self.data[0..4] == b"CRAB");
-            
-            let is_binary_command = self.data.len() > 0 && 
-                self.data[0] >= 0x01 && self.data[0] <= 0x06;
-            
+            let is_binary_protocol = self.data.len() >= 4
+                && (&self.data[0..4] == b"TOON" || &self.data[0..4] == b"CRAB");
+
+            let is_binary_command =
+                self.data.len() > 0 && self.data[0] >= 0x01 && self.data[0] <= 0x06;
+
             if is_binary_protocol || is_binary_command {
                 // For binary protocols/commands, extract exact number of bytes (boundary + 1)
                 let command_data = self.data.split_to(boundary + 1);
                 let result = command_data.to_vec();
-                
+
                 // Update remaining boundaries
                 for boundary_ref in &mut self.command_boundaries {
                     *boundary_ref -= boundary + 1;
                 }
-                
+
                 Some(result)
             } else {
                 // For text protocols, extract and remove newlines
                 let command_data = self.data.split_to(boundary + 1); // +1 to include newline
-                
+
                 // Remove the newline for text protocols
                 let mut result = command_data.to_vec();
                 if result.ends_with(b"\n") {
@@ -200,74 +200,90 @@ impl StreamingBuffer {
         match cmd_type {
             0x01 => Some(0), // PING - just 1 byte (0x01)
             0x06 => Some(0), // STATS - just 1 byte (0x06)
-            
-            0x02 => { // PUT - cmd + key_len(4) + key + value_len(4) + value + ttl_flag(1) + [ttl(8)]
-                if data.len() < 5 { return None; } // Need at least cmd + key_len
-                
+
+            0x02 => {
+                // PUT - cmd + key_len(4) + key + value_len(4) + value + ttl_flag(1) + [ttl(8)]
+                if data.len() < 5 {
+                    return None;
+                } // Need at least cmd + key_len
+
                 // Read key length safely
                 let key_len = if data.len() >= 5 {
                     u32::from_le_bytes([data[1], data[2], data[3], data[4]]) as usize
                 } else {
                     return None;
                 };
-                
+
                 let mut cursor = 5 + key_len; // cmd(1) + key_len(4) + key
-                
-                if data.len() < cursor + 4 { return None; } // Need value_len
-                
+
+                if data.len() < cursor + 4 {
+                    return None;
+                } // Need value_len
+
                 // Read value length safely
                 let value_len = if data.len() >= cursor + 4 {
                     u32::from_le_bytes([
-                        data[cursor], data[cursor+1], data[cursor+2], data[cursor+3]
+                        data[cursor],
+                        data[cursor + 1],
+                        data[cursor + 2],
+                        data[cursor + 3],
                     ]) as usize
                 } else {
                     return None;
                 };
-                
+
                 cursor += 4 + value_len; // value_len(4) + value
-                
-                if data.len() < cursor + 1 { return None; } // Need TTL flag
-                
+
+                if data.len() < cursor + 1 {
+                    return None;
+                } // Need TTL flag
+
                 let has_ttl = data[cursor] == 1;
                 cursor += 1;
-                
+
                 if has_ttl {
                     cursor += 8; // TTL is 8 bytes
                 }
-                
+
                 if data.len() >= cursor {
                     Some(cursor - 1) // -1 because boundary is inclusive
                 } else {
                     None
                 }
-            },
-            
-            0x03 | 0x04 => { // GET/DEL - cmd + key_len(4) + key
-                if data.len() < 5 { return None; } // Need at least cmd + key_len
-                
+            }
+
+            0x03 | 0x04 => {
+                // GET/DEL - cmd + key_len(4) + key
+                if data.len() < 5 {
+                    return None;
+                } // Need at least cmd + key_len
+
                 let key_len = u32::from_le_bytes([data[1], data[2], data[3], data[4]]) as usize;
                 let cursor = 5 + key_len; // cmd(1) + key_len(4) + key
-                
+
                 if data.len() >= cursor {
                     Some(cursor - 1) // -1 because boundary is inclusive
                 } else {
                     None
                 }
-            },
-            
-            0x05 => { // EXPIRE - cmd + key_len(4) + key + ttl(8)
-                if data.len() < 5 { return None; } // Need at least cmd + key_len
-                
+            }
+
+            0x05 => {
+                // EXPIRE - cmd + key_len(4) + key + ttl(8)
+                if data.len() < 5 {
+                    return None;
+                } // Need at least cmd + key_len
+
                 let key_len = u32::from_le_bytes([data[1], data[2], data[3], data[4]]) as usize;
                 let cursor = 5 + key_len + 8; // cmd(1) + key_len(4) + key + ttl(8)
-                
+
                 if data.len() >= cursor {
                     Some(cursor - 1) // -1 because boundary is inclusive
                 } else {
                     None
                 }
-            },
-            
+            }
+
             _ => None, // Unknown command
         }
     }
@@ -291,54 +307,56 @@ mod tests {
     #[test]
     fn test_streaming_buffer_single_command() {
         let mut buffer = StreamingBuffer::new(1024);
-        
+
         // Add a complete command
         buffer.append(b"GET key1\n").unwrap();
-        
+
         assert!(buffer.has_complete_commands());
-        
+
         let command = buffer.extract_command().unwrap();
         assert_eq!(command, b"GET key1");
-        
+
         assert!(!buffer.has_complete_commands());
     }
 
     #[test]
     fn test_streaming_buffer_multiple_commands() {
         let mut buffer = StreamingBuffer::new(1024);
-        
+
         // Add multiple commands
-        buffer.append(b"GET key1\nPUT key2 value2\nDEL key3\n").unwrap();
-        
+        buffer
+            .append(b"GET key1\nPUT key2 value2\nDEL key3\n")
+            .unwrap();
+
         assert!(buffer.has_complete_commands());
-        
+
         // Extract first command
         let cmd1 = buffer.extract_command().unwrap();
         assert_eq!(cmd1, b"GET key1");
-        
+
         // Extract second command
         let cmd2 = buffer.extract_command().unwrap();
         assert_eq!(cmd2, b"PUT key2 value2");
-        
+
         // Extract third command
         let cmd3 = buffer.extract_command().unwrap();
         assert_eq!(cmd3, b"DEL key3");
-        
+
         assert!(!buffer.has_complete_commands());
     }
 
     #[test]
     fn test_streaming_buffer_partial_command() {
         let mut buffer = StreamingBuffer::new(1024);
-        
+
         // Add partial command
         buffer.append(b"GET key").unwrap();
         assert!(!buffer.has_complete_commands());
-        
+
         // Complete the command
         buffer.append(b"1\n").unwrap();
         assert!(buffer.has_complete_commands());
-        
+
         let command = buffer.extract_command().unwrap();
         assert_eq!(command, b"GET key1");
     }
@@ -346,7 +364,7 @@ mod tests {
     #[test]
     fn test_streaming_buffer_size_limit() {
         let mut buffer = StreamingBuffer::new(10); // Very small limit
-        
+
         // Try to add data that exceeds limit
         let result = buffer.append(b"This is a very long command that exceeds the limit");
         assert!(result.is_err());
@@ -356,18 +374,18 @@ mod tests {
     #[test]
     fn test_streaming_buffer_expected_size() {
         let mut buffer = StreamingBuffer::new(1024);
-        
+
         // Set expected size
         buffer.set_expected_size(10);
-        
+
         // Add partial data
         buffer.append(b"12345").unwrap();
         assert!(!buffer.has_expected_data());
-        
+
         // Complete expected data
         buffer.append(b"67890").unwrap();
         assert!(buffer.has_expected_data());
-        
+
         let data = buffer.extract_expected().unwrap();
         assert_eq!(data, b"1234567890");
     }
@@ -375,12 +393,12 @@ mod tests {
     #[test]
     fn test_streaming_buffer_with_quotes() {
         let mut buffer = StreamingBuffer::new(1024);
-        
+
         // Add command with quoted value containing spaces
         buffer.append(b"PUT key \"Hello World\"\n").unwrap();
-        
+
         assert!(buffer.has_complete_commands());
-        
+
         let command = buffer.extract_command().unwrap();
         assert_eq!(command, b"PUT key \"Hello World\"");
     }
@@ -388,15 +406,15 @@ mod tests {
     #[test]
     fn test_streaming_buffer_large_value() {
         let mut buffer = StreamingBuffer::new(10240); // 10KB limit
-        
+
         // Create a large value (5KB)
         let large_value = "x".repeat(5000);
         let command = format!("PUT large_key \"{}\"\n", large_value);
-        
+
         buffer.append(command.as_bytes()).unwrap();
-        
+
         assert!(buffer.has_complete_commands());
-        
+
         let extracted = buffer.extract_command().unwrap();
         let extracted_str = String::from_utf8(extracted).unwrap();
         assert!(extracted_str.starts_with("PUT large_key"));

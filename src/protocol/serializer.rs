@@ -139,7 +139,8 @@ impl ProtocolSerializer {
     /// Serialize a response to bytes using TOON protocol
     pub fn serialize_response_toon(response: &Response) -> crate::Result<Bytes> {
         let mut encoder = ToonEncoder::new();
-        let encoded = encoder.encode_response(response)
+        let encoded = encoder
+            .encode_response(response)
             .map_err(|e| format!("TOON encode error: {}", e))?;
         Ok(encoded.freeze())
     }
@@ -147,7 +148,8 @@ impl ProtocolSerializer {
     /// Serialize a command to bytes using TOON protocol
     pub fn serialize_command_toon(command: &Command) -> crate::Result<Bytes> {
         let mut encoder = ToonEncoder::new();
-        let encoded = encoder.encode_command(command)
+        let encoded = encoder
+            .encode_command(command)
             .map_err(|e| format!("TOON encode error: {}", e))?;
         Ok(encoded.freeze())
     }

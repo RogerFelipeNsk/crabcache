@@ -346,7 +346,9 @@ impl Config {
     fn validate_rate_limit_config(&self) -> Result<(), String> {
         if self.rate_limiting.enabled {
             if self.rate_limiting.max_requests_per_second == 0 {
-                return Err("Max requests per second cannot be 0 when rate limiting is enabled".to_string());
+                return Err(
+                    "Max requests per second cannot be 0 when rate limiting is enabled".to_string(),
+                );
             }
             if self.rate_limiting.burst_capacity == 0 {
                 return Err("Burst capacity cannot be 0 when rate limiting is enabled".to_string());

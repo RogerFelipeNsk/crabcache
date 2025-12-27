@@ -40,21 +40,22 @@ impl ProtocolParser {
         // Check for TOON magic bytes "TOON" first (highest priority)
         if bytes.len() >= 4 && &bytes[0..4] == b"TOON" {
             // 🚀 TOON Protocol - Ultra-compact and efficient!
-            
+
             // Check if this is just protocol negotiation (magic bytes + version + flags only)
             if bytes.len() == 6 {
                 // This is TOON protocol negotiation - respond with PING
                 debug!("TOON protocol negotiation detected");
                 return Ok(Command::Ping);
             }
-            
+
             // Check for minimal TOON packet (magic + version + flags + minimal length + type)
             if bytes.len() >= 8 {
                 let mut decoder = ToonDecoder::new();
-                return decoder.decode_to_command(bytes)
+                return decoder
+                    .decode_to_command(bytes)
                     .map_err(|e| format!("TOON decode error: {}", e).into());
             }
-            
+
             // Invalid TOON packet - too short
             return Err("TOON packet too short".into());
         }
@@ -207,7 +208,8 @@ impl ProtocolParser {
 
         match cmd.as_str() {
             "PING" => Ok(Command::Ping),
-            "PUT" | "SET" => {  // Support both PUT and SET (Redis compatibility)
+            "PUT" | "SET" => {
+                // Support both PUT and SET (Redis compatibility)
                 if args.is_empty() {
                     return Err("PUT/SET requires key and value".into());
                 }
@@ -280,7 +282,14 @@ impl ProtocolParser {
             if let Some(end_quote) = remaining[1..].find('"') {
                 let value = &remaining[1..end_quote + 1];
                 let after_quote = remaining[end_quote + 2..].trim();
-                (value, if after_quote.is_empty() { None } else { Some(after_quote) })
+                (
+                    value,
+                    if after_quote.is_empty() {
+                        None
+                    } else {
+                        Some(after_quote)
+                    },
+                )
             } else {
                 return Err("Unterminated quoted value in PUT/SET command".into());
             }

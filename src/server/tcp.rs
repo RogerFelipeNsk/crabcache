@@ -2,9 +2,7 @@
 
 use crate::metrics::SharedMetrics;
 use crate::protocol::commands::Response;
-use crate::protocol::{
-    BinaryProtocol, PipelineProcessor, ProtocolParser, ProtocolSerializer,
-};
+use crate::protocol::{BinaryProtocol, PipelineProcessor, ProtocolParser, ProtocolSerializer};
 use crate::router::ShardRouter;
 use crate::security::{
     AuthManager, IpFilter, RateLimiter, SecurityCheckResult, SecurityContext, SecurityManager,
@@ -493,10 +491,11 @@ impl TcpServer {
                         // Don't break connection on single command failure
                         // Send error response and continue
                         let error_response = Response::Error(format!("Processing error: {}", e));
-                        let response_bytes = match ProtocolSerializer::serialize_response(&error_response) {
-                            Ok(bytes) => bytes,
-                            Err(_) => break,
-                        };
+                        let response_bytes =
+                            match ProtocolSerializer::serialize_response(&error_response) {
+                                Ok(bytes) => bytes,
+                                Err(_) => break,
+                            };
                         if let Err(e) = stream.write_all(&response_bytes).await {
                             error!("Failed to write error response: {}", e);
                             break;
@@ -551,7 +550,8 @@ impl TcpServer {
             );
             metrics.record_processing_error();
 
-            let error_response = Response::Error(format!("AUTH_ERROR: {}", auth_result.error_message()));
+            let error_response =
+                Response::Error(format!("AUTH_ERROR: {}", auth_result.error_message()));
             let response_bytes = match protocol_type {
                 2 => ProtocolSerializer::serialize_response_toon(&error_response)?,
                 1 => BinaryProtocol::serialize_response(&error_response),
@@ -570,22 +570,22 @@ impl TcpServer {
             2 => {
                 debug!("Using TOON protocol for response to {}", client_addr);
                 ProtocolSerializer::serialize_response_toon(&response)?
-            },
+            }
             1 => {
                 debug!("Using binary protocol for response to {}", client_addr);
                 BinaryProtocol::serialize_response(&response)
-            },
+            }
             _ => {
                 debug!("Using text protocol for response to {}", client_addr);
                 ProtocolSerializer::serialize_response(&response)?
-            },
+            }
         };
 
         stream.write_all(&response_bytes).await?;
 
         debug!(
             "Processed single command from {} (protocol: {})",
-            client_addr, 
+            client_addr,
             match protocol_type {
                 2 => "TOON",
                 1 => "binary",

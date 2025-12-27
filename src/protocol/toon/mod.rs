@@ -8,11 +8,11 @@
 //! - Auto string interning
 //! - SIMD optimizations
 
-pub mod encoder;
 pub mod decoder;
-pub mod types;
+pub mod encoder;
 pub mod interning;
 pub mod negotiation;
+pub mod types;
 pub mod zero_copy;
 
 use bytes::Bytes;
@@ -45,13 +45,21 @@ impl Default for ToonFlags {
 impl ToonFlags {
     pub fn to_byte(&self) -> u8 {
         let mut flags = 0u8;
-        if self.zero_copy { flags |= 0x01; }
-        if self.string_interning { flags |= 0x02; }
-        if self.compression { flags |= 0x04; }
-        if self.simd_optimized { flags |= 0x08; }
+        if self.zero_copy {
+            flags |= 0x01;
+        }
+        if self.string_interning {
+            flags |= 0x02;
+        }
+        if self.compression {
+            flags |= 0x04;
+        }
+        if self.simd_optimized {
+            flags |= 0x08;
+        }
         flags
     }
-    
+
     pub fn from_byte(byte: u8) -> Self {
         Self {
             zero_copy: (byte & 0x01) != 0,
@@ -107,10 +115,11 @@ impl ToonType {
             ToonType::InternedString(_) => 0x10,
         }
     }
-    
+
     /// Estimate encoded size in bytes
     pub fn estimated_size(&self) -> usize {
-        1 + match self { // +1 for type byte
+        1 + match self {
+            // +1 for type byte
             ToonType::Null => 0,
             ToonType::Bool(_) => 1,
             ToonType::Int8(_) => 1,
@@ -126,13 +135,16 @@ impl ToonType {
             ToonType::String(s) => varint_size(s.len() as u64) + s.len(),
             ToonType::Bytes(b) => varint_size(b.len() as u64) + b.len(),
             ToonType::Array(arr) => {
-                varint_size(arr.len() as u64) + arr.iter().map(|v| v.estimated_size()).sum::<usize>()
-            },
+                varint_size(arr.len() as u64)
+                    + arr.iter().map(|v| v.estimated_size()).sum::<usize>()
+            }
             ToonType::Object(obj) => {
-                varint_size(obj.len() as u64) + obj.iter().map(|(k, v)| {
-                    varint_size(k.len() as u64) + k.len() + v.estimated_size()
-                }).sum::<usize>()
-            },
+                varint_size(obj.len() as u64)
+                    + obj
+                        .iter()
+                        .map(|(k, v)| varint_size(k.len() as u64) + k.len() + v.estimated_size())
+                        .sum::<usize>()
+            }
             ToonType::InternedString(_) => varint_size(u32::MAX as u64), // Max 5 bytes for u32
         }
     }
@@ -140,7 +152,9 @@ impl ToonType {
 
 /// Calculate varint encoding size
 fn varint_size(mut value: u64) -> usize {
-    if value == 0 { return 1; }
+    if value == 0 {
+        return 1;
+    }
     let mut size = 0;
     while value > 0 {
         size += 1;
@@ -167,7 +181,7 @@ impl ToonPacket {
             data,
         }
     }
-    
+
     pub fn with_flags(data: ToonType, flags: ToonFlags) -> Self {
         Self {
             magic: *b"TOON",
@@ -176,12 +190,12 @@ impl ToonPacket {
             data,
         }
     }
-    
+
     /// Check if this is a valid TOON packet
     pub fn is_valid_magic(bytes: &[u8]) -> bool {
         bytes.len() >= 4 && &bytes[0..4] == TOON_MAGIC
     }
-    
+
     /// Estimate total packet size
     pub fn estimated_size(&self) -> usize {
         4 + // magic
@@ -203,34 +217,38 @@ impl StringInterner {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Intern a string, returning its ID
     pub fn intern(&mut self, s: &str) -> u32 {
         if let Some(&id) = self.lookup.get(s) {
             return id;
         }
-        
+
         let id = self.strings.len() as u32;
         self.strings.push(s.to_string());
         self.lookup.insert(s.to_string(), id);
         id
     }
-    
+
     /// Get string by ID
     pub fn get(&self, id: u32) -> Option<&str> {
         self.strings.get(id as usize).map(|s| s.as_str())
     }
-    
+
     /// Get total memory saved by interning
     pub fn memory_saved(&self) -> usize {
-        self.strings.iter().enumerate().map(|(id, s)| {
-            let usage_count = self.lookup.values().filter(|&&v| v == id as u32).count();
-            if usage_count > 1 {
-                s.len() * (usage_count - 1) // Saved bytes
-            } else {
-                0
-            }
-        }).sum()
+        self.strings
+            .iter()
+            .enumerate()
+            .map(|(id, s)| {
+                let usage_count = self.lookup.values().filter(|&&v| v == id as u32).count();
+                if usage_count > 1 {
+                    s.len() * (usage_count - 1) // Saved bytes
+                } else {
+                    0
+                }
+            })
+            .sum()
     }
 }
 
@@ -243,13 +261,13 @@ mod tests {
         let flags = ToonFlags::default();
         let byte = flags.to_byte();
         let restored = ToonFlags::from_byte(byte);
-        
+
         assert_eq!(flags.zero_copy, restored.zero_copy);
         assert_eq!(flags.string_interning, restored.string_interning);
         assert_eq!(flags.compression, restored.compression);
         assert_eq!(flags.simd_optimized, restored.simd_optimized);
     }
-    
+
     #[test]
     fn test_toon_type_sizes() {
         assert_eq!(ToonType::Null.estimated_size(), 1);
@@ -257,31 +275,31 @@ mod tests {
         assert_eq!(ToonType::Int8(42).estimated_size(), 2);
         assert_eq!(ToonType::String("hello".to_string()).estimated_size(), 7); // 1 + 1 + 5
     }
-    
+
     #[test]
     fn test_string_interning() {
         let mut interner = StringInterner::new();
-        
+
         let id1 = interner.intern("hello");
         let id2 = interner.intern("world");
         let id3 = interner.intern("hello"); // Should reuse
-        
+
         assert_eq!(id1, id3);
         assert_ne!(id1, id2);
         assert_eq!(interner.get(id1), Some("hello"));
         assert_eq!(interner.get(id2), Some("world"));
     }
-    
+
     #[test]
     fn test_magic_bytes() {
         let packet = ToonPacket::new(ToonType::Null);
         assert_eq!(packet.magic, *b"TOON");
-        
+
         assert!(ToonPacket::is_valid_magic(b"TOON123"));
         assert!(!ToonPacket::is_valid_magic(b"CRAB123"));
         assert!(!ToonPacket::is_valid_magic(b"TOO"));
     }
-    
+
     #[test]
     fn test_varint_size() {
         assert_eq!(varint_size(0), 1);

@@ -32,17 +32,13 @@ pub use zero_copy_buffer::{ZeroCopyBufferPool, ZeroCopyConfig, ZeroCopySerialize
 
 // Phase 8.1 - Protobuf exports
 pub use protobuf::{
-    ProtocolNegotiator, ProtocolType, NegotiationResult,
-    ProtobufParser, ProtobufSerializer, ProtobufZeroCopy,
-    SchemaRegistry, ProtobufBufferPool,
-    ProtobufConfig, ProtobufMetrics, ProtobufError, ProtobufResult,
-    PROTOBUF_MAGIC, PROTOBUF_VERSION, MAX_PROTOBUF_MESSAGE_SIZE,
+    NegotiationResult, ProtobufBufferPool, ProtobufConfig, ProtobufError, ProtobufMetrics,
+    ProtobufParser, ProtobufResult, ProtobufSerializer, ProtobufZeroCopy, ProtocolNegotiator,
+    ProtocolType, SchemaRegistry, MAX_PROTOBUF_MESSAGE_SIZE, PROTOBUF_MAGIC, PROTOBUF_VERSION,
 };
 
 // Phase 8.2 - TOON Protocol exports
 pub use toon::{
-    ToonPacket, ToonType, ToonFlags, StringInterner,
-    encoder::ToonEncoder,
-    decoder::ToonDecoder,
+    decoder::ToonDecoder, encoder::ToonEncoder, StringInterner, ToonFlags, ToonPacket, ToonType,
     TOON_MAGIC, TOON_VERSION,
 };

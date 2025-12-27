@@ -17,28 +17,28 @@ impl SchemaRegistry {
             cache_size,
         }
     }
-    
+
     /// Register a schema
     pub fn register_schema(&self, name: String, schema_data: Vec<u8>) -> Result<(), String> {
         let mut schemas = self.schemas.write().map_err(|_| "Lock poisoned")?;
-        
+
         if schemas.len() >= self.cache_size {
             // Simple eviction: remove oldest (first) entry
             if let Some(key) = schemas.keys().next().cloned() {
                 schemas.remove(&key);
             }
         }
-        
+
         schemas.insert(name, schema_data);
         Ok(())
     }
-    
+
     /// Get a schema
     pub fn get_schema(&self, name: &str) -> Option<Vec<u8>> {
         let schemas = self.schemas.read().ok()?;
         schemas.get(name).cloned()
     }
-    
+
     /// Check if schema exists
     pub fn has_schema(&self, name: &str) -> bool {
         if let Ok(schemas) = self.schemas.read() {
@@ -47,7 +47,7 @@ impl SchemaRegistry {
             false
         }
     }
-    
+
     /// Get schema count
     pub fn schema_count(&self) -> usize {
         if let Ok(schemas) = self.schemas.read() {
