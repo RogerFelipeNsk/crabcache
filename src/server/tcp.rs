@@ -519,6 +519,18 @@ impl TcpServer {
         metrics: &Arc<ConnectionMetrics>,
         client_addr: SocketAddr,
     ) -> crate::Result<()> {
+        // Check for TOON protocol negotiation first
+        if data.len() == 6 && &data[0..4] == b"TOON" {
+            debug!("TOON protocol negotiation from {}", client_addr);
+
+            // Send TOON negotiation response
+            let toon_response = ProtocolSerializer::create_toon_negotiation_response()?;
+            stream.write_all(&toon_response).await?;
+
+            debug!("Sent TOON negotiation response to {}", client_addr);
+            return Ok(());
+        }
+
         // Parse single command with auto-detection and improved error handling
         let (command, protocol_type) = match Self::parse_command_auto_detect(data) {
             Ok(result) => result,

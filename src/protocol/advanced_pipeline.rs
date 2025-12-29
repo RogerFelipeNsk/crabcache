@@ -384,15 +384,14 @@ impl ParallelBatchParser {
         let (result_sender, result_receiver) = mpsc::unbounded_channel();
 
         // Spawn parser threads (simplified implementation)
-        for thread_id in 0..thread_count {
+        if thread_count > 0 {
             let _task_rx = task_receiver;
             let _result_tx = result_sender.clone();
 
             // Simplified: In production, we'd spawn actual worker threads
-            debug!("Parser thread {} configured", thread_id);
+            debug!("Parser thread 0 configured");
 
             // For this example, we'll use a single receiver
-            break;
         }
 
         Self {

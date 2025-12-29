@@ -146,6 +146,8 @@ impl TinyLFU {
     pub fn with_capacity(capacity: usize) -> Self {
         let mut config = EvictionConfig::default();
         config.max_capacity = capacity;
+        // Ensure min_items_threshold is less than capacity
+        config.min_items_threshold = config.min_items_threshold.min(capacity.saturating_sub(1));
         Self::new(config).expect("Default config should be valid")
     }
 
@@ -527,7 +529,8 @@ mod tests {
     fn test_window_to_main_promotion() {
         let config = EvictionConfig {
             max_capacity: 10,
-            window_ratio: 0.2, // 2 items in window, 8 in main
+            min_items_threshold: 2, // Less than max_capacity
+            window_ratio: 0.2,      // 2 items in window, 8 in main
             ..Default::default()
         };
         let mut cache = TinyLFU::new(config).unwrap();
@@ -620,32 +623,44 @@ mod tests {
 
     #[test]
     fn test_evict_items() {
-        let mut cache = TinyLFU::with_capacity(3);
+        let config = EvictionConfig {
+            max_capacity: 5,
+            min_items_threshold: 1, // Allow eviction down to 1 item
+            ..Default::default()
+        };
+        let mut cache = TinyLFU::new(config).unwrap();
 
         cache.put("key1".to_string(), b"value1".to_vec());
         cache.put("key2".to_string(), b"value2".to_vec());
         cache.put("key3".to_string(), b"value3".to_vec());
+        cache.put("key4".to_string(), b"value4".to_vec());
+        cache.put("key5".to_string(), b"value5".to_vec());
 
         let evicted = cache.evict_items(2);
         assert_eq!(evicted.len(), 2);
-        assert_eq!(cache.len(), 1);
+        assert_eq!(cache.len(), 3);
     }
 
     #[test]
     fn test_sketch_reset() {
         let config = EvictionConfig {
             max_capacity: 10,
+            min_items_threshold: 2, // Less than max_capacity
             reset_interval_secs: 1, // Very short interval
             ..Default::default()
         };
         let mut cache = TinyLFU::new(config).unwrap();
 
-        cache.put("key1".to_string(), b"value1".to_vec());
+        // Add many items to trigger sketch operations
+        for i in 0..15000 {
+            cache.put(format!("key{}", i), b"value".to_vec());
+            cache.get(&format!("key{}", i));
+        }
 
         // Wait for reset interval
-        std::thread::sleep(Duration::from_millis(2));
+        std::thread::sleep(Duration::from_millis(1100));
 
-        // This should trigger a reset
+        // This should trigger a reset due to the operations count
         cache.get("key1");
 
         let metrics = cache.metrics();

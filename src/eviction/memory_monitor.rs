@@ -353,7 +353,12 @@ mod tests {
 
         // Between watermarks (70% = halfway between 60% and 80%)
         monitor.set_usage(700); // 70%
-        assert_eq!(monitor.pressure_level(), 0.5);
+        let pressure = monitor.pressure_level();
+        assert!(
+            (pressure - 0.5).abs() < 0.001,
+            "Expected ~0.5, got {}",
+            pressure
+        );
 
         // At high watermark
         monitor.set_usage(800); // 80%

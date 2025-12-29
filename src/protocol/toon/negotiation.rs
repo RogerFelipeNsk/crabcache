@@ -446,8 +446,8 @@ mod tests {
         let (result, _) = negotiator.process_negotiation_request(b"CRAB\x01\x00");
         assert_eq!(result, ToonNegotiationResult::ProtobufFallback);
 
-        // Test text fallback
-        let (result, _) = negotiator.process_negotiation_request(b"PING");
+        // Test text fallback - use longer command that doesn't match TOON magic
+        let (result, _) = negotiator.process_negotiation_request(b"PING\r\n\x00\x00");
         assert_eq!(result, ToonNegotiationResult::TextFallback);
     }
 

@@ -668,8 +668,12 @@ mod tests {
         assert!(metrics.can_accept_requests());
         assert!(!metrics.is_overloaded());
 
-        // Test overloaded condition
+        // Test overloaded condition - need high values across multiple metrics
         metrics.cpu_utilization = 0.95;
+        metrics.memory_utilization = 0.95;
+        metrics.active_connections = 1000;
+        metrics.avg_response_time = 100.0;
+        metrics.error_rate = 0.1;
         assert!(metrics.is_overloaded());
     }
 

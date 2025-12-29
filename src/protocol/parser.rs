@@ -43,8 +43,8 @@ impl ProtocolParser {
 
             // Check if this is just protocol negotiation (magic bytes + version + flags only)
             if bytes.len() == 6 {
-                // This is TOON protocol negotiation - respond with PING
-                debug!("TOON protocol negotiation detected");
+                // This is TOON protocol negotiation - respond with PING to acknowledge
+                debug!("TOON protocol negotiation detected - acknowledging support");
                 return Ok(Command::Ping);
             }
 
@@ -56,7 +56,7 @@ impl ProtocolParser {
                     .map_err(|e| format!("TOON decode error: {}", e).into());
             }
 
-            // Invalid TOON packet - too short
+            // Invalid TOON packet - too short but not negotiation
             return Err("TOON packet too short".into());
         }
 

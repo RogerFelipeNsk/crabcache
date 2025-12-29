@@ -511,17 +511,27 @@ mod tests {
         let mut manager = ToonZeroCopyManager::new();
 
         let region1 = manager.create_mmap_region(2 * 1024 * 1024).unwrap(); // 2MB
-        let region2 = region1.clone();
 
+        // The manager stores a copy in mmap_regions, so initial count is 2
         assert_eq!(
             region1.ref_count.load(std::sync::atomic::Ordering::Relaxed),
             2
         );
 
-        drop(region2);
+        let region2 = region1.clone();
+
+        // Now we have 3 references: manager's copy, region1, and region2
         assert_eq!(
             region1.ref_count.load(std::sync::atomic::Ordering::Relaxed),
-            1
+            3
+        );
+
+        drop(region2);
+
+        // Back to 2 references: manager's copy and region1
+        assert_eq!(
+            region1.ref_count.load(std::sync::atomic::Ordering::Relaxed),
+            2
         );
     }
 
