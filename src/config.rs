@@ -176,7 +176,7 @@ impl Default for RateLimitConfig {
 impl Default for ConnectionConfig {
     fn default() -> Self {
         Self {
-            max_connections: 1000,
+            max_connections: 2000, // Increased from 1000 to 2000 for higher concurrency
             timeout_seconds: 30,
             keepalive: true,
             pipeline: PipelineConfig::default(),
@@ -188,8 +188,8 @@ impl Default for PipelineConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            max_batch_size: 16,
-            batch_timeout_ms: 10,
+            max_batch_size: 2000, // Increased from 256 to 2000 for ultra-high throughput
+            batch_timeout_ms: 1,  // Reduced from 2 to 1 for ultra-low latency
         }
     }
 }

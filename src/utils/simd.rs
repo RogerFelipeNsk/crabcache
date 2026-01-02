@@ -156,8 +156,186 @@ impl SIMDParser {
             return Ok(Vec::new());
         }
 
-        let command = crate::protocol::binary::BinaryProtocol::parse_command(data)?;
+        // Parse directly without calling BinaryProtocol to avoid circular dependency
+        let command = Self::parse_single_command_scalar(data)?;
         Ok(vec![command])
+    }
+
+    /// Parse a single command using scalar operations (no circular dependency)
+    fn parse_single_command_scalar(data: &[u8]) -> crate::Result<Command> {
+        if data.is_empty() {
+            return Err("Empty command".into());
+        }
+
+        let cmd_type = data[0];
+        let mut cursor = 1;
+
+        match cmd_type {
+            0x01 => Ok(Command::Ping), // CMD_PING
+
+            0x02 => {
+                // CMD_PUT
+                if cursor + 4 > data.len() {
+                    return Err("Invalid PUT command: insufficient key length data".into());
+                }
+
+                let key_len = u32::from_le_bytes([
+                    data[cursor],
+                    data[cursor + 1],
+                    data[cursor + 2],
+                    data[cursor + 3],
+                ]) as usize;
+                cursor += 4;
+
+                if cursor + key_len > data.len() {
+                    return Err("Invalid PUT command: insufficient key data".into());
+                }
+
+                let key = &data[cursor..cursor + key_len];
+                cursor += key_len;
+
+                if cursor + 4 > data.len() {
+                    return Err("Invalid PUT command: insufficient value length data".into());
+                }
+
+                let value_len = u32::from_le_bytes([
+                    data[cursor],
+                    data[cursor + 1],
+                    data[cursor + 2],
+                    data[cursor + 3],
+                ]) as usize;
+                cursor += 4;
+
+                if cursor + value_len > data.len() {
+                    return Err("Invalid PUT command: insufficient value data".into());
+                }
+
+                let value = &data[cursor..cursor + value_len];
+                cursor += value_len;
+
+                // Check for TTL
+                let ttl = if cursor < data.len() {
+                    let has_ttl = data[cursor];
+                    cursor += 1;
+                    if has_ttl == 1 && cursor + 8 <= data.len() {
+                        let ttl_bytes = [
+                            data[cursor],
+                            data[cursor + 1],
+                            data[cursor + 2],
+                            data[cursor + 3],
+                            data[cursor + 4],
+                            data[cursor + 5],
+                            data[cursor + 6],
+                            data[cursor + 7],
+                        ];
+                        Some(u64::from_le_bytes(ttl_bytes))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                Ok(Command::Put {
+                    key: key.to_vec().into(),
+                    value: value.to_vec().into(),
+                    ttl,
+                })
+            }
+
+            0x03 => {
+                // CMD_GET
+                if cursor + 4 > data.len() {
+                    return Err("Invalid GET command: insufficient key length data".into());
+                }
+
+                let key_len = u32::from_le_bytes([
+                    data[cursor],
+                    data[cursor + 1],
+                    data[cursor + 2],
+                    data[cursor + 3],
+                ]) as usize;
+                cursor += 4;
+
+                if cursor + key_len > data.len() {
+                    return Err("Invalid GET command: insufficient key data".into());
+                }
+
+                let key = &data[cursor..cursor + key_len];
+
+                Ok(Command::Get {
+                    key: key.to_vec().into(),
+                })
+            }
+
+            0x04 => {
+                // CMD_DEL
+                if cursor + 4 > data.len() {
+                    return Err("Invalid DEL command: insufficient key length data".into());
+                }
+
+                let key_len = u32::from_le_bytes([
+                    data[cursor],
+                    data[cursor + 1],
+                    data[cursor + 2],
+                    data[cursor + 3],
+                ]) as usize;
+                cursor += 4;
+
+                if cursor + key_len > data.len() {
+                    return Err("Invalid DEL command: insufficient key data".into());
+                }
+
+                let key = &data[cursor..cursor + key_len];
+
+                Ok(Command::Del {
+                    key: key.to_vec().into(),
+                })
+            }
+
+            0x05 => {
+                // CMD_EXPIRE
+                if cursor + 4 > data.len() {
+                    return Err("Invalid EXPIRE command: insufficient key length data".into());
+                }
+
+                let key_len = u32::from_le_bytes([
+                    data[cursor],
+                    data[cursor + 1],
+                    data[cursor + 2],
+                    data[cursor + 3],
+                ]) as usize;
+                cursor += 4;
+
+                if cursor + key_len + 8 > data.len() {
+                    return Err("Invalid EXPIRE command: insufficient data".into());
+                }
+
+                let key = &data[cursor..cursor + key_len];
+                cursor += key_len;
+
+                let ttl_bytes = [
+                    data[cursor],
+                    data[cursor + 1],
+                    data[cursor + 2],
+                    data[cursor + 3],
+                    data[cursor + 4],
+                    data[cursor + 5],
+                    data[cursor + 6],
+                    data[cursor + 7],
+                ];
+                let ttl = u64::from_le_bytes(ttl_bytes);
+
+                Ok(Command::Expire {
+                    key: key.to_vec().into(),
+                    ttl,
+                })
+            }
+
+            0x06 => Ok(Command::Stats), // CMD_STATS
+
+            _ => Err(format!("Unknown command type: {}", cmd_type).into()),
+        }
     }
 
     fn hash_key_scalar(key: &[u8]) -> u64 {

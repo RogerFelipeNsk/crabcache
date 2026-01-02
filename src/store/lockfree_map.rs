@@ -210,7 +210,10 @@ where
             if !entry_ptr.is_null() {
                 let entry = unsafe { &*entry_ptr };
                 if entry.key == *key && !entry.deleted.load(Ordering::Acquire) {
-                    return entry.value.lock().ok().map(|v| v.clone());
+                    let value_ptr = entry.value.load(Ordering::Acquire);
+                    if !value_ptr.is_null() {
+                        return Some(unsafe { (*value_ptr).clone() });
+                    }
                 }
             }
         }
@@ -227,27 +230,32 @@ where
                     if entry.deleted.load(Ordering::Acquire) {
                         // Resurrect deleted entry
                         entry.deleted.store(false, Ordering::Release);
-                        if let Ok(mut old_value) = entry.value.lock() {
-                            let result = old_value.clone();
-                            *old_value = value;
-                            return Some(result);
+                        let new_value_ptr = Box::into_raw(Box::new(value));
+                        let old_value_ptr = entry.value.swap(new_value_ptr, Ordering::AcqRel);
+                        if !old_value_ptr.is_null() {
+                            let old_value = unsafe { *Box::from_raw(old_value_ptr) };
+                            return Some(old_value);
                         }
+                        return None;
                     } else {
                         // Update existing entry
-                        if let Ok(mut old_value) = entry.value.lock() {
-                            let result = old_value.clone();
-                            *old_value = value;
-                            return Some(result);
+                        let new_value_ptr = Box::into_raw(Box::new(value));
+                        let old_value_ptr = entry.value.swap(new_value_ptr, Ordering::AcqRel);
+                        if !old_value_ptr.is_null() {
+                            let old_value = unsafe { *Box::from_raw(old_value_ptr) };
+                            return Some(old_value);
                         }
+                        return None;
                     }
                 }
             }
         }
 
         // Create new entry
+        let value_ptr = Box::into_raw(Box::new(value));
         let new_entry = Box::into_raw(Box::new(Entry {
             key,
-            value: Mutex::new(value),
+            value: AtomicPtr::new(value_ptr),
             deleted: AtomicBool::new(false),
         }));
 
@@ -270,9 +278,9 @@ where
             }
         }
 
-        // No empty slots, this is a simplified implementation
-        // In a real implementation, we'd resize the entries vector
+        // No empty slots, clean up and return None
         unsafe {
+            let _ = Box::from_raw((*new_entry).value.load(Ordering::Acquire));
             let _ = Box::from_raw(new_entry);
         };
         None
@@ -286,7 +294,10 @@ where
                 if entry.key == *key && !entry.deleted.load(Ordering::Acquire) {
                     entry.deleted.store(true, Ordering::Release);
                     self.size.fetch_sub(1, Ordering::Relaxed);
-                    return entry.value.lock().ok().map(|v| v.clone());
+                    let value_ptr = entry.value.load(Ordering::Acquire);
+                    if !value_ptr.is_null() {
+                        return Some(unsafe { (*value_ptr).clone() });
+                    }
                 }
             }
         }
@@ -297,7 +308,7 @@ where
 /// An entry in the bucket
 struct Entry<K, V> {
     key: K,
-    value: Mutex<V>,
+    value: AtomicPtr<V>,
     deleted: AtomicBool,
 }
 

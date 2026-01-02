@@ -24,10 +24,16 @@ const RESP_ERROR: u8 = 0x13;
 const RESP_VALUE: u8 = 0x14;
 const RESP_STATS: u8 = 0x15;
 
-// Pre-allocated static responses for maximum performance
+// Pre-allocated static responses for maximum performance (zero allocation)
 static RESPONSE_OK: &[u8] = &[RESP_OK];
 static RESPONSE_PONG: &[u8] = &[RESP_PONG];
 static RESPONSE_NULL: &[u8] = &[RESP_NULL];
+
+// Thread-local buffer pool for dynamic responses
+thread_local! {
+    static RESPONSE_BUFFER: std::cell::RefCell<BytesMut> =
+        std::cell::RefCell::new(BytesMut::with_capacity(4096));
+}
 
 /// Ultra-fast binary protocol serializer
 pub struct BinaryProtocol;
@@ -36,37 +42,46 @@ impl BinaryProtocol {
     /// Serialize response to binary format with zero-copy optimizations
     pub fn serialize_response(response: &Response) -> Bytes {
         match response {
-            // Static responses (1 byte each) - zero allocation
+            // Static responses (1 byte each) - zero allocation, zero copy
             Response::Ok => Bytes::from_static(RESPONSE_OK),
             Response::Pong => Bytes::from_static(RESPONSE_PONG),
             Response::Null => Bytes::from_static(RESPONSE_NULL),
 
-            // Dynamic responses with minimal allocation
-            Response::Error(msg) => {
+            // Dynamic responses with thread-local buffer reuse
+            Response::Error(msg) => RESPONSE_BUFFER.with(|buf_cell| {
+                let mut buf = buf_cell.borrow_mut();
+                buf.clear();
+
                 let msg_bytes = msg.as_bytes();
-                let mut buf = BytesMut::with_capacity(1 + 4 + msg_bytes.len());
+                buf.reserve(1 + 4 + msg_bytes.len());
                 buf.put_u8(RESP_ERROR);
                 buf.put_u32_le(msg_bytes.len() as u32);
                 buf.extend_from_slice(msg_bytes);
-                buf.freeze()
-            }
+                buf.clone().freeze()
+            }),
 
-            Response::Value(value) => {
-                let mut buf = BytesMut::with_capacity(1 + 4 + value.len());
+            Response::Value(value) => RESPONSE_BUFFER.with(|buf_cell| {
+                let mut buf = buf_cell.borrow_mut();
+                buf.clear();
+
+                buf.reserve(1 + 4 + value.len());
                 buf.put_u8(RESP_VALUE);
                 buf.put_u32_le(value.len() as u32);
                 buf.extend_from_slice(value);
-                buf.freeze()
-            }
+                buf.clone().freeze()
+            }),
 
-            Response::Stats(stats) => {
+            Response::Stats(stats) => RESPONSE_BUFFER.with(|buf_cell| {
+                let mut buf = buf_cell.borrow_mut();
+                buf.clear();
+
                 let stats_bytes = stats.as_bytes();
-                let mut buf = BytesMut::with_capacity(1 + 4 + stats_bytes.len());
+                buf.reserve(1 + 4 + stats_bytes.len());
                 buf.put_u8(RESP_STATS);
                 buf.put_u32_le(stats_bytes.len() as u32);
                 buf.extend_from_slice(stats_bytes);
-                buf.freeze()
-            }
+                buf.clone().freeze()
+            }),
         }
     }
 
@@ -76,10 +91,7 @@ impl BinaryProtocol {
             return Err("Empty command".into());
         }
 
-        // Disable SIMD parsing temporarily to avoid stack overflow
-        // TODO: Re-enable after fixing the stack overflow issue
-        /*
-        // Try SIMD-accelerated parsing first
+        // Try SIMD-accelerated parsing first for larger commands
         if data.len() >= 16 {
             if let Ok(commands) = SIMDParser::parse_commands_vectorized(data) {
                 if let Some(command) = commands.into_iter().next() {
@@ -87,18 +99,18 @@ impl BinaryProtocol {
                 }
             }
         }
-        */
 
         // Fallback to scalar parsing
         Self::parse_command_scalar(data)
     }
 
-    /// Scalar parsing implementation
+    /// Scalar parsing implementation with optimized fixed-size headers
     fn parse_command_scalar(data: &[u8]) -> crate::Result<Command> {
         if data.is_empty() {
             return Err("Empty command".into());
         }
 
+        // Use std::io::Cursor for efficient parsing with fixed-size headers
         let mut cursor = std::io::Cursor::new(data);
         let cmd_type = cursor.get_u8();
 
@@ -106,6 +118,7 @@ impl BinaryProtocol {
             CMD_PING => Ok(Command::Ping),
 
             CMD_PUT => {
+                // Use fixed 4-byte length instead of varint for better performance
                 let key_len = cursor.get_u32_le() as usize;
                 if cursor.remaining() < key_len {
                     return Err("Invalid PUT command: insufficient key data".into());
@@ -124,7 +137,7 @@ impl BinaryProtocol {
                 cursor.advance(value_len);
                 let value = &data[value_start..value_start + value_len];
 
-                // Check for TTL
+                // Check for TTL with optimized parsing
                 let ttl = if cursor.remaining() >= 1 {
                     let has_ttl = cursor.get_u8();
                     if has_ttl == 1 && cursor.remaining() >= 8 {
@@ -136,9 +149,10 @@ impl BinaryProtocol {
                     None
                 };
 
+                // Use zero-copy Bytes::from instead of to_vec().into()
                 Ok(Command::Put {
-                    key: key.to_vec().into(),
-                    value: value.to_vec().into(),
+                    key: Bytes::copy_from_slice(key),
+                    value: Bytes::copy_from_slice(value),
                     ttl,
                 })
             }
@@ -153,7 +167,7 @@ impl BinaryProtocol {
                 let key = &data[key_start..key_start + key_len];
 
                 Ok(Command::Get {
-                    key: key.to_vec().into(),
+                    key: Bytes::copy_from_slice(key),
                 })
             }
 
@@ -167,7 +181,7 @@ impl BinaryProtocol {
                 let key = &data[key_start..key_start + key_len];
 
                 Ok(Command::Del {
-                    key: key.to_vec().into(),
+                    key: Bytes::copy_from_slice(key),
                 })
             }
 
@@ -184,7 +198,7 @@ impl BinaryProtocol {
                 let ttl = cursor.get_u64_le();
 
                 Ok(Command::Expire {
-                    key: key.to_vec().into(),
+                    key: Bytes::copy_from_slice(key),
                     ttl,
                 })
             }

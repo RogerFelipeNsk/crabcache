@@ -1,13 +1,12 @@
-//! High-performance buffer pool for reducing allocations
+//! High-performance buffer pool for reducing allocations with lock-free design
 
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
-/// Pool of reusable buffers to reduce allocations with performance optimizations
+/// Lock-free pool of reusable buffers to reduce allocations with performance optimizations
 pub struct BufferPool {
-    buffers: Arc<Mutex<VecDeque<Vec<u8>>>>,
     buffer_size: usize,
     max_pool_size: usize,
     // Performance metrics
@@ -16,11 +15,15 @@ pub struct BufferPool {
     returns: AtomicUsize,
 }
 
+// Thread-local buffer storage for lock-free access
+thread_local! {
+    static THREAD_LOCAL_BUFFERS: RefCell<VecDeque<Vec<u8>>> = RefCell::new(VecDeque::new());
+}
+
 impl BufferPool {
     /// Create a new buffer pool with performance tracking
     pub fn new(buffer_size: usize, max_pool_size: usize) -> Self {
         Self {
-            buffers: Arc::new(Mutex::new(VecDeque::with_capacity(max_pool_size))),
             buffer_size,
             max_pool_size,
             hits: AtomicUsize::new(0),
@@ -29,17 +32,26 @@ impl BufferPool {
         }
     }
 
-    /// Get a buffer from the pool or create a new one (optimized)
+    /// Get a buffer from the pool or create a new one (lock-free)
     pub async fn get_buffer(&self) -> Vec<u8> {
-        let mut buffers = self.buffers.lock().await;
+        // Use thread-local storage for lock-free access
+        let buffer = THREAD_LOCAL_BUFFERS.with(|buffers| {
+            let mut buffers = buffers.borrow_mut();
 
-        if let Some(mut buffer) = buffers.pop_front() {
-            // Reuse existing buffer (pool hit)
-            self.hits.fetch_add(1, Ordering::Relaxed);
+            if let Some(mut buffer) = buffers.pop_front() {
+                // Reuse existing buffer (pool hit)
+                self.hits.fetch_add(1, Ordering::Relaxed);
 
-            // Fast clear and resize
-            buffer.clear();
-            buffer.resize(self.buffer_size, 0);
+                // Fast clear and resize
+                buffer.clear();
+                buffer.resize(self.buffer_size, 0);
+                Some(buffer)
+            } else {
+                None
+            }
+        });
+
+        if let Some(buffer) = buffer {
             buffer
         } else {
             // Create new buffer (pool miss)
@@ -52,7 +64,7 @@ impl BufferPool {
         }
     }
 
-    /// Return a buffer to the pool (optimized)
+    /// Return a buffer to the pool (lock-free)
     pub async fn return_buffer(&self, buffer: Vec<u8>) {
         self.returns.fetch_add(1, Ordering::Relaxed);
 
@@ -62,20 +74,21 @@ impl BufferPool {
             return;
         }
 
-        let mut buffers = self.buffers.lock().await;
+        // Use thread-local storage for lock-free access
+        THREAD_LOCAL_BUFFERS.with(|buffers| {
+            let mut buffers = buffers.borrow_mut();
 
-        // Only keep buffer if pool isn't full
-        if buffers.len() < self.max_pool_size {
-            buffers.push_back(buffer);
-        }
-        // Otherwise, let buffer be dropped (automatic memory management)
+            // Only keep buffer if pool isn't full
+            if buffers.len() < self.max_pool_size {
+                buffers.push_back(buffer);
+            }
+            // Otherwise, let buffer be dropped (automatic memory management)
+        });
     }
 
-    /// Get current pool statistics with performance metrics
+    /// Get current pool statistics with performance metrics (lock-free)
     pub async fn stats(&self) -> BufferPoolStats {
-        let buffers = self.buffers.lock().await;
-        let current_size = buffers.len();
-        drop(buffers); // Release lock early
+        let current_size = THREAD_LOCAL_BUFFERS.with(|buffers| buffers.borrow().len());
 
         BufferPoolStats {
             current_size,
@@ -101,16 +114,19 @@ impl BufferPool {
         }
     }
 
-    /// Pre-warm the pool with buffers (useful for startup)
+    /// Pre-warm the pool with buffers (useful for startup) - lock-free
     pub async fn prewarm(&self, count: usize) {
         let actual_count = count.min(self.max_pool_size);
-        let mut buffers = self.buffers.lock().await;
 
-        for _ in 0..actual_count {
-            let mut buffer = Vec::with_capacity(self.buffer_size);
-            buffer.resize(self.buffer_size, 0);
-            buffers.push_back(buffer);
-        }
+        THREAD_LOCAL_BUFFERS.with(|buffers| {
+            let mut buffers = buffers.borrow_mut();
+
+            for _ in 0..actual_count {
+                let mut buffer = Vec::with_capacity(self.buffer_size);
+                buffer.resize(self.buffer_size, 0);
+                buffers.push_back(buffer);
+            }
+        });
     }
 }
 

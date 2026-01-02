@@ -2,7 +2,7 @@
 
 # Rust build artifacts
 target/
-Cargo.lock
+# Cargo.lock - NEEDED for reproducible builds
 
 # IDE files
 .vscode/

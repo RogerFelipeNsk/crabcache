@@ -153,10 +153,16 @@ impl ZeroCopyBufferPool {
     }
 }
 
-/// Zero-copy command serializer
+use std::cell::RefCell;
+
+thread_local! {
+    static THREAD_LOCAL_BUFFER_POOL: RefCell<ZeroCopyBufferPool> = RefCell::new(
+        ZeroCopyBufferPool::new(ZeroCopyConfig::default())
+    );
+}
+
+/// Zero-copy command serializer with thread-local buffer pool
 pub struct ZeroCopySerializer {
-    /// Buffer pool for reuse
-    buffer_pool: Arc<std::sync::Mutex<ZeroCopyBufferPool>>,
     /// Serialization statistics
     stats: ZeroCopySerializerStats,
 }
@@ -175,15 +181,14 @@ pub struct ZeroCopySerializerStats {
 }
 
 impl ZeroCopySerializer {
-    /// Create new zero-copy serializer
-    pub fn new(buffer_pool: Arc<std::sync::Mutex<ZeroCopyBufferPool>>) -> Self {
+    /// Create new zero-copy serializer with thread-local buffer pool
+    pub fn new(_buffer_pool: Arc<std::sync::Mutex<ZeroCopyBufferPool>>) -> Self {
         Self {
-            buffer_pool,
             stats: ZeroCopySerializerStats::default(),
         }
     }
 
-    /// Serialize batch of responses with zero-copy optimization
+    /// Serialize batch of responses with zero-copy optimization using thread-local pool
     pub fn serialize_response_batch_zero_copy(
         &mut self,
         responses: &[Response],
@@ -195,11 +200,9 @@ impl ZeroCopySerializer {
         // Estimate required buffer size
         let estimated_size = self.estimate_response_batch_size(responses);
 
-        // Get buffer from pool
-        let mut buffer = {
-            let mut pool = self.buffer_pool.lock().unwrap();
-            pool.get_buffer(estimated_size)
-        };
+        // Get buffer from thread-local pool (no locks!)
+        let mut buffer =
+            THREAD_LOCAL_BUFFER_POOL.with(|pool| pool.borrow_mut().get_buffer(estimated_size));
 
         // Serialize responses directly into buffer
         for response in responses {

@@ -121,10 +121,33 @@ impl SIMDParser {
         Ok(commands)
     }
 
-    /// SIMD-optimized single command parsing
+    /// SIMD-optimized single command parsing with zero-copy
     fn parse_single_command_simd(&self, data: &[u8]) -> Result<Command, String> {
         if data.is_empty() {
             return Err("Empty command".to_string());
+        }
+
+        // Ultra-fast inline parsing for hot path
+        if data.len() >= 4 {
+            // Check for PING (most common)
+            if data.len() == 4 && data == b"PING" {
+                return Ok(Command::Ping);
+            }
+
+            // Check for GET with SIMD-optimized prefix matching
+            if data.len() > 4 && &data[0..4] == b"GET " {
+                return self.parse_get_zero_copy(&data[4..]);
+            }
+
+            // Check for PUT with SIMD-optimized prefix matching
+            if data.len() > 4 && &data[0..4] == b"PUT " {
+                return self.parse_put_zero_copy(&data[4..]);
+            }
+
+            // Check for DEL with SIMD-optimized prefix matching
+            if data.len() > 4 && &data[0..4] == b"DEL " {
+                return self.parse_del_zero_copy(&data[4..]);
+            }
         }
 
         // Fast path for common commands using SIMD string comparison
@@ -178,17 +201,60 @@ impl SIMDParser {
         self.parse_single_command_scalar(data)
     }
 
-    /// Parse GET command with SIMD optimization
-    fn parse_get_command_simd(&self, args: &[u8]) -> Result<Command, String> {
-        // Find first space or end of string for key
+    /// Parse GET command with zero-copy optimization
+    fn parse_get_zero_copy(&self, args: &[u8]) -> Result<Command, String> {
+        // Find first space or end of string for key (zero-copy)
         let key_end = args.iter().position(|&b| b == b' ').unwrap_or(args.len());
 
         if key_end == 0 {
             return Err("GET command missing key".to_string());
         }
 
-        let key = Bytes::from(args[..key_end].to_vec());
+        // Zero-copy: create Bytes directly from slice without allocation
+        let key = Bytes::from_static(unsafe { std::slice::from_raw_parts(args.as_ptr(), key_end) });
         Ok(Command::Get { key })
+    }
+
+    /// Parse PUT command with zero-copy optimization
+    fn parse_put_zero_copy(&self, args: &[u8]) -> Result<Command, String> {
+        // Find first space for key-value separation (zero-copy)
+        if let Some(space_pos) = args.iter().position(|&b| b == b' ') {
+            let key_end = space_pos;
+            let value_start = space_pos + 1;
+
+            if key_end == 0 || value_start >= args.len() {
+                return Err("Invalid PUT command format".to_string());
+            }
+
+            // Zero-copy: create Bytes directly from slices
+            let key =
+                Bytes::from_static(unsafe { std::slice::from_raw_parts(args.as_ptr(), key_end) });
+            let value = Bytes::from_static(unsafe {
+                std::slice::from_raw_parts(args.as_ptr().add(value_start), args.len() - value_start)
+            });
+
+            return Ok(Command::Put {
+                key,
+                value,
+                ttl: None,
+            });
+        }
+
+        Err("PUT command missing value".to_string())
+    }
+
+    /// Parse DEL command with zero-copy optimization
+    fn parse_del_zero_copy(&self, args: &[u8]) -> Result<Command, String> {
+        // Find first space or end of string for key (zero-copy)
+        let key_end = args.iter().position(|&b| b == b' ').unwrap_or(args.len());
+
+        if key_end == 0 {
+            return Err("DEL command missing key".to_string());
+        }
+
+        // Zero-copy: create Bytes directly from slice
+        let key = Bytes::from_static(unsafe { std::slice::from_raw_parts(args.as_ptr(), key_end) });
+        Ok(Command::Del { key })
     }
 
     /// Parse PUT command with SIMD optimization

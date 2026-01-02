@@ -15,6 +15,7 @@ pub mod server;
 pub mod shard;
 pub mod store;
 pub mod ttl;
+pub mod ultra_fast; // Ultra-fast optimizations for 500k ops/sec + P99 < 10ms
 pub mod utils;
 pub mod wal;
 
