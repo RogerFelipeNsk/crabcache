@@ -1,0 +1,119 @@
+
+ Display CVEs identified in a software artifact
+
+Usage
+  docker scout cves [OPTIONS] [IMAGE|DIRECTORY|ARCHIVE]
+
+Description
+The docker scout cves command analyzes a software artifact for vulnerabilities.
+
+If no image is specified, the most recently built image is used.
+
+The following artifact types are supported:
+
+- Images
+- OCI layout directories
+- Tarball archives, as created by docker save
+- Local directory or file
+- SPDX file or in-toto attestation file with SPDX predicate
+
+The tool analyzes the provided software artifact, and generates a vulnerability report.
+
+By default, the tool expects an image reference, such as:
+
+- redis
+- curlimages/curl:7.87.0
+- mcr.microsoft.com/dotnet/runtime:7.0
+
+If the artifact you want to analyze is an OCI directory, a tarball archive, a local file or directory,
+or if you want to control from where the image will be resolved, you must prefix the reference with one of the following:
+
+- image:// (default) use a local image, or fall back to a registry lookup
+- local:// use an image from the local image store (don't do a registry lookup)
+- registry:// use an image from a registry (don't use a local image)
+- oci-dir:// use an OCI layout directory
+- archive:// use a tarball archive, as created by docker save
+- fs:// use a local directory or file
+- sbom:// use an SBOM as SPDX file or in-toto attestation file with SPDX predicate or syft json SBOM file
+
+
+
+Flags
+      --details                     Print details on default text output
+      --env string                  Name of environment
+      --epss                        Display the EPSS scores and organize the package's CVEs according to their EPSS score
+      --epss-percentile float32     Exclude CVEs with EPSS scores less than the specified percentile (0 to 1)
+      --epss-score float32          Exclude CVEs with EPSS scores less than the specified value (0 to 1)
+  -e, --exit-code                   Return exit code '2' if vulnerabilities are detected
+      --format string               Output format of the generated vulnerability report:
+                                    - packages: default output, plain text with vulnerabilities grouped by packages
+                                    - sarif: json Sarif output
+                                    - spdx: json SPDX output
+                                    - gitlab: json GitLab output
+                                    - markdown: markdown output (including some html tags like collapsible sections)
+                                    - sbom: json SBOM output
+                                     (default "packages")
+      --ignore-base                 Filter out CVEs introduced from base image
+      --ignore-suppressed           Filter CVEs found in Scout exceptions based on the specified exception scope
+      --locations                   Print package locations including file paths and layer diff_id
+      --multi-stage                 Show packages from multi-stage Docker builds
+      --only-base                   Only show CVEs introduced by the base image
+      --only-cisa-kev               Filter to CVEs listed in the CISA KEV catalog
+      --only-cve-id strings         Comma separated list of CVE ids (like CVE-2021-45105) to search for
+      --only-fixed                  Filter to fixable CVEs
+      --only-metric strings         Comma separated list of CVSS metrics (like AV:N or PR:L) to filter CVEs by
+      --only-package strings        Comma separated regular expressions to filter packages by
+      --only-package-type strings   Comma separated list of package types (like apk, deb, rpm, npm, pypi, golang, etc)
+      --only-severity strings       Comma separated list of severities (critical, high, medium, low, unspecified) to filter CVEs by
+      --only-stage strings          Comma separated list of multi-stage Docker build stage names
+      --only-unfixed                Filter to unfixed CVEs
+      --only-vex-affected           Filter CVEs by VEX statements with status not affected
+      --only-vuln-packages          When used with --format=only-packages ignore packages with no vulnerabilities
+      --org string                  Namespace of the Docker organization
+  -o, --output string               Write the report to a file
+      --platform string             Platform of image to analyze
+      --ref string                  Reference to use if the provided tarball contains multiple references.
+                                    Can only be used with archive
+      --vex-author strings          List of VEX statement authors to accept (default [<.*@docker.com>])
+      --vex-location strings        File location of directory or file containing VEX statements
+
+Examples
+  Display vulnerabilities for the most recently built image
+  $ docker scout cves[0m
+
+  Display vulnerabilities grouped by package
+  $ docker scout cves alpine[0m
+
+  Display vulnerabilities from a docker save tarball
+  $ docker save alpine > alpine.tar[0m
+  $ docker scout cves archive://alpine.tar[0m
+
+  Display vulnerabilities from an OCI directory
+  $ skopeo copy --override-os linux docker://alpine oci:alpine[0m
+  $ docker scout cves oci-dir://alpine[0m
+
+  Display vulnerabilities from the current directory
+  $ docker scout cves fs://.[0m
+
+  Export vulnerabilities to a SARIF JSON file
+  $ docker scout cves --format sarif --output alpine.sarif.json alpine[0m
+
+  Markdown output, including HTML tags. To be used in Pull Request comments for instance.
+  $ docker scout cves --format markdown alpine[0m
+
+  List all Go packages of the image that are vulnerable
+  $ docker scout cves --format only-packages --only-package-type golang --only-vuln-packages golang:1.18.0[0m
+
+  List vulnerabilities from an SPDX file
+  $ syft -o spdx-json alpine | docker scout cves sbom://[0m
+
+Learn More
+  Read docker scout cli reference at https://docs.docker.com/engine/reference/commandline/scout/
+
+Report Issues
+  Raise bugs and feature requests at https://github.com/docker/scout-cli/issues
+
+Send Feedback
+  Send feedback with docker feedback
+
+[31mERROR  [0m Status: please provide a valid format, Code: 1 

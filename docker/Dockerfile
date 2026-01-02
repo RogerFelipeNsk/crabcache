@@ -45,11 +45,12 @@ LABEL org.opencontainers.image.source="https://github.com/RogerFelipeNsk/crabcac
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.created="2025-12-24"
 
-# Install runtime dependencies
+# Install runtime dependencies and update gnupg2 to fix CVE-2025-68973
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
     netcat-openbsd \
+    && apt-get upgrade -y gnupg2 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

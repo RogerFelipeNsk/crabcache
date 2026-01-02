@@ -375,7 +375,7 @@ mod tests {
         let response = manager.process_command_zero_copy(get_cmd).await;
         match response {
             Response::Value(value) => {
-                assert_eq!(value, b"test_value");
+                assert_eq!(value.as_ref(), b"test_value");
             }
             _ => panic!("Expected value response"),
         }
@@ -387,7 +387,7 @@ mod tests {
         let response = manager.process_command(cmd).await;
         match response {
             Response::Value(value) => {
-                assert_eq!(value, b"test_value");
+                assert_eq!(value.as_ref(), b"test_value");
             }
             _ => panic!("Expected value response"),
         }

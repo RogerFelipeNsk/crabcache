@@ -37,6 +37,8 @@
 - **Rate limiting** com algoritmo token bucket
 - **IP filtering** com suporte CIDR (IPv4/IPv6)
 - **Connection limits** configuráveis
+- **Container security**: Imagens atualizadas contra CVEs conhecidas
+- **Vulnerability scanning**: Scripts automatizados para detecção de vulnerabilidades
 
 ### 📊 Observabilidade
 - **Métricas Prometheus** nativas
@@ -74,6 +76,35 @@ cargo build --release
 # Executar
 ./target/release/crabcache
 ```
+
+## 🛡️ Segurança de Container
+
+### Verificação de Vulnerabilidades
+
+O CrabCache inclui ferramentas para verificar vulnerabilidades de segurança:
+
+```bash
+# Executar scan de segurança automatizado
+./scripts/security-scan.sh
+
+# Scan de imagem específica
+./scripts/security-scan.sh -i crabcache:v0.0.2
+
+# Resultados salvos em ./security-reports/
+```
+
+### CVEs Resolvidas
+
+- **CVE-2025-68973**: Vulnerabilidade gnupg2 corrigida (Dezembro 2024)
+  - Severity: 7.8 (High)
+  - Status: ✅ Resolvida via atualização de pacote
+
+### Práticas de Segurança
+
+- 🔄 **Atualizações regulares**: Base images atualizadas automaticamente
+- 🔒 **Usuário não-root**: Container executa como usuário dedicado
+- 📊 **Scanning contínuo**: Verificação automática de vulnerabilidades
+- 📋 **Documentação**: Veja [SECURITY.md](docs/SECURITY.md) para detalhes completos
 
 ## 🔧 Configuração
 
