@@ -184,7 +184,7 @@ impl SIMDParser {
 
         // Check for "GET " prefix
         if data.len() >= 4 && &data[0..4] == b"GET " {
-            return self.parse_get_command_simd(&data[4..]);
+            return self.parse_get_zero_copy(&data[4..]);
         }
 
         // Check for "PUT " prefix
