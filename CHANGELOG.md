@@ -17,10 +17,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 #### Added
 - 🛡️ **Security Documentation**: Adicionado [SECURITY.md](docs/SECURITY.md) com guidelines completas
-- 🔍 **Vulnerability Scanner**: Script automatizado `scripts/security-scan.sh`
+- 🔍 **Vulnerability Scanner**: Script manual `scripts/security-scan.sh`
   - Suporte para Docker Scout, Trivy e Grype
   - Relatórios JSON e resumo em Markdown
-  - Execução automatizada de múltiplas ferramentas
+  - Execução manual para evitar pipelines duplicadas
 - 📋 **Security Monitoring**: Documentação de práticas de segurança
 - 🔄 **Container Hardening**: Melhorias na segurança dos containers
 
@@ -28,6 +28,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - 📦 **Base Image Security**: Processo de build atualizado para incluir patches de segurança
 - 📚 **README**: Adicionada seção de segurança de container
 - 🏷️ **Docker Labels**: Metadados de segurança nos containers
+
+#### Removed
+- ❌ **Automatic Security Workflow**: Removido workflow automático que causava pipelines duplicadas
+  - Security scan agora é executado manualmente via script
+  - Evita conflitos com o pipeline principal de CI/CD
 
 ## [0.0.1] - 2025-12-23
 

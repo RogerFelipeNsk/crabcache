@@ -103,7 +103,7 @@ O CrabCache inclui ferramentas para verificar vulnerabilidades de segurança:
 
 - 🔄 **Atualizações regulares**: Base images atualizadas automaticamente
 - 🔒 **Usuário não-root**: Container executa como usuário dedicado
-- 📊 **Scanning contínuo**: Verificação automática de vulnerabilidades
+- 📊 **Scanning manual**: Script disponível para verificação de vulnerabilidades
 - 📋 **Documentação**: Veja [SECURITY.md](docs/SECURITY.md) para detalhes completos
 
 ## 🔧 Configuração
