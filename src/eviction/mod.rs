@@ -98,7 +98,7 @@ mod tests {
     fn test_cache_item_creation() {
         let item = CacheItem::new("test_key".to_string(), b"test_value".to_vec());
         assert_eq!(item.key, "test_key");
-        assert_eq!(item.value, b"test_value");
+        assert_eq!(item.value.as_slice(), b"test_value");
         assert_eq!(item.access_count, 1);
     }
 

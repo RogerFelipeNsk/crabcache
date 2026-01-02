@@ -333,7 +333,7 @@ mod tests {
         match &entries[0].operation {
             Operation::Put { key, value, .. } => {
                 assert_eq!(key, "key1");
-                assert_eq!(value, b"value1");
+                assert_eq!(value.as_slice(), b"value1");
             }
             _ => panic!("Expected Put operation"),
         }
