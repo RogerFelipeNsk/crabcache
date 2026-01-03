@@ -146,7 +146,7 @@ pub struct PrefetchOptimizer;
 
 impl PrefetchOptimizer {
     /// Prefetch data for read access
-    /// 
+    ///
     /// # Safety
     /// The caller must ensure that `ptr` points to valid memory for at least `len` bytes.
     #[inline(always)]
@@ -159,7 +159,7 @@ impl PrefetchOptimizer {
     }
 
     /// Prefetch data for write access
-    /// 
+    ///
     /// # Safety
     /// The caller must ensure that `ptr` points to valid memory for at least `len` bytes.
     #[inline(always)]
@@ -172,7 +172,7 @@ impl PrefetchOptimizer {
     }
 
     /// Prefetch with temporal locality hint
-    /// 
+    ///
     /// # Safety
     /// The caller must ensure that `ptr` points to valid memory for at least `len` bytes.
     #[inline(always)]

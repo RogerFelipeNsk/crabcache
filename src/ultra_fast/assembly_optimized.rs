@@ -24,7 +24,7 @@ pub fn memcmp_asm(a: &[u8], b: &[u8]) -> bool {
 }
 
 /// Ultra-fast string length calculation (optimized Rust implementation)
-/// 
+///
 /// # Safety
 /// The caller must ensure that `data` points to a valid null-terminated string.
 #[inline(always)]
@@ -37,7 +37,7 @@ pub unsafe fn strlen_asm(data: *const u8) -> usize {
 }
 
 /// Ultra-fast memory copy (optimized Rust implementation)
-/// 
+///
 /// # Safety
 /// The caller must ensure that `src` and `dst` are valid pointers and that
 /// the memory regions do not overlap.
