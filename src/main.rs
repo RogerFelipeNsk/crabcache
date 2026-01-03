@@ -1,4 +1,7 @@
-use crabcache::ultra_fast::{IoUringServer, ToonUltimateServer, UltimateServer, UltraFastServer};
+use crabcache::ultra_fast::{
+    HybridServer, IoUringServer, SimpleServer, ToonHybridServer, ToonUltimateServer,
+    UltimateServer, UltraFastServer,
+};
 use crabcache::{Config, Result};
 use tracing::{error, info, warn};
 use tracing_subscriber::{fmt, EnvFilter};
@@ -27,7 +30,7 @@ async fn main() -> Result<()> {
 
     // Choose server implementation based on configuration
     let server_type =
-        std::env::var("CRABCACHE_SERVER_TYPE").unwrap_or_else(|_| "ultimate".to_string());
+        std::env::var("CRABCACHE_SERVER_TYPE").unwrap_or_else(|_| "toon_hybrid".to_string());
 
     info!("CrabCache server starting...");
     info!("🚀 Target: 500k+ ops/sec, P99 < 10ms");
@@ -61,6 +64,33 @@ async fn main() -> Result<()> {
             tokio::spawn(async move {
                 if let Err(e) = server.start().await {
                     error!(error = %e, "IoUringServer error");
+                }
+            })
+        }
+        "toon_hybrid" => {
+            info!("🎨 Starting CrabCache ToonHybridServer (TOON Protocol + DashMap)");
+            let server = ToonHybridServer::new(config).await?;
+            tokio::spawn(async move {
+                if let Err(e) = server.start().await {
+                    error!(error = %e, "ToonHybridServer error");
+                }
+            })
+        }
+        "hybrid" => {
+            info!("🔧 Starting CrabCache HybridServer (Stable + DashMap)");
+            let server = HybridServer::new(config).await?;
+            tokio::spawn(async move {
+                if let Err(e) = server.start().await {
+                    error!(error = %e, "HybridServer error");
+                }
+            })
+        }
+        "simple" => {
+            info!("🔧 Starting CrabCache SimpleServer (Debug Mode)");
+            let server = SimpleServer::new(config).await?;
+            tokio::spawn(async move {
+                if let Err(e) = server.start().await {
+                    error!(error = %e, "SimpleServer error");
                 }
             })
         }

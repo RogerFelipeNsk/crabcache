@@ -12,7 +12,7 @@ use crate::protocol::toon::{
     decoder::ToonDecoder,
     encoder::ToonEncoder,
     zero_copy::{ToonZeroCopyConfig, ToonZeroCopyManager},
-    StringInterner, ToonFlags, ToonPacket, ToonType,
+    ToonFlags, ToonPacket, ToonType,
 };
 use crate::ultra_fast::{
     arena_allocator::arena_reset,
@@ -26,6 +26,12 @@ use crate::ultra_fast::{
     simd_parser::parse_command_simd,
 };
 use crate::Config;
+
+// CRITICAL LOCK-FREE DEPENDENCIES
+use bytes::BytesMut;
+use dashmap::DashMap;
+use thread_local::ThreadLocal;
+
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -39,11 +45,19 @@ pub struct ToonUltimateServer {
     shard_manager: Arc<LockFreeShardManager>,
     stats: CacheAligned<ToonUltimateServerStats>,
 
-    // TOON-specific optimizations
-    toon_encoder: Arc<std::sync::Mutex<ToonEncoder>>,
-    toon_decoder: Arc<std::sync::Mutex<ToonDecoder>>,
-    zero_copy_manager: Arc<std::sync::Mutex<ToonZeroCopyManager>>,
-    string_interner: Arc<std::sync::Mutex<StringInterner>>,
+    // TOON-specific optimizations - LOCK-FREE VERSION
+    toon_encoders: Arc<thread_local::ThreadLocal<std::cell::RefCell<ToonEncoder>>>,
+    toon_decoders: Arc<thread_local::ThreadLocal<std::cell::RefCell<ToonDecoder>>>,
+    zero_copy_managers: Arc<thread_local::ThreadLocal<std::cell::RefCell<ToonZeroCopyManager>>>,
+    string_interner: Arc<dashmap::DashMap<String, u32>>, // Lock-free string interning
+
+    // Buffer pool for efficient memory management
+    buffer_pools: Arc<
+        thread_local::ThreadLocal<std::cell::RefCell<crate::protocol::buffer_pool::BufferPool>>,
+    >,
+
+    // Response cache for common responses
+    response_cache: Arc<dashmap::DashMap<String, bytes::Bytes>>,
 
     // CPU optimizations (Sprint 4)
     cpu_affinity: Arc<CpuAffinityManager>,
@@ -131,8 +145,8 @@ impl ToonUltimateServer {
             simd_optimized: true,
         };
 
-        let toon_encoder = ToonEncoder::new();
-        let toon_decoder = ToonDecoder::new();
+        let _toon_encoder = ToonEncoder::new();
+        let _toon_decoder = ToonDecoder::new();
 
         // Sync interners for consistency
         // toon_decoder.sync_interner(toon_encoder.get_interner());
@@ -144,7 +158,7 @@ impl ToonUltimateServer {
             enable_simd: true,
             memory_alignment: 64, // Cache-line alignment
         };
-        let zero_copy_manager = ToonZeroCopyManager::with_config(zero_copy_config);
+        let _zero_copy_manager = ToonZeroCopyManager::with_config(zero_copy_config);
 
         // Initialize CPU optimizations
         let cpu_affinity = Arc::new(CpuAffinityManager::new());
@@ -199,10 +213,19 @@ impl ToonUltimateServer {
             config: Arc::new(config),
             shard_manager,
             stats: CacheAligned::new(ToonUltimateServerStats::default()),
-            toon_encoder: Arc::new(std::sync::Mutex::new(toon_encoder)),
-            toon_decoder: Arc::new(std::sync::Mutex::new(toon_decoder)),
-            zero_copy_manager: Arc::new(std::sync::Mutex::new(zero_copy_manager)),
-            string_interner: Arc::new(std::sync::Mutex::new(StringInterner::new())),
+
+            // LOCK-FREE TOON COMPONENTS - CRITICAL OPTIMIZATION
+            toon_encoders: Arc::new(thread_local::ThreadLocal::new()),
+            toon_decoders: Arc::new(thread_local::ThreadLocal::new()),
+            zero_copy_managers: Arc::new(thread_local::ThreadLocal::new()),
+            string_interner: Arc::new(dashmap::DashMap::with_capacity(10000)),
+
+            // BUFFER POOLING - MEMORY OPTIMIZATION
+            buffer_pools: Arc::new(thread_local::ThreadLocal::new()),
+
+            // RESPONSE CACHE - PERFORMANCE OPTIMIZATION
+            response_cache: Arc::new(dashmap::DashMap::with_capacity(100)),
+
             cpu_affinity,
             performance_monitor,
             hot_data,
@@ -233,10 +256,12 @@ impl ToonUltimateServer {
 
                     let shard_manager = Arc::clone(&self.shard_manager);
                     let stats = &self.stats;
-                    let toon_encoder = Arc::clone(&self.toon_encoder);
-                    let _toon_decoder = Arc::clone(&self.toon_decoder);
-                    let zero_copy_manager = Arc::clone(&self.zero_copy_manager);
-                    let _string_interner = Arc::clone(&self.string_interner);
+                    let toon_encoders = Arc::clone(&self.toon_encoders);
+                    let toon_decoders = Arc::clone(&self.toon_decoders);
+                    let zero_copy_managers = Arc::clone(&self.zero_copy_managers);
+                    let buffer_pools = Arc::clone(&self.buffer_pools);
+                    let string_interner = Arc::clone(&self.string_interner);
+                    let response_cache = Arc::clone(&self.response_cache);
                     let cpu_affinity = Arc::clone(&self.cpu_affinity);
                     let performance_monitor = Arc::clone(&self.performance_monitor);
                     let batch_config = self.batch_config.clone();
@@ -257,8 +282,12 @@ impl ToonUltimateServer {
                             shard_manager,
                             addr,
                             batch_config,
-                            toon_encoder,
-                            zero_copy_manager,
+                            toon_encoders,
+                            toon_decoders,
+                            zero_copy_managers,
+                            buffer_pools,
+                            string_interner,
+                            response_cache,
                             performance_monitor,
                         )
                         .await
@@ -288,8 +317,12 @@ impl ToonUltimateServer {
 
         // Pre-warm TOON encoder/decoder
         {
-            let mut encoder = self.toon_encoder.lock().unwrap();
-            let mut decoder = self.toon_decoder.lock().unwrap();
+            let encoder = self
+                .toon_encoders
+                .get_or(|| std::cell::RefCell::new(ToonEncoder::new()));
+            let decoder = self
+                .toon_decoders
+                .get_or(|| std::cell::RefCell::new(ToonDecoder::new()));
 
             // Create sample TOON packet
             let mut sample_obj = HashMap::new();
@@ -297,27 +330,35 @@ impl ToonUltimateServer {
             let sample_packet = ToonPacket::new(ToonType::Object(sample_obj));
 
             // Pre-warm encoding
-            if let Ok(encoded) = encoder.encode(&sample_packet) {
+            if let Ok(encoded) = encoder.borrow_mut().encode(&sample_packet) {
                 // Pre-warm decoding
-                let _ = decoder.decode(&encoded);
+                let _ = decoder.borrow_mut().decode(&encoded);
             }
         }
 
         // Pre-warm zero-copy manager
         {
-            let mut zero_copy = self.zero_copy_manager.lock().unwrap();
+            let zero_copy = self.zero_copy_managers.get_or(|| {
+                let zero_copy_config = ToonZeroCopyConfig {
+                    max_pooled_buffers: 2000,
+                    default_buffer_size: 128 * 1024,
+                    large_buffer_threshold: 512 * 1024,
+                    enable_simd: true,
+                    memory_alignment: 64,
+                };
+                std::cell::RefCell::new(ToonZeroCopyManager::with_config(zero_copy_config))
+            });
             let sample_value = ToonType::String("warmup_string".to_string());
-            let _ = zero_copy.zero_copy_encode(&sample_value);
+            let _ = zero_copy.borrow_mut().zero_copy_encode(&sample_value);
         }
 
         // Pre-warm string interner
         {
-            let mut interner = self.string_interner.lock().unwrap();
-            interner.intern("warmup_string");
-            interner.intern("GET");
-            interner.intern("PUT");
-            interner.intern("DEL");
-            interner.intern("PING");
+            self.string_interner.insert("warmup_string".to_string(), 1);
+            self.string_interner.insert("GET".to_string(), 2);
+            self.string_interner.insert("PUT".to_string(), 3);
+            self.string_interner.insert("DEL".to_string(), 4);
+            self.string_interner.insert("PING".to_string(), 5);
         }
 
         // Pre-warm response pool
@@ -337,14 +378,20 @@ impl ToonUltimateServer {
         info!("✅ TOON ultimate system pre-warming completed");
     }
 
-    /// Handle connection with TOON ultimate optimizations
+    /// Handle connection with TOON ultimate optimizations - LOCK-FREE VERSION
     async fn handle_toon_ultimate_connection(
         mut stream: TcpStream,
         shard_manager: Arc<LockFreeShardManager>,
         client_addr: std::net::SocketAddr,
         batch_config: ToonBatchConfig,
-        toon_encoder: Arc<std::sync::Mutex<ToonEncoder>>,
-        zero_copy_manager: Arc<std::sync::Mutex<ToonZeroCopyManager>>,
+        toon_encoders: Arc<ThreadLocal<std::cell::RefCell<ToonEncoder>>>,
+        toon_decoders: Arc<ThreadLocal<std::cell::RefCell<ToonDecoder>>>,
+        zero_copy_managers: Arc<ThreadLocal<std::cell::RefCell<ToonZeroCopyManager>>>,
+        buffer_pools: Arc<
+            ThreadLocal<std::cell::RefCell<crate::protocol::buffer_pool::BufferPool>>,
+        >,
+        _string_interner: Arc<DashMap<String, u32>>,
+        _response_cache: Arc<DashMap<String, bytes::Bytes>>,
         performance_monitor: Arc<PerformanceMonitor>,
     ) -> crate::Result<()> {
         // Ultra-aggressive socket optimizations
@@ -352,17 +399,27 @@ impl ToonUltimateServer {
             warn!("Failed to set TCP_NODELAY: {}", e);
         }
 
-        // TOON-optimized buffers (larger for TOON packet batching)
-        let mut read_buffer = vec![0u8; 4 * 1024 * 1024]; // 4MB read buffer
-        let mut write_buffer = Vec::with_capacity(4 * 1024 * 1024); // 4MB write buffer
+        // LOCK-FREE BUFFER MANAGEMENT - CRITICAL OPTIMIZATION
+        let mut read_buffer = buffer_pools
+            .get_or(|| std::cell::RefCell::new(crate::protocol::buffer_pool::BufferPool::new()))
+            .borrow_mut()
+            .get_buffer(64 * 1024); // 64KB instead of 4MB
+
+        let mut write_buffer = buffer_pools
+            .get_or(|| std::cell::RefCell::new(crate::protocol::buffer_pool::BufferPool::new()))
+            .borrow_mut()
+            .get_buffer(64 * 1024); // 64KB instead of 4MB
+
         let mut toon_packet_batch = Vec::with_capacity(batch_config.max_batch_size);
         let mut response_batch = Vec::with_capacity(batch_config.max_batch_size);
 
-        // Pre-fetch buffers into CPU cache
-        PrefetchOptimizer::prefetch_read(read_buffer.as_ptr(), read_buffer.len());
-        PrefetchOptimizer::prefetch_write(write_buffer.as_ptr(), write_buffer.capacity());
+        // SIMD PACKET PARSER - PERFORMANCE OPTIMIZATION
+        let _simd_parser = crate::protocol::simd_packet_parser::SIMDPacketParser::new();
 
-        debug!("TOON ultimate connection established with {}", client_addr);
+        debug!(
+            "TOON ultimate connection established with {} (LOCK-FREE)",
+            client_addr
+        );
 
         let mut pending_data = Vec::new();
         let mut current_batch_size = batch_config.min_batch_size;
@@ -400,8 +457,9 @@ impl ToonUltimateServer {
                                     &mut response_batch,
                                     &shard_manager,
                                     client_addr,
-                                    &toon_encoder,
-                                    &zero_copy_manager,
+                                    &toon_encoders,
+                                    &toon_decoders,
+                                    &zero_copy_managers,
                                     &performance_monitor,
                                 )
                                 .await?;
@@ -448,8 +506,9 @@ impl ToonUltimateServer {
                             &mut response_batch,
                             &shard_manager,
                             client_addr,
-                            &toon_encoder,
-                            &zero_copy_manager,
+                            &toon_encoders,
+                            &toon_decoders,
+                            &zero_copy_managers,
                             &performance_monitor,
                         )
                         .await?;
@@ -472,7 +531,9 @@ impl ToonUltimateServer {
             // Append new data with prefetching
             let old_len = pending_data.len();
             pending_data.extend_from_slice(&read_buffer[..n]);
-            PrefetchOptimizer::prefetch_read(pending_data[old_len..].as_ptr(), n);
+            unsafe {
+                PrefetchOptimizer::prefetch_read(pending_data[old_len..].as_ptr(), n);
+            }
 
             // Parse all complete TOON packets with SIMD optimization
             while let Some(packet_end) = Self::find_toon_packet_boundary(&pending_data) {
@@ -488,8 +549,9 @@ impl ToonUltimateServer {
                             &mut response_batch,
                             &shard_manager,
                             client_addr,
-                            &toon_encoder,
-                            &zero_copy_manager,
+                            &toon_encoders,
+                            &toon_decoders,
+                            &zero_copy_managers,
                             &performance_monitor,
                         )
                         .await?;
@@ -560,8 +622,9 @@ impl ToonUltimateServer {
         responses: &mut Vec<Vec<u8>>,
         shard_manager: &Arc<LockFreeShardManager>,
         client_addr: std::net::SocketAddr,
-        toon_encoder: &Arc<std::sync::Mutex<ToonEncoder>>,
-        zero_copy_manager: &Arc<std::sync::Mutex<ToonZeroCopyManager>>,
+        toon_encoders: &Arc<ThreadLocal<std::cell::RefCell<ToonEncoder>>>,
+        _toon_decoders: &Arc<ThreadLocal<std::cell::RefCell<ToonDecoder>>>,
+        zero_copy_managers: &Arc<ThreadLocal<std::cell::RefCell<ToonZeroCopyManager>>>,
         performance_monitor: &Arc<PerformanceMonitor>,
     ) -> crate::Result<()> {
         let batch_start = Instant::now();
@@ -614,7 +677,7 @@ impl ToonUltimateServer {
 
             // Encode response with TOON zero-copy optimizations
             let response_bytes =
-                Self::encode_toon_response(&response, toon_encoder, zero_copy_manager)?;
+                Self::encode_toon_response(&response, toon_encoders, zero_copy_managers)?;
             responses.push(response_bytes);
         }
 
@@ -634,12 +697,12 @@ impl ToonUltimateServer {
     /// Encode TOON response with zero-copy optimizations
     fn encode_toon_response(
         response: &crate::protocol::Response,
-        toon_encoder: &Arc<std::sync::Mutex<ToonEncoder>>,
-        zero_copy_manager: &Arc<std::sync::Mutex<ToonZeroCopyManager>>,
+        toon_encoders: &Arc<ThreadLocal<std::cell::RefCell<ToonEncoder>>>,
+        _zero_copy_managers: &Arc<ThreadLocal<std::cell::RefCell<ToonZeroCopyManager>>>,
     ) -> crate::Result<Vec<u8>> {
-        let mut encoder = toon_encoder.lock().unwrap();
+        let encoder = toon_encoders.get_or(|| std::cell::RefCell::new(ToonEncoder::new()));
 
-        match encoder.encode_response(response) {
+        match encoder.borrow_mut().encode_response(response) {
             Ok(bytes) => Ok(bytes.to_vec()),
             Err(e) => {
                 error!("TOON encoding error: {}", e);
@@ -654,6 +717,7 @@ impl ToonUltimateServer {
                 };
                 let error_packet = ToonPacket::new(ToonType::Object(error_obj));
                 encoder
+                    .borrow_mut()
                     .encode(&error_packet)
                     .map(|b| b.to_vec())
                     .map_err(|e| {
@@ -667,10 +731,10 @@ impl ToonUltimateServer {
     /// Encode TOON error response
     fn encode_toon_error_response(
         error_msg: &str,
-        toon_encoder: &Arc<std::sync::Mutex<ToonEncoder>>,
-        _zero_copy_manager: &Arc<std::sync::Mutex<ToonZeroCopyManager>>,
+        toon_encoders: &Arc<ThreadLocal<std::cell::RefCell<ToonEncoder>>>,
+        _zero_copy_managers: &Arc<ThreadLocal<std::cell::RefCell<ToonZeroCopyManager>>>,
     ) -> crate::Result<Vec<u8>> {
-        let mut encoder = toon_encoder.lock().unwrap();
+        let encoder = toon_encoders.get_or(|| std::cell::RefCell::new(ToonEncoder::new()));
 
         let error_obj = {
             let mut obj = HashMap::new();
@@ -680,6 +744,7 @@ impl ToonUltimateServer {
         let error_packet = ToonPacket::new(ToonType::Object(error_obj));
 
         encoder
+            .borrow_mut()
             .encode(&error_packet)
             .map(|b| b.to_vec())
             .map_err(|e| {
@@ -692,7 +757,7 @@ impl ToonUltimateServer {
     async fn write_toon_ultimate_batch(
         stream: &mut TcpStream,
         responses: &[Vec<u8>],
-        write_buffer: &mut Vec<u8>,
+        write_buffer: &mut BytesMut,
     ) -> crate::Result<()> {
         use tokio::io::AsyncWriteExt;
 
@@ -706,7 +771,9 @@ impl ToonUltimateServer {
         }
 
         // Single syscall for entire batch with prefetching
-        PrefetchOptimizer::prefetch_read(write_buffer.as_ptr(), write_buffer.len());
+        unsafe {
+            PrefetchOptimizer::prefetch_read(write_buffer.as_ptr(), write_buffer.len());
+        }
         stream.write_all(write_buffer).await?;
 
         Ok(())

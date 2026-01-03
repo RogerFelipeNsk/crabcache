@@ -254,8 +254,12 @@ impl UltimateServer {
         let mut response_batch = Vec::with_capacity(batch_config.max_batch_size);
 
         // Pre-fetch buffers into CPU cache
-        PrefetchOptimizer::prefetch_read(read_buffer.as_ptr(), read_buffer.len());
-        PrefetchOptimizer::prefetch_write(write_buffer.as_ptr(), write_buffer.capacity());
+        unsafe {
+            PrefetchOptimizer::prefetch_read(read_buffer.as_ptr(), read_buffer.len());
+        }
+        unsafe {
+            PrefetchOptimizer::prefetch_write(write_buffer.as_ptr(), write_buffer.capacity());
+        }
 
         debug!("Ultimate connection established with {}", client_addr);
 
@@ -364,7 +368,9 @@ impl UltimateServer {
             // Append new data with prefetching
             let old_len = pending_data.len();
             pending_data.extend_from_slice(&read_buffer[..n]);
-            PrefetchOptimizer::prefetch_read(pending_data[old_len..].as_ptr(), n);
+            unsafe {
+                PrefetchOptimizer::prefetch_read(pending_data[old_len..].as_ptr(), n);
+            }
 
             // Parse all complete commands with SIMD optimization
             while let Some(newline_pos) = pending_data.iter().position(|&b| b == b'\n') {
@@ -553,7 +559,9 @@ impl UltimateServer {
         }
 
         // Single syscall for entire batch with prefetching
-        PrefetchOptimizer::prefetch_read(write_buffer.as_ptr(), write_buffer.len());
+        unsafe {
+            PrefetchOptimizer::prefetch_read(write_buffer.as_ptr(), write_buffer.len());
+        }
         stream.write_all(write_buffer).await?;
 
         Ok(())

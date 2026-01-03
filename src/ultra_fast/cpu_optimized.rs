@@ -146,38 +146,41 @@ pub struct PrefetchOptimizer;
 
 impl PrefetchOptimizer {
     /// Prefetch data for read access
+    /// 
+    /// # Safety
+    /// The caller must ensure that `ptr` points to valid memory for at least `len` bytes.
     #[inline(always)]
-    pub fn prefetch_read(ptr: *const u8, len: usize) {
-        unsafe {
-            let chunks = len / 64; // Cache line size
-            for i in 0..chunks {
-                let addr = ptr.add(i * 64);
-                crate::ultra_fast::assembly_optimized::prefetch_data(addr, 0);
-            }
+    pub unsafe fn prefetch_read(ptr: *const u8, len: usize) {
+        let chunks = len / 64; // Cache line size
+        for i in 0..chunks {
+            let addr = ptr.add(i * 64);
+            crate::ultra_fast::assembly_optimized::prefetch_data(addr, 0);
         }
     }
 
     /// Prefetch data for write access
+    /// 
+    /// # Safety
+    /// The caller must ensure that `ptr` points to valid memory for at least `len` bytes.
     #[inline(always)]
-    pub fn prefetch_write(ptr: *const u8, len: usize) {
-        unsafe {
-            let chunks = len / 64;
-            for i in 0..chunks {
-                let addr = ptr.add(i * 64);
-                crate::ultra_fast::assembly_optimized::prefetch_data(addr, 1);
-            }
+    pub unsafe fn prefetch_write(ptr: *const u8, len: usize) {
+        let chunks = len / 64;
+        for i in 0..chunks {
+            let addr = ptr.add(i * 64);
+            crate::ultra_fast::assembly_optimized::prefetch_data(addr, 1);
         }
     }
 
     /// Prefetch with temporal locality hint
+    /// 
+    /// # Safety
+    /// The caller must ensure that `ptr` points to valid memory for at least `len` bytes.
     #[inline(always)]
-    pub fn prefetch_temporal(ptr: *const u8, len: usize) {
-        unsafe {
-            let chunks = len / 64;
-            for i in 0..chunks {
-                let addr = ptr.add(i * 64);
-                crate::ultra_fast::assembly_optimized::prefetch_data(addr, 2);
-            }
+    pub unsafe fn prefetch_temporal(ptr: *const u8, len: usize) {
+        let chunks = len / 64;
+        for i in 0..chunks {
+            let addr = ptr.add(i * 64);
+            crate::ultra_fast::assembly_optimized::prefetch_data(addr, 2);
         }
     }
 }
@@ -274,7 +277,9 @@ impl CacheOptimizer {
     /// Warm up cache with data
     #[inline(always)]
     pub fn warm_cache(data: &[u8]) {
-        PrefetchOptimizer::prefetch_read(data.as_ptr(), data.len());
+        unsafe {
+            PrefetchOptimizer::prefetch_read(data.as_ptr(), data.len());
+        }
 
         // Touch every cache line to ensure it's loaded
         let mut sum = 0u64;

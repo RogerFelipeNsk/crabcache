@@ -15,6 +15,10 @@ pub mod protobuf;
 // Phase 8.2 - TOON Protocol Support (Tiny Optimized Object Notation)
 pub mod toon;
 
+// SPRINT 1 OPTIMIZATIONS - CRITICAL FOR PERFORMANCE
+pub mod buffer_pool;
+pub mod simd_packet_parser;
+
 pub use advanced_pipeline::{
     AdaptiveBatchSizer, AdvancedPipelineConfig, AdvancedPipelineMetrics, AdvancedPipelineProcessor,
     CommandAffinityAnalyzer, ParallelBatchParser,

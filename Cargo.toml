@@ -1,6 +1,6 @@
 [package]
 name = "crabcache"
-version = "0.0.2"
+version = "0.1.0"
 edition = "2021"
 authors = ["Roger Felipe <rogerfelipe.nsk@gmail.com>"]
 description = "High-performance in-memory cache server written in Rust"
@@ -47,6 +47,10 @@ crossbeam = "0.8"
 crossbeam-epoch = "0.9"
 crossbeam-utils = "0.8"
 rayon = "1.0"
+
+# LOCK-FREE OPTIMIZATIONS - CRITICAL FOR PERFORMANCE
+thread_local = "1.1"
+memchr = "2.6"  # SIMD string search
 
 # SIMD and vectorization
 wide = { version = "0.7", optional = true }

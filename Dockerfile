@@ -32,7 +32,7 @@ FROM debian:bookworm-slim
 
 # Metadata labels
 LABEL maintainer="Roger Felipe <rogerfelipe.nsk@gmail.com>"
-LABEL version="0.0.2"
+LABEL version="0.1.0"
 LABEL description="High-performance in-memory cache server written in Rust"
 
 # Install runtime dependencies and update gnupg2 to fix CVE-2025-68973

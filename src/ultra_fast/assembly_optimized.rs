@@ -24,27 +24,30 @@ pub fn memcmp_asm(a: &[u8], b: &[u8]) -> bool {
 }
 
 /// Ultra-fast string length calculation (optimized Rust implementation)
+/// 
+/// # Safety
+/// The caller must ensure that `data` points to a valid null-terminated string.
 #[inline(always)]
-pub fn strlen_asm(data: *const u8) -> usize {
-    unsafe {
-        let mut len = 0;
-        while *data.add(len) != 0 {
-            len += 1;
-        }
-        len
+pub unsafe fn strlen_asm(data: *const u8) -> usize {
+    let mut len = 0;
+    while *data.add(len) != 0 {
+        len += 1;
     }
+    len
 }
 
 /// Ultra-fast memory copy (optimized Rust implementation)
+/// 
+/// # Safety
+/// The caller must ensure that `src` and `dst` are valid pointers and that
+/// the memory regions do not overlap.
 #[inline(always)]
-pub fn memcpy_asm(dst: *mut u8, src: *const u8, len: usize) {
+pub unsafe fn memcpy_asm(dst: *mut u8, src: *const u8, len: usize) {
     if len == 0 {
         return;
     }
 
-    unsafe {
-        std::ptr::copy_nonoverlapping(src, dst, len);
-    }
+    std::ptr::copy_nonoverlapping(src, dst, len);
 }
 
 /// Ultra-fast byte search (optimized Rust implementation)
