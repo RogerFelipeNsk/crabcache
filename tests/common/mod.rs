@@ -144,10 +144,16 @@ impl Raw {
         }
     }
 
-    /// True if the server closed the connection (EOF) within the read timeout.
+    /// True if the server closed the connection within the read timeout. Linux answers with a reset
+    /// instead of EOF when the server closes while unread request bytes are still queued.
     pub fn is_closed(&mut self) -> bool {
+        use std::io::ErrorKind::{ConnectionAborted, ConnectionReset};
         let mut b = [0u8; 1];
-        matches!(self.stream.read(&mut b), Ok(0))
+        match self.stream.read(&mut b) {
+            Ok(0) => true,
+            Err(e) => matches!(e.kind(), ConnectionReset | ConnectionAborted),
+            Ok(_) => false,
+        }
     }
 }
 
