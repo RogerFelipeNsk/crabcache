@@ -1,28 +1,10 @@
-//! CrabCache - Predictable, Memory-Efficient Cache Engine
-//!
-//! A modern cache system written in Rust, designed to be more predictable
-//! than Redis and Dragonfly, with better memory efficiency and true multi-core support.
+//! CrabCache: a Redis-compatible (RESP2) in-memory cache server.
 
-pub mod client;
-pub mod cluster;
+pub mod commands;
 pub mod config;
-pub mod eviction;
-pub mod metrics;
 pub mod protocol;
-pub mod router;
-pub mod security;
 pub mod server;
-pub mod shard;
 pub mod store;
-pub mod ttl;
-pub mod ultra_fast; // Ultra-fast optimizations for 500k ops/sec + P99 < 10ms
-pub mod utils;
-pub mod wal;
+pub mod util;
 
-pub use config::Config;
-
-/// CrabCache version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Result type alias for CrabCache operations
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

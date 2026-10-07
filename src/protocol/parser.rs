@@ -1,414 +1,467 @@
-//! High-performance protocol parser with zero-copy optimizations
+//! Incremental RESP2 request parser (multibulk + inline), modelled on Redis' `processMultibulkBuffer`
+//! and `processInlineBuffer`.
+//!
+//! The parser never rescans bytes it has already consumed: a partially received multibulk command keeps
+//! its position and collected argument ranges across reads, and an incomplete inline line remembers how far
+//! it has been searched for `\n`. This keeps parsing linear in the number of bytes received, so a client
+//! trickling a huge request cannot make the server spin.
 
-use super::commands::{Command, Response};
-use crate::utils::varint;
-use bytes::Bytes;
-use std::str;
-use tracing::debug;
+use memchr::memchr;
 
-// Import TOON protocol
-use super::toon::decoder::ToonDecoder;
+/// Hard limits applied while parsing. Defaults mirror Redis.
+#[derive(Clone, Debug)]
+pub struct Limits {
+    /// Largest accepted bulk string (`proto-max-bulk-len`).
+    pub max_bulk_len: usize,
+    /// Largest accepted number of arguments in one multibulk request.
+    pub max_multibulk_len: usize,
+    /// Largest inline request line, and largest `*`/`$` header line.
+    pub max_inline_len: usize,
+}
 
-/// High-performance protocol parser for CrabCache binary protocol
-pub struct ProtocolParser;
-
-// Command type constants (must match serializer)
-const CMD_PING: u8 = 0x01;
-const CMD_PUT: u8 = 0x02;
-const CMD_GET: u8 = 0x03;
-const CMD_DEL: u8 = 0x04;
-const CMD_EXPIRE: u8 = 0x05;
-const CMD_STATS: u8 = 0x06;
-const CMD_METRICS: u8 = 0x07;
-
-// Response type constants
-const RESP_OK: u8 = 0x10;
-const RESP_PONG: u8 = 0x11;
-const RESP_NULL: u8 = 0x12;
-const RESP_ERROR: u8 = 0x13;
-const RESP_VALUE: u8 = 0x14;
-const RESP_STATS: u8 = 0x15;
-
-impl ProtocolParser {
-    /// Parse a command from bytes using optimized binary format
-    /// Now supports: Text → Protobuf → TOON (triple protocol support!)
-    pub fn parse_command(bytes: &[u8]) -> crate::Result<Command> {
-        if bytes.is_empty() {
-            return Err("Empty command".into());
+impl Default for Limits {
+    fn default() -> Self {
+        Self {
+            max_bulk_len: 512 * 1024 * 1024,
+            max_multibulk_len: 1024 * 1024,
+            max_inline_len: 64 * 1024,
         }
+    }
+}
 
-        // Check for TOON magic bytes "TOON" first (highest priority)
-        if bytes.len() >= 4 && &bytes[0..4] == b"TOON" {
-            // 🚀 TOON Protocol - Ultra-compact and efficient!
+/// A protocol violation. The connection must reply `-ERR Protocol error: <msg>` and close.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ProtocolError(pub String);
 
-            // Check if this is just protocol negotiation (magic bytes + version + flags only)
-            if bytes.len() == 6 {
-                // This is TOON protocol negotiation - respond with PING to acknowledge
-                debug!("TOON protocol negotiation detected - acknowledging support");
-                return Ok(Command::Ping);
-            }
+#[derive(Debug, PartialEq, Eq)]
+pub enum Parsed {
+    /// A full command is available. Argument ranges are in [`Parser::args`]; they index into the
+    /// parsed buffer for multibulk requests, or into [`Parser::scratch`] when `inline` is true.
+    Command { consumed: usize, inline: bool },
+    /// Bytes were consumed but they carried no command (blank inline line, `*0`, `*-1`).
+    Empty { consumed: usize },
+    /// More bytes are needed.
+    Incomplete,
+}
 
-            // Check for minimal TOON packet (magic + version + flags + minimal length + type)
-            if bytes.len() >= 8 {
-                let mut decoder = ToonDecoder::new();
-                return decoder
-                    .decode_to_command(bytes)
-                    .map_err(|e| format!("TOON decode error: {}", e).into());
-            }
+#[derive(Default)]
+pub struct Parser {
+    /// Argument ranges of the last parsed command.
+    pub args: Vec<(usize, usize)>,
+    /// Unescaped inline arguments.
+    pub scratch: Vec<u8>,
+    /// Number of arguments announced by the current multibulk header; 0 when not inside one.
+    expected: usize,
+    /// Resume offset inside the current multibulk command.
+    pos: usize,
+    /// Bytes of an incomplete inline request already searched for `\n`.
+    inline_scanned: usize,
+    /// Total size the buffer must reach before the pending bulk string is complete.
+    needed: usize,
+}
 
-            // Invalid TOON packet - too short but not negotiation
-            return Err("TOON packet too short".into());
-        }
-
-        // Check for Protobuf magic bytes "CRAB" second
-        if bytes.len() >= 4 && &bytes[0..4] == b"CRAB" {
-            // 🎉 Protobuf Protocol - Efficient binary format
-            if bytes.len() >= 6 {
-                // Skip CRAB magic (4 bytes) + version (1 byte) + flags (1 byte)
-                let inner_bytes = &bytes[6..];
-                if !inner_bytes.is_empty() {
-                    // Try to parse the inner command as text for compatibility
-                    return Self::parse_command_text(inner_bytes);
-                }
-            }
-            // If we can't extract inner command, treat as PING for protocol negotiation
-            return Ok(Command::Ping);
-        }
-
-        // Try binary format third (legacy support)
-        if let Ok(cmd) = Self::parse_command_binary(bytes) {
-            return Ok(cmd);
-        }
-
-        // Fallback to text format for backward compatibility
-        Self::parse_command_text(bytes)
+impl Parser {
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    /// Parse binary format command (zero-copy when possible)
-    fn parse_command_binary(bytes: &[u8]) -> crate::Result<Command> {
-        if bytes.is_empty() {
-            return Err("Empty binary command".into());
+    /// Buffer size required to complete the pending bulk argument, used to reserve capacity up front
+    /// instead of growing the buffer read by read.
+    pub fn needed(&self) -> usize {
+        self.needed
+    }
+
+    /// Parses at most one command from the start of `buf`.
+    ///
+    /// Between calls the caller may only append to `buf` or drop bytes that a previous call reported as
+    /// consumed; offsets of a partial command are relative to the start of the unconsumed data.
+    pub fn parse(&mut self, buf: &[u8], lim: &Limits) -> Result<Parsed, ProtocolError> {
+        if self.expected == 0 {
+            if buf.is_empty() {
+                return Ok(Parsed::Incomplete);
+            }
+            if buf[0] != b'*' {
+                return self.parse_inline(buf, lim);
+            }
+            let Some(eol) = find_crlf(buf, 1) else {
+                if buf.len() > lim.max_inline_len {
+                    return Err(err("too big mbulk count string"));
+                }
+                return Ok(Parsed::Incomplete);
+            };
+            let count = parse_header_int(&buf[1..eol])
+                .filter(|&n| n <= lim.max_multibulk_len as i64)
+                .ok_or_else(|| err("invalid multibulk length"))?;
+            if count <= 0 {
+                return Ok(Parsed::Empty { consumed: eol + 2 });
+            }
+            self.expected = count as usize;
+            self.pos = eol + 2;
+            self.args.clear();
+            self.args.reserve(self.expected.min(1024));
         }
 
-        let mut cursor = 0;
-        let cmd_type = bytes[cursor];
-        cursor += 1;
-
-        match cmd_type {
-            CMD_PING => Ok(Command::Ping),
-
-            CMD_PUT => {
-                // Parse key
-                let (key_len, key_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += key_len_bytes;
-
-                if cursor + key_len as usize > bytes.len() {
-                    return Err("Invalid key length in PUT command".into());
+        while self.args.len() < self.expected {
+            let pos = self.pos;
+            if pos >= buf.len() {
+                return Ok(Parsed::Incomplete);
+            }
+            if buf[pos] != b'$' {
+                let got = buf[pos] as char;
+                self.reset();
+                return Err(err(&format!("expected '$', got '{got}'")));
+            }
+            let Some(eol) = find_crlf(buf, pos + 1) else {
+                if buf.len() - pos > lim.max_inline_len {
+                    self.reset();
+                    return Err(err("too big bulk count string"));
                 }
+                return Ok(Parsed::Incomplete);
+            };
+            let Some(len) = parse_header_int(&buf[pos + 1..eol])
+                .filter(|&n| n >= 0 && n as usize <= lim.max_bulk_len)
+            else {
+                self.reset();
+                return Err(err("invalid bulk length"));
+            };
+            let start = eol + 2;
+            let end = start + len as usize;
+            if end + 2 > buf.len() {
+                self.needed = end + 2;
+                return Ok(Parsed::Incomplete);
+            }
+            if &buf[end..end + 2] != b"\r\n" {
+                self.reset();
+                return Err(err("expected CRLF after bulk string"));
+            }
+            self.args.push((start, end));
+            self.pos = end + 2;
+        }
 
-                let key = Bytes::copy_from_slice(&bytes[cursor..cursor + key_len as usize]);
-                cursor += key_len as usize;
+        let consumed = self.pos;
+        self.expected = 0;
+        self.pos = 0;
+        self.needed = 0;
+        Ok(Parsed::Command {
+            consumed,
+            inline: false,
+        })
+    }
 
-                // Parse value
-                let (value_len, value_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += value_len_bytes;
+    fn reset(&mut self) {
+        self.expected = 0;
+        self.pos = 0;
+        self.needed = 0;
+        self.inline_scanned = 0;
+        self.args.clear();
+    }
 
-                if cursor + value_len as usize > bytes.len() {
-                    return Err("Invalid value length in PUT command".into());
+    fn parse_inline(&mut self, buf: &[u8], lim: &Limits) -> Result<Parsed, ProtocolError> {
+        let from = self.inline_scanned.min(buf.len());
+        let Some(rel) = memchr(b'\n', &buf[from..]) else {
+            self.inline_scanned = buf.len();
+            if buf.len() > lim.max_inline_len {
+                self.reset();
+                return Err(err("too big inline request"));
+            }
+            return Ok(Parsed::Incomplete);
+        };
+        let nl = from + rel;
+        self.inline_scanned = 0;
+        if nl > lim.max_inline_len {
+            return Err(err("too big inline request"));
+        }
+        let mut line = &buf[..nl];
+        if let Some(stripped) = line.strip_suffix(b"\r") {
+            line = stripped;
+        }
+        split_args(line, &mut self.scratch, &mut self.args)
+            .map_err(|_| err("unbalanced quotes in request"))?;
+        if self.args.is_empty() {
+            Ok(Parsed::Empty { consumed: nl + 1 })
+        } else {
+            Ok(Parsed::Command {
+                consumed: nl + 1,
+                inline: true,
+            })
+        }
+    }
+}
+
+fn err(msg: &str) -> ProtocolError {
+    ProtocolError(msg.to_string())
+}
+
+/// Index of the `\r` of the first `\r\n` at or after `from`.
+fn find_crlf(buf: &[u8], from: usize) -> Option<usize> {
+    let mut i = from;
+    while i < buf.len() {
+        let r = i + memchr(b'\r', &buf[i..])?;
+        if r + 1 >= buf.len() {
+            return None;
+        }
+        if buf[r + 1] == b'\n' {
+            return Some(r);
+        }
+        i = r + 1;
+    }
+    None
+}
+
+/// Parses the integer of a `*<n>` or `$<n>` header. Accepts an optional leading `-`.
+fn parse_header_int(s: &[u8]) -> Option<i64> {
+    let (neg, digits) = match s.split_first() {
+        Some((b'-', rest)) => (true, rest),
+        _ => (false, s),
+    };
+    if digits.is_empty() || digits.len() > 18 {
+        return None;
+    }
+    let mut v: i64 = 0;
+    for &c in digits {
+        if !c.is_ascii_digit() {
+            return None;
+        }
+        v = v * 10 + (c - b'0') as i64;
+    }
+    Some(if neg { -v } else { v })
+}
+
+/// Splits an inline request into arguments with the quoting rules of Redis' `sdssplitargs`.
+fn split_args(
+    line: &[u8],
+    scratch: &mut Vec<u8>,
+    args: &mut Vec<(usize, usize)>,
+) -> Result<(), ()> {
+    scratch.clear();
+    args.clear();
+    let n = line.len();
+    let mut i = 0;
+    loop {
+        while i < n && is_space(line[i]) {
+            i += 1;
+        }
+        if i == n {
+            return Ok(());
+        }
+        let start = scratch.len();
+        let (mut in_dq, mut in_sq) = (false, false);
+        loop {
+            if in_dq {
+                if i == n {
+                    return Err(());
                 }
-
-                let value = Bytes::copy_from_slice(&bytes[cursor..cursor + value_len as usize]);
-                cursor += value_len as usize;
-
-                // Parse TTL flag
-                if cursor >= bytes.len() {
-                    return Err("Missing TTL flag in PUT command".into());
-                }
-
-                let ttl = if bytes[cursor] == 1 {
-                    cursor += 1;
-                    if cursor + 8 > bytes.len() {
-                        return Err("Invalid TTL in PUT command".into());
+                let c = line[i];
+                if c == b'\\'
+                    && i + 3 < n
+                    && line[i + 1] == b'x'
+                    && hex(line[i + 2]).is_some()
+                    && hex(line[i + 3]).is_some()
+                {
+                    scratch.push(hex(line[i + 2]).unwrap() * 16 + hex(line[i + 3]).unwrap());
+                    i += 4;
+                } else if c == b'\\' && i + 1 < n {
+                    scratch.push(match line[i + 1] {
+                        b'n' => b'\n',
+                        b'r' => b'\r',
+                        b't' => b'\t',
+                        b'b' => 0x08,
+                        b'a' => 0x07,
+                        other => other,
+                    });
+                    i += 2;
+                } else if c == b'"' {
+                    // A closing quote must be followed by a space or the end of the line.
+                    if i + 1 < n && !is_space(line[i + 1]) {
+                        return Err(());
                     }
-                    let ttl_bytes = &bytes[cursor..cursor + 8];
-                    Some(u64::from_le_bytes(ttl_bytes.try_into().unwrap()))
+                    i += 1;
+                    break;
                 } else {
-                    None
-                };
-
-                Ok(Command::Put { key, value, ttl })
-            }
-
-            CMD_GET => {
-                let (key_len, key_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += key_len_bytes;
-
-                if cursor + key_len as usize > bytes.len() {
-                    return Err("Invalid key length in GET command".into());
+                    scratch.push(c);
+                    i += 1;
                 }
-
-                let key = Bytes::copy_from_slice(&bytes[cursor..cursor + key_len as usize]);
-                Ok(Command::Get { key })
-            }
-
-            CMD_DEL => {
-                let (key_len, key_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += key_len_bytes;
-
-                if cursor + key_len as usize > bytes.len() {
-                    return Err("Invalid key length in DEL command".into());
+            } else if in_sq {
+                if i == n {
+                    return Err(());
                 }
-
-                let key = Bytes::copy_from_slice(&bytes[cursor..cursor + key_len as usize]);
-                Ok(Command::Del { key })
-            }
-
-            CMD_EXPIRE => {
-                let (key_len, key_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += key_len_bytes;
-
-                if cursor + key_len as usize + 8 > bytes.len() {
-                    return Err("Invalid EXPIRE command format".into());
-                }
-
-                let key = Bytes::copy_from_slice(&bytes[cursor..cursor + key_len as usize]);
-                cursor += key_len as usize;
-
-                let ttl_bytes = &bytes[cursor..cursor + 8];
-                let ttl = u64::from_le_bytes(ttl_bytes.try_into().unwrap());
-
-                Ok(Command::Expire { key, ttl })
-            }
-
-            CMD_STATS => Ok(Command::Stats),
-            CMD_METRICS => Ok(Command::Metrics),
-
-            _ => Err(format!("Unknown binary command type: {}", cmd_type).into()),
-        }
-    }
-
-    /// Parse text format command (legacy support) - IMPROVED for binary data
-    fn parse_command_text(bytes: &[u8]) -> crate::Result<Command> {
-        // Convert bytes to string for parsing
-        let input = str::from_utf8(bytes)?.trim();
-
-        // Handle empty input
-        if input.is_empty() {
-            return Err("Empty command".into());
-        }
-
-        // Find the first space to separate command from arguments
-        let (cmd_str, args) = if let Some(space_pos) = input.find(' ') {
-            (&input[..space_pos], &input[space_pos + 1..])
-        } else {
-            (input, "")
-        };
-
-        let cmd = cmd_str.to_uppercase();
-
-        match cmd.as_str() {
-            "PING" => Ok(Command::Ping),
-            "PUT" | "SET" => {
-                // Support both PUT and SET (Redis compatibility)
-                if args.is_empty() {
-                    return Err("PUT/SET requires key and value".into());
-                }
-
-                // Improved parsing for PUT command with proper space handling
-                Self::parse_put_command_improved(args)
-            }
-            "GET" => {
-                if args.is_empty() {
-                    return Err("GET requires key".into());
-                }
-                let key = Bytes::from(args.trim().to_string());
-                Ok(Command::Get { key })
-            }
-            "DEL" => {
-                if args.is_empty() {
-                    return Err("DEL requires key".into());
-                }
-                let key = Bytes::from(args.trim().to_string());
-                Ok(Command::Del { key })
-            }
-            "EXPIRE" => {
-                if args.is_empty() {
-                    return Err("EXPIRE requires key and ttl".into());
-                }
-
-                let (key_str, ttl_str) = if let Some(space_pos) = args.find(' ') {
-                    (&args[..space_pos], &args[space_pos + 1..])
+                let c = line[i];
+                if c == b'\\' && i + 1 < n && line[i + 1] == b'\'' {
+                    scratch.push(b'\'');
+                    i += 2;
+                } else if c == b'\'' {
+                    if i + 1 < n && !is_space(line[i + 1]) {
+                        return Err(());
+                    }
+                    i += 1;
+                    break;
                 } else {
-                    return Err("EXPIRE requires key and ttl".into());
-                };
-
-                let key = Bytes::from(key_str.to_string());
-                let ttl = ttl_str.trim().parse::<u64>()?;
-                Ok(Command::Expire { key, ttl })
-            }
-            "STATS" => Ok(Command::Stats),
-            "METRICS" => Ok(Command::Metrics),
-            _ => Err(format!("Unknown command: {}", cmd).into()),
-        }
-    }
-
-    /// Improved PUT/SET command parsing that handles spaces and large data
-    fn parse_put_command_improved(args: &str) -> crate::Result<Command> {
-        // Handle different PUT/SET formats:
-        // 1. PUT/SET key value
-        // 2. PUT/SET key "value with spaces"
-        // 3. PUT/SET key value ttl
-        // 4. PUT/SET key "value with spaces" ttl
-
-        let args = args.trim();
-        if args.is_empty() {
-            return Err("PUT/SET requires key and value".into());
-        }
-
-        // Find the key (first argument)
-        let (key_str, remaining) = if let Some(space_pos) = args.find(' ') {
-            (&args[..space_pos], args[space_pos + 1..].trim())
-        } else {
-            return Err("PUT/SET requires key and value".into());
-        };
-
-        if remaining.is_empty() {
-            return Err("PUT/SET requires key and value".into());
-        }
-
-        // Parse value (with quote support)
-        let (value_str, ttl_str) = if remaining.starts_with('"') {
-            // Quoted value - find closing quote
-            if let Some(end_quote) = remaining[1..].find('"') {
-                let value = &remaining[1..end_quote + 1];
-                let after_quote = remaining[end_quote + 2..].trim();
-                (
-                    value,
-                    if after_quote.is_empty() {
-                        None
-                    } else {
-                        Some(after_quote)
-                    },
-                )
+                    scratch.push(c);
+                    i += 1;
+                }
             } else {
-                return Err("Unterminated quoted value in PUT/SET command".into());
+                if i == n {
+                    break;
+                }
+                match line[i] {
+                    b' ' | b'\n' | b'\r' | b'\t' | 0 => break,
+                    b'"' => in_dq = true,
+                    b'\'' => in_sq = true,
+                    c => scratch.push(c),
+                }
+                i += 1;
             }
-        } else {
-            // Unquoted value - find next space (if TTL is provided)
-            if let Some(space_pos) = remaining.find(' ') {
-                (&remaining[..space_pos], Some(&remaining[space_pos + 1..]))
-            } else {
-                (remaining, None)
-            }
-        };
+        }
+        args.push((start, scratch.len()));
+    }
+}
 
-        let key = Bytes::from(key_str.to_string());
-        let value = Bytes::from(value_str.to_string());
+fn is_space(c: u8) -> bool {
+    matches!(c, b' ' | b'\t' | b'\n' | b'\r' | 0x0b | 0x0c)
+}
 
-        // Parse TTL if provided
-        let ttl = if let Some(ttl_str) = ttl_str {
-            ttl_str.trim().parse::<u64>().ok()
-        } else {
-            None
-        };
+fn hex(c: u8) -> Option<u8> {
+    match c {
+        b'0'..=b'9' => Some(c - b'0'),
+        b'a'..=b'f' => Some(c - b'a' + 10),
+        b'A'..=b'F' => Some(c - b'A' + 10),
+        _ => None,
+    }
+}
 
-        Ok(Command::Put { key, value, ttl })
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args_of(p: &Parser, buf: &[u8], inline: bool) -> Vec<Vec<u8>> {
+        let base = if inline { &p.scratch[..] } else { buf };
+        p.args.iter().map(|&(s, e)| base[s..e].to_vec()).collect()
     }
 
-    /// Parse a response from bytes using optimized binary format
-    pub fn parse_response(bytes: &[u8]) -> crate::Result<Response> {
-        if bytes.is_empty() {
-            return Err("Empty response".into());
+    /// Parses every command in `input`, feeding it in chunks of `chunk` bytes.
+    fn parse_all(input: &[u8], chunk: usize) -> Result<Vec<Vec<Vec<u8>>>, ProtocolError> {
+        let lim = Limits::default();
+        let mut p = Parser::new();
+        let mut buf: Vec<u8> = Vec::new();
+        let mut out = Vec::new();
+        for piece in input.chunks(chunk.max(1)) {
+            buf.extend_from_slice(piece);
+            loop {
+                match p.parse(&buf, &lim)? {
+                    Parsed::Command { consumed, inline } => {
+                        out.push(args_of(&p, &buf, inline));
+                        buf.drain(..consumed);
+                    }
+                    Parsed::Empty { consumed } => {
+                        buf.drain(..consumed);
+                    }
+                    Parsed::Incomplete => break,
+                }
+            }
         }
-
-        // Try binary format first
-        if let Ok(resp) = Self::parse_response_binary(bytes) {
-            return Ok(resp);
-        }
-
-        // Fallback to text format
-        Self::parse_response_text(bytes)
+        assert!(buf.is_empty(), "leftover bytes: {buf:?}");
+        Ok(out)
     }
 
-    /// Parse binary format response
-    fn parse_response_binary(bytes: &[u8]) -> crate::Result<Response> {
-        if bytes.is_empty() {
-            return Err("Empty binary response".into());
-        }
+    fn v(parts: &[&str]) -> Vec<Vec<u8>> {
+        parts.iter().map(|s| s.as_bytes().to_vec()).collect()
+    }
 
-        let mut cursor = 0;
-        let resp_type = bytes[cursor];
-        cursor += 1;
-
-        match resp_type {
-            RESP_OK => Ok(Response::Ok),
-            RESP_PONG => Ok(Response::Pong),
-            RESP_NULL => Ok(Response::Null),
-
-            RESP_ERROR => {
-                let (msg_len, msg_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += msg_len_bytes;
-
-                if cursor + msg_len as usize > bytes.len() {
-                    return Err("Invalid error message length".into());
-                }
-
-                let msg =
-                    String::from_utf8_lossy(&bytes[cursor..cursor + msg_len as usize]).to_string();
-                Ok(Response::Error(msg))
-            }
-
-            RESP_VALUE => {
-                let (value_len, value_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += value_len_bytes;
-
-                if cursor + value_len as usize > bytes.len() {
-                    return Err("Invalid value length".into());
-                }
-
-                let value = Bytes::copy_from_slice(&bytes[cursor..cursor + value_len as usize]);
-                Ok(Response::Value(value))
-            }
-
-            RESP_STATS => {
-                let (stats_len, stats_len_bytes) = varint::decode_varint(&bytes[cursor..])?;
-                cursor += stats_len_bytes;
-
-                if cursor + stats_len as usize > bytes.len() {
-                    return Err("Invalid stats length".into());
-                }
-
-                let stats = String::from_utf8_lossy(&bytes[cursor..cursor + stats_len as usize])
-                    .to_string();
-                Ok(Response::Stats(stats))
-            }
-
-            _ => Err(format!("Unknown binary response type: {}", resp_type).into()),
+    #[test]
+    fn multibulk_any_split_gives_same_commands() {
+        let input = b"*3\r\n$3\r\nSET\r\n$3\r\nkey\r\n$11\r\nhello world\r\n*2\r\n$3\r\nGET\r\n$3\r\nkey\r\n*1\r\n$0\r\n\r\n";
+        let expected = vec![
+            v(&["SET", "key", "hello world"]),
+            v(&["GET", "key"]),
+            v(&[""]),
+        ];
+        for chunk in 1..=input.len() {
+            assert_eq!(
+                parse_all(input, chunk).unwrap(),
+                expected,
+                "chunk size {chunk}"
+            );
         }
     }
 
-    /// Parse text format response (legacy support)
-    fn parse_response_text(bytes: &[u8]) -> crate::Result<Response> {
-        let input = str::from_utf8(bytes)?.trim();
+    #[test]
+    fn binary_safe_bulk() {
+        let input = b"*2\r\n$3\r\nGET\r\n$4\r\n\x00\r\n\xff\r\n";
+        assert_eq!(
+            parse_all(input, 3).unwrap(),
+            vec![vec![b"GET".to_vec(), b"\x00\r\n\xff".to_vec()]]
+        );
+    }
 
-        if input.starts_with("OK") {
-            Ok(Response::Ok)
-        } else if input.starts_with("PONG") {
-            Ok(Response::Pong)
-        } else if input.starts_with("NULL") {
-            Ok(Response::Null)
-        } else if input.starts_with("ERROR:") {
-            let error_msg = input
-                .strip_prefix("ERROR:")
-                .unwrap_or("Unknown error")
-                .trim();
-            Ok(Response::Error(error_msg.to_string()))
-        } else if input.starts_with("STATS:") {
-            let stats_data = input.strip_prefix("STATS:").unwrap_or("").trim();
-            Ok(Response::Stats(stats_data.to_string()))
-        } else {
-            // Assume it's a value response
-            Ok(Response::Value(Bytes::from(input.to_string())))
+    #[test]
+    fn inline_with_quotes_and_escapes() {
+        let input = b"SET k \"a b\\x41\\n\" \r\nGET 'it\\'s'\nPING\r\n\r\n";
+        assert_eq!(
+            parse_all(input, 2).unwrap(),
+            vec![
+                v(&["SET", "k", "a bA\n"]),
+                v(&["GET", "it's"]),
+                v(&["PING"])
+            ]
+        );
+    }
+
+    #[test]
+    fn empty_and_negative_multibulk_are_skipped() {
+        assert_eq!(
+            parse_all(b"*0\r\n*-1\r\nPING\r\n", 1).unwrap(),
+            vec![v(&["PING"])]
+        );
+    }
+
+    #[test]
+    fn protocol_errors() {
+        assert!(parse_all(b"*2\r\n$3\r\nGET\r\n:1\r\n", 64).is_err());
+        assert!(parse_all(b"*1\r\n$-5\r\n", 64).is_err());
+        assert!(parse_all(b"*abc\r\n", 64).is_err());
+        assert!(parse_all(b"*99999999999\r\n", 64).is_err());
+        assert!(parse_all(b"*1\r\n$3\r\nGETXX", 64).is_err());
+        assert!(parse_all(b"SET k \"unterminated\r\n", 64).is_err());
+        assert!(parse_all(b"SET k \"a\"b\r\n", 64).is_err());
+    }
+
+    #[test]
+    fn oversized_requests_are_rejected_without_newline() {
+        let lim = Limits::default();
+        let mut p = Parser::new();
+        let big = vec![b'A'; lim.max_inline_len + 1];
+        assert!(p.parse(&big, &lim).is_err());
+        let mut p = Parser::new();
+        let mut hdr = b"*1\r\n$".to_vec();
+        hdr.extend(std::iter::repeat_n(b'9', lim.max_inline_len + 1));
+        assert!(p.parse(&hdr, &lim).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::same_item_push)] // the buffer must grow one byte per parse call
+    fn inline_scan_is_incremental() {
+        // Feeding a long line byte by byte must not rescan from the start each time.
+        let lim = Limits::default();
+        let mut p = Parser::new();
+        let mut buf = Vec::new();
+        for _ in 0..10_000 {
+            buf.push(b'x');
+            assert_eq!(p.parse(&buf, &lim).unwrap(), Parsed::Incomplete);
+            assert_eq!(p.inline_scanned, buf.len());
         }
+        buf.extend_from_slice(b"\r\n");
+        assert!(matches!(
+            p.parse(&buf, &lim).unwrap(),
+            Parsed::Command { .. }
+        ));
+    }
+
+    #[test]
+    fn reports_needed_size_for_large_bulk() {
+        let lim = Limits::default();
+        let mut p = Parser::new();
+        let buf = b"*2\r\n$3\r\nSET\r\n$1000\r\nab";
+        assert_eq!(p.parse(buf, &lim).unwrap(), Parsed::Incomplete);
+        assert_eq!(p.needed(), 13 + 7 + 1000 + 2);
     }
 }

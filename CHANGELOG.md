@@ -5,6 +5,44 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-07
+
+Reescrita completa ("v2"). O código anterior está preservado na tag `legacy-v1`.
+
+### Mudou
+- **Protocolo RESP2 compatível com Redis** (multibulk + inline). Funciona com `redis-cli`,
+  `redis-benchmark`, `memtier_benchmark` e bibliotecas cliente Redis. O protocolo de texto próprio e os
+  7 servidores alternativos foram substituídos por um único servidor.
+- Respostas acumuladas e enviadas com uma única escrita por leitura (pipelining eficiente).
+- Threads de I/O thread-per-core (um runtime e um kqueue/epoll por thread), com distribuição adaptativa
+  de conexões (`--io-conns-per-thread`).
+- Store em shards com entrada de 16 bytes (uma alocação com chave, valor e TTL opcional), entradas em
+  blocos fixos e mimalloc devolvendo memória livre imediatamente. Usa 14% menos memória que o Redis 8.10
+  com valores de 100 B (27% menos com 10 B).
+- Porta padrão 6379, bind padrão `127.0.0.1`.
+
+### Adicionado
+- Comandos de string (GET/SET com NX/XX/GET/EX/PX/EXAT/PXAT/KEEPTTL, MGET/MSET/MSETNX, INCR*,
+  APPEND, GETRANGE, GETEX, GETDEL...), chaves (DEL, EXISTS, EXPIRE* com NX/XX/GT/LT, TTL/PTTL, PERSIST,
+  KEYS, SCAN, RENAME...) e servidor (AUTH, HELLO, CLIENT, CONFIG GET/SET, INFO, ...).
+- TTL com expiração preguiçosa e ativa.
+- `maxmemory` com `noeviction`, `allkeys-lru`, `allkeys-lfu` e `allkeys-random`.
+- `requirepass` (comparação em tempo constante).
+- Testes diferenciais contra um Redis real (respostas idênticas byte a byte), testes de integração com
+  o cliente oficial `redis`, CI sem `continue-on-error`.
+
+### Corrigido (em relação à 0.1.0)
+- Valores com espaços, binários e a string `"NULL"` agora são armazenados corretamente.
+- Sobrescrever uma chave sempre atualiza o valor (o mapa lock-free antigo mantinha o valor antigo).
+- Um cliente enviando dados sem `\n` não consome mais CPU indefinidamente (parsing era O(n²)).
+- 3 vulnerabilidades em dependências (bytes, crossbeam-epoch, protobuf) eliminadas.
+
+### Errata da 0.1.0
+As afirmações abaixo da 0.1.0 não se sustentaram na auditoria de 2026-10-06: o protocolo TOON do
+servidor era um stub e o cliente JS nunca o usava; os números de desempenho vinham de testes com
+resolução de 1 ms e sem verificação dos valores; o CI ignorava falhas de teste. Ver `docs/BENCHMARKS.md`
+para medições reproduzíveis.
+
 ## [0.1.0] - 2026-01-03
 
 ### 🎨 Major Release - TOON Protocol & Production-Ready Server

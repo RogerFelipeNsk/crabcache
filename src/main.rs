@@ -1,144 +1,88 @@
-use crabcache::ultra_fast::{
-    HybridServer, IoUringServer, SimpleServer, ToonHybridServer, ToonUltimateServer,
-    UltimateServer, UltraFastServer,
-};
-use crabcache::{Config, Result};
-use tracing::{error, info, warn};
-use tracing_subscriber::{fmt, EnvFilter};
+use clap::Parser;
+use crabcache::config::Config;
+use crabcache::server::{Server, log_startup};
+use std::process::ExitCode;
+use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize structured logging with JSON format
-    let subscriber = fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .json()
-        .with_current_span(false)
-        .with_span_list(false)
-        .finish();
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-    tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
+/// `mi_option_purge_delay` in the `mi_option_e` enum of the bundled mimalloc v3 (`c_src/mimalloc/v3/include/mimalloc.h`);
+/// libmimalloc-sys does not export it by name.
+const MI_OPTION_PURGE_DELAY: libmimalloc_sys::mi_option_t = 15;
 
-    info!("Starting CrabCache v{}", crabcache::VERSION);
+/// mimalloc returns freed pages to the OS only when the owning thread allocates again after the purge
+/// delay, so memory released while a shard's vector or hash table grew stayed resident on idle I/O
+/// threads (~14 bytes per key with 1M small keys). Purging immediately keeps the footprint at what is
+/// actually in use.
+fn configure_allocator() -> i64 {
+    // SAFETY: plain option getters/setters with no preconditions.
+    unsafe {
+        let default = libmimalloc_sys::mi_option_get(MI_OPTION_PURGE_DELAY) as i64;
+        libmimalloc_sys::mi_option_set(MI_OPTION_PURGE_DELAY, 0);
+        default
+    }
+}
 
-    // Load configuration
-    let config = Config::load().await?;
-    info!(
-        bind_addr = %config.bind_addr,
-        port = config.port,
-        "Configuration loaded"
-    );
+fn main() -> ExitCode {
+    let purge_default = configure_allocator();
+    let config = Config::parse();
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .init();
+    tracing::debug!(purge_default, "mimalloc purge delay set to 0 ms");
 
-    // Choose server implementation based on configuration
-    let server_type =
-        std::env::var("CRABCACHE_SERVER_TYPE").unwrap_or_else(|_| "toon_hybrid".to_string());
-
-    info!("CrabCache server starting...");
-    info!("🚀 Target: 500k+ ops/sec, P99 < 10ms");
-    info!("Server type: {}", server_type);
-
-    let tcp_port = config.port;
-
-    // Start the appropriate server
-    let server_handle = match server_type.as_str() {
-        "toon_ultimate" => {
-            info!("🚀 Starting CrabCache ToonUltimateServer (TOON Protocol + All Sprints)");
-            let server = ToonUltimateServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "ToonUltimateServer error");
-                }
-            })
-        }
-        "ultimate" => {
-            info!("🚀 Starting CrabCache UltimateServer (Sprint 3 & 4)");
-            let server = UltimateServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "UltimateServer error");
-                }
-            })
-        }
-        "io_uring" => {
-            info!("🚀 Starting CrabCache IoUringServer (Sprint 3)");
-            let server = IoUringServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "IoUringServer error");
-                }
-            })
-        }
-        "toon_hybrid" => {
-            info!("🎨 Starting CrabCache ToonHybridServer (TOON Protocol + DashMap)");
-            let server = ToonHybridServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "ToonHybridServer error");
-                }
-            })
-        }
-        "hybrid" => {
-            info!("🔧 Starting CrabCache HybridServer (Stable + DashMap)");
-            let server = HybridServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "HybridServer error");
-                }
-            })
-        }
-        "simple" => {
-            info!("🔧 Starting CrabCache SimpleServer (Debug Mode)");
-            let server = SimpleServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "SimpleServer error");
-                }
-            })
-        }
-        "ultra" => {
-            info!("🚀 Starting CrabCache UltraFastServer (Sprint 2)");
-            let server = UltraFastServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "UltraFastServer error");
-                }
-            })
-        }
-        _ => {
-            warn!(
-                "Unknown server type '{}', defaulting to ToonUltimateServer",
-                server_type
-            );
-            let server = ToonUltimateServer::new(config).await?;
-            tokio::spawn(async move {
-                if let Err(e) = server.start().await {
-                    error!(error = %e, "ToonUltimateServer error");
-                }
-            })
+    // The main runtime only accepts connections and runs maintenance; I/O threads are started by
+    // `Server::run`.
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(e) => {
+            error!(error = %e, "failed to start runtime");
+            return ExitCode::FAILURE;
         }
     };
 
-    info!(tcp_port = tcp_port, "CrabCache server ready!");
-    info!("🚀 Performance: Targeting 500k+ ops/sec, P99 < 10ms");
-    info!("🔥 Lock-free architecture enabled");
-    info!("⚡ SIMD parsing enabled (Sprint 2)");
-    info!("🏎️  Assembly optimizations enabled");
-    info!("🧠 Arena allocator enabled");
-    info!("🚀 io_uring-style batching enabled (Sprint 3)");
-    info!("🎯 CPU/Memory optimizations enabled (Sprint 4)");
-    info!("🌟 ARM64 NEON SIMD enabled (Sprint 4)");
-    info!("🎨 TOON Protocol support enabled (80%+ smaller than JSON)");
+    runtime.block_on(async move {
+        let server = match Server::bind(config.clone()).await {
+            Ok(s) => s,
+            Err(e) => {
+                error!(error = %e, bind = %config.bind, port = config.port, "failed to bind");
+                return ExitCode::FAILURE;
+            }
+        };
+        match server.local_addr() {
+            Ok(addr) => log_startup(&config, addr),
+            Err(e) => error!(error = %e, "could not read local address"),
+        }
+        server.run(shutdown_signal()).await;
+        info!("shutting down");
+        ExitCode::SUCCESS
+    })
+}
 
-    // Wait for shutdown signal
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        let _ = tokio::signal::ctrl_c().await;
+    };
+    #[cfg(unix)]
+    let term = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut s) => {
+                s.recv().await;
+            }
+            Err(_) => std::future::pending::<()>().await,
+        }
+    };
+    #[cfg(not(unix))]
+    let term = std::future::pending::<()>();
     tokio::select! {
-        _ = tokio::signal::ctrl_c() => {
-            info!("Received shutdown signal");
-        }
-        _ = server_handle => {
-            error!("Server task completed unexpectedly");
-        }
+        _ = ctrl_c => {}
+        _ = term => {}
     }
-
-    info!("Shutting down CrabCache server...");
-
-    Ok(())
 }

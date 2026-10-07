@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v2]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  lint:
+    name: fmt + clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - name: Install Redis (reference for differential tests)
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then brew install redis; else
+            curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+            sudo apt-get update && sudo apt-get install -y redis-server
+          fi
+          redis-server --version
+      - name: Unit, integration and differential tests
+        env:
+          # Differential tests must run in CI; skipping silently would be a false positive.
+          CRABCACHE_REQUIRE_REDIS: "1"
+          CRABCACHE_DIFF_SEEDS: "100"
+        run: cargo nextest run --release --no-fail-fast
+      - run: cargo test --doc
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+      - run: cargo audit
+
+  docker:
+    name: docker build + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t crabcache:ci .
+      - name: Smoke test the image
+        run: |
+          docker run -d --name cc -p 6379:6379 -e CRABCACHE_REQUIREPASS=ci-pass crabcache:ci
+          sudo apt-get install -y redis-tools >/dev/null
+          for i in $(seq 1 30); do redis-cli -a ci-pass --no-auth-warning ping && break; sleep 1; done
+          test "$(redis-cli -a ci-pass --no-auth-warning set k v)" = "OK"
+          test "$(redis-cli -a ci-pass --no-auth-warning get k)" = "v"
+          test "$(redis-cli get k 2>&1 | head -c 6)" = "NOAUTH"
+          docker logs cc
