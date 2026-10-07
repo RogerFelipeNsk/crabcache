@@ -448,9 +448,43 @@ fn unknown_command_and_arity_messages_match_redis() {
     let items = array_items(&raw.cmd(&[b"HELLO"]));
     assert_eq!(items.len(), 14);
     assert_eq!(
-        raw.cmd(&[b"HELLO", b"3"]),
+        raw.cmd(&[b"HELLO", b"4"]),
         b"-NOPROTO unsupported protocol version\r\n"
     );
+}
+
+#[test]
+fn resp3_after_hello_3() {
+    let srv = TestServer::start(&[]);
+    let mut raw = srv.raw();
+    let hello = raw.cmd(&[b"HELLO", b"3"]);
+    assert!(
+        hello.starts_with(b"%7\r\n"),
+        "{}",
+        String::from_utf8_lossy(&hello)
+    );
+    assert!(hello.windows(13).any(|w| w == b"$5\r\nproto\r\n:3"));
+    // Null is `_` in RESP3; maps and verbatim strings replace arrays and bulk text.
+    assert_eq!(raw.cmd(&[b"GET", b"missing"]), b"_\r\n");
+    assert!(
+        raw.cmd(&[b"CONFIG", b"GET", b"maxmemory"])
+            .starts_with(b"%1\r\n")
+    );
+    assert!(raw.cmd(&[b"INFO", b"server"]).starts_with(b"="));
+    // HELLO 2 and RESET go back to RESP2.
+    raw.cmd(&[b"HELLO", b"2"]);
+    assert_eq!(raw.cmd(&[b"GET", b"missing"]), b"$-1\r\n");
+
+    // A client library negotiating RESP3 (redis-py 6+ does this by default).
+    let url = format!("redis://{}/?protocol=resp3", srv.addr);
+    let mut con = redis::Client::open(url).unwrap().get_connection().unwrap();
+    let _: () = con.set_ex("k", "v", 60).unwrap();
+    assert_eq!(
+        con.get::<_, Option<String>>("k").unwrap().as_deref(),
+        Some("v")
+    );
+    assert_eq!(con.get::<_, Option<String>>("nope").unwrap(), None);
+    assert_eq!(con.ttl::<_, i64>("k").unwrap(), 60);
 }
 
 #[test]

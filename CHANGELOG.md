@@ -5,6 +5,16 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-10-07
+
+### Adicionado
+- RESP3 via `HELLO 3`. O `redis-py` 8 negocia RESP3 por padrão, sem fallback, e não conseguia
+  conectar na 0.2.0. Os testes diferenciais agora rodam em RESP2 e RESP3 contra um Redis real.
+- Gráficos de benchmark no README (`scripts/gen-charts.py`).
+
+### Corrigido
+- O workflow de release pode ser reexecutado sem falhar quando a release do GitHub já existe.
+
 ## [0.2.0] - 2026-10-07
 
 Reescrita completa ("v2"). O código anterior está preservado na tag `legacy-v1`.

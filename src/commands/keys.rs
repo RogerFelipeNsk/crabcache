@@ -286,7 +286,7 @@ pub fn randomkey(c: &mut Ctx, _args: &Args) {
             }
         }
     }
-    reply::null(c.out);
+    reply::null(c.out, c.session.resp3);
 }
 
 fn rename_generic(c: &mut Ctx, args: &Args, nx: bool) {

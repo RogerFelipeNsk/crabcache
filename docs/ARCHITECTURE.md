@@ -1,6 +1,6 @@
 # Arquitetura
 
-O CrabCache v2 é um único binário que fala RESP2 (o protocolo do Redis). Por isso `redis-cli`,
+O CrabCache v2 é um único binário que fala o protocolo do Redis, em RESP2 ou RESP3 (via `HELLO 3`). Por isso `redis-cli`,
 `redis-benchmark`, `memtier_benchmark` e as bibliotecas cliente do Redis funcionam sem alteração.
 
 ```
@@ -100,7 +100,7 @@ quanto no macOS (Homebrew).
 ## Lacunas conhecidas
 
 * Só strings: sem listas, hashes, sets, sorted sets e streams.
-* Sem MULTI/EXEC, WATCH, Lua, pub/sub, RESP3, usuários ACL, persistência ou replicação.
+* Sem MULTI/EXEC, WATCH, Lua, pub/sub, usuários ACL, persistência ou replicação.
 * `SCAN` pode pular uma chave que uma remoção concorrente moveu para uma posição já visitada.
 * `APPEND` copia o valor (O(n) por chamada).
 * Conexões não migram entre threads; uma thread com poucas conexões muito ativas pode saturar

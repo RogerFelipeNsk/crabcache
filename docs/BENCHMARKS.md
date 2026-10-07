@@ -18,10 +18,14 @@ O Redis executa comandos numa única thread. Para comparar a eficiência por nú
 com `--threads 1`, e o `memtier_benchmark` (4 threads, 48 conexões, 90% GET) gera a carga, para que o
 cliente não seja o gargalo. A CPU consumida por cada servidor foi medida durante a execução.
 
-| | Núcleos usados | Ops/s sem pipeline | Ops/s com pipeline 16 |
-|---|---|---|---|
-| Redis 8.10 | 0.97–0.99 | 112k | 0.92–1.10M |
-| CrabCache `--threads 1` | 0.93–0.98 | **136k (+23%)** | **1.71–1.86M (+63% a +84%)** |
+| | Sem pipeline: ops/s | por núcleo-segundo | Pipeline 16: ops/s | por núcleo-segundo |
+|---|---|---|---|---|
+| Redis 8.10 | 112.2k (0.99 núcleo) | 112.9k | 923.5k (0.93 núcleo) | 998k |
+| CrabCache `--threads 1` | **136.1k** (0.98 núcleo) | **139.4k** | **1.71M** (0.93 núcleo) | **1.84M** |
+| Diferença | **+21%** | **+23%** | **+85%** | **+84%** |
+
+Os dois servidores usaram praticamente a mesma CPU, então as duas métricas contam a mesma história.
+Em outras rodadas, a vantagem com pipeline 16 variou de +63% a +85%.
 
 Só escritas (`--ratio=1:0`): Redis 110k / 919k, CrabCache **135k / 1.71M**.
 
