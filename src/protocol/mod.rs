@@ -1,48 +1,36 @@
-//! Protocol definitions and parsing
+//! Wire protocol: RESP2 request parsing and reply encoding.
 
-pub mod advanced_pipeline;
-pub mod binary;
-pub mod commands;
 pub mod parser;
-pub mod pipeline;
-pub mod serializer;
-pub mod simd_parser;
-pub mod zero_copy_buffer;
+pub mod reply;
 
-// Phase 8.1 - Protobuf Native Support
-pub mod protobuf;
+pub use parser::{Limits, Parsed, Parser, ProtocolError};
 
-// Phase 8.2 - TOON Protocol Support (Tiny Optimized Object Notation)
-pub mod toon;
+/// Arguments of one command, borrowed from the connection buffer (multibulk) or the parser's
+/// scratch space (inline).
+pub struct Args<'a> {
+    base: &'a [u8],
+    ranges: &'a [(usize, usize)],
+}
 
-// SPRINT 1 OPTIMIZATIONS - CRITICAL FOR PERFORMANCE
-pub mod buffer_pool;
-pub mod simd_packet_parser;
+impl<'a> Args<'a> {
+    pub fn new(base: &'a [u8], ranges: &'a [(usize, usize)]) -> Self {
+        Self { base, ranges }
+    }
 
-pub use advanced_pipeline::{
-    AdaptiveBatchSizer, AdvancedPipelineConfig, AdvancedPipelineMetrics, AdvancedPipelineProcessor,
-    CommandAffinityAnalyzer, ParallelBatchParser,
-};
-pub use binary::BinaryProtocol;
-pub use commands::{Command, Response};
-pub use parser::ProtocolParser;
-pub use pipeline::{
-    PipelineBatch, PipelineBuilder, PipelineProcessor, PipelineProtocol, PipelineResponseBatch,
-    PipelineStats,
-};
-pub use serializer::ProtocolSerializer;
-pub use simd_parser::SIMDParser;
-pub use zero_copy_buffer::{ZeroCopyBufferPool, ZeroCopyConfig, ZeroCopySerializer};
+    pub fn len(&self) -> usize {
+        self.ranges.len()
+    }
 
-// Phase 8.1 - Protobuf exports
-pub use protobuf::{
-    NegotiationResult, ProtobufBufferPool, ProtobufConfig, ProtobufError, ProtobufMetrics,
-    ProtobufParser, ProtobufResult, ProtobufSerializer, ProtobufZeroCopy, ProtocolNegotiator,
-    ProtocolType, SchemaRegistry, MAX_PROTOBUF_MESSAGE_SIZE, PROTOBUF_MAGIC, PROTOBUF_VERSION,
-};
+    pub fn is_empty(&self) -> bool {
+        self.ranges.is_empty()
+    }
 
-// Phase 8.2 - TOON Protocol exports
-pub use toon::{
-    decoder::ToonDecoder, encoder::ToonEncoder, StringInterner, ToonFlags, ToonPacket, ToonType,
-    TOON_MAGIC, TOON_VERSION,
-};
+    pub fn get(&self, i: usize) -> &'a [u8] {
+        let (s, e) = self.ranges[i];
+        &self.base[s..e]
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &'a [u8]> + '_ {
+        (0..self.len()).map(move |i| self.get(i))
+    }
+}
