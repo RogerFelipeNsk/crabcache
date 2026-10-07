@@ -231,7 +231,7 @@ impl Rng {
         self.below(100) < pct
     }
 
-    pub fn pick<'a, T>(&mut self, items: &'a [T]) -> &'a T {
-        &items[self.below(items.len() as u64) as usize]
+    pub fn pick<T: Copy>(&mut self, items: &[T]) -> T {
+        items[self.below(items.len() as u64) as usize]
     }
 }

@@ -26,6 +26,15 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
 
+  msrv:
+    name: build on Rust 1.85 (rust-version)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --all-targets
+
   test:
     name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
