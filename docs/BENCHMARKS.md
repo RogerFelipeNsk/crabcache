@@ -80,7 +80,7 @@ O que fez a diferença (ver `docs/ARCHITECTURE.md`):
 Throughput só vale com respostas certas. Antes de qualquer medição:
 
 * `tests/differential.rs` compara respostas byte a byte com um Redis real. 750 mil comandos aleatórios
-  (500 seeds) bateram com o Redis 8.10.
+  (500 seeds) bateram com o Redis 8.10.2 no Linux (imagem oficial) e no macOS (Homebrew).
 * `tests/integration.rs` valida, com o cliente oficial `redis` do Rust, valores binários, 10.000
   comandos em pipeline, contadores atômicos com 8 clientes concorrentes, expiração ativa, eviction e
   limites de protocolo.

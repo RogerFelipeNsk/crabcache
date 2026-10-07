@@ -103,6 +103,26 @@ fn set_options_and_ttl() {
         "plain SET clears expiry"
     );
     assert_eq!(con.ttl::<_, i64>("missing").unwrap(), -2);
+    // A relative expiry that overflows when added to the current time is an error (Redis on Linux;
+    // clang-built Redis accepts it because its check relies on undefined signed overflow).
+    for cmd in [
+        redis::cmd("SET")
+            .arg("k")
+            .arg("v")
+            .arg("PX")
+            .arg(i64::MAX)
+            .clone(),
+        redis::cmd("PSETEX").arg("k").arg(i64::MAX).arg("v").clone(),
+        redis::cmd("SET")
+            .arg("k")
+            .arg("v")
+            .arg("EX")
+            .arg(i64::MAX / 1000)
+            .clone(),
+    ] {
+        let e = cmd.query::<()>(&mut con).unwrap_err().to_string();
+        assert!(e.contains("invalid expire time"), "{e}");
+    }
     let err: RedisResult<()> = redis::cmd("SET")
         .arg("k")
         .arg("v")

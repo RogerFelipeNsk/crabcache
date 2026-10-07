@@ -85,9 +85,17 @@ com aridade errada) a um Redis real e ao CrabCache, e exige respostas idênticas
 que dependem do tempo (TTL restante) são comparadas por classe, e a saída de `KEYS` é ordenada. O CI
 roda contra o Redis 8 e falha se o Redis não estiver disponível, em vez de pular o teste.
 
-Divergência intencional: `GETEX chave EX|PX n` em que `agora + n` estoura um i64. O Redis grava um
-prazo com overflow (depois disso o `PTTL` fica enorme, o `EXPIRETIME` fica 0 e o `PERSIST` retorna 0).
-O CrabCache trata o caso como o `SET` faz e apaga a chave.
+Entradas que o gerador evita de propósito:
+
+* Expiração relativa (`EX`/`PX`) em que `agora + n` estoura um i64. O Redis detecta esse caso por
+  overflow de inteiro com sinal, que é comportamento indefinido em C. O build Linux (gcc) responde
+  `ERR invalid expire time`, como pretendido, e o build do Homebrew no macOS (clang) aceita o comando.
+  O CrabCache segue o comportamento pretendido, coberto por teste de integração.
+* `GT`/`LT` com expirações relativas: aplicar o mesmo TTL duas vezes no mesmo milissegundo produz
+  prazos iguais, então a resposta dependeria do tempo.
+
+O teste passou com 500 seeds (750 mil comandos) contra o Redis 8.10.2 tanto no Linux (imagem oficial)
+quanto no macOS (Homebrew).
 
 ## Lacunas conhecidas
 

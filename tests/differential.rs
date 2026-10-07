@@ -1,9 +1,10 @@
 //! Differential testing against a real Redis: random command sequences are sent to both servers and
 //! the raw replies must match byte for byte (after normalizing time-dependent and unordered replies).
 //!
-//! Known, intentional divergence: `GETEX key EX|PX n` where `now + n` overflows an i64. Redis stores a
-//! wrapped deadline (afterwards PTTL is huge, EXPIRETIME is 0 and PERSIST returns 0); CrabCache treats
-//! it like SET does in that case and deletes the key. The generator avoids that input.
+//! Inputs avoided on purpose: a relative EX/PX expiry whose `now + n` overflows an i64 in SET, SETEX,
+//! PSETEX and GETEX. Redis detects that overflow through signed wraparound, which is undefined
+//! behavior in C, so the reply depends on how Redis was compiled (Linux/gcc returns the intended
+//! "invalid expire time" error, which CrabCache matches; Homebrew/clang on macOS accepts the command).
 //!
 //! Redis comes from `CRABCACHE_DIFF_REDIS=host:port` (it will be FLUSHALLed) or a `redis-server`
 //! binary on PATH started on a free port. Set `CRABCACHE_REQUIRE_REDIS=1` (as CI does) to fail
@@ -170,14 +171,6 @@ fn random_command(r: &mut Rng) -> Vec<Vec<u8>> {
             .to_vec()
     };
     // Millisecond variants: a relative "1000" ms could elapse mid-run, so scale those up.
-    let ttl_ms = |r: &mut Rng| -> Vec<u8> {
-        let t = ttl(r);
-        if t == b"1000" {
-            b"100000000".to_vec()
-        } else {
-            t
-        }
-    };
     let ttl_ms_no_overflow = |r: &mut Rng| -> Vec<u8> {
         let t = ttl_no_overflow(r);
         if t == b"1000" {
@@ -198,7 +191,7 @@ fn random_command(r: &mut Rng) -> Vec<Vec<u8>> {
                     2 => c.push(s("GET")),
                     3 => c.push(s("KEEPTTL")),
                     4 => c.extend([s("EX"), ttl(r)]),
-                    5 => c.extend([s("PX"), ttl_ms(r)]),
+                    5 => c.extend([s("PX"), ttl_ms_no_overflow(r)]),
                     6 => c.extend([s("EXAT"), at(r)]),
                     _ => c.extend([s("PXAT"), at(r)]),
                 }
@@ -211,7 +204,7 @@ fn random_command(r: &mut Rng) -> Vec<Vec<u8>> {
         10 => vec![s("SETNX"), k(r), v(r)],
         11 => match r.below(2) {
             0 => vec![s("SETEX"), k(r), ttl(r), v(r)],
-            _ => vec![s("PSETEX"), k(r), ttl_ms(r), v(r)],
+            _ => vec![s("PSETEX"), k(r), ttl_ms_no_overflow(r), v(r)],
         },
         12 => {
             let mut c = vec![s("GETEX"), k(r)];
@@ -266,8 +259,16 @@ fn random_command(r: &mut Rng) -> Vec<Vec<u8>> {
                 r.pick(TTLS).to_string()
             };
             let mut c = vec![s(name), k(r), s(&when)];
+            // GT/LT compare deadlines. With relative expiries, applying the same TTL twice within one
+            // millisecond gives equal deadlines, so the reply would depend on timing; use them only
+            // with absolute deadlines.
+            let flags: &[&str] = if name.ends_with("AT") {
+                &["NX", "XX", "GT", "LT", "BAD"]
+            } else {
+                &["NX", "XX", "BAD"]
+            };
             for _ in 0..r.below(3) {
-                c.push(s(r.pick(&["NX", "XX", "GT", "LT", "BAD"])));
+                c.push(s(r.pick(flags)));
             }
             c
         }
@@ -336,11 +337,18 @@ fn show(cmd: &[Vec<u8>]) -> String {
         .join(" ")
 }
 
+/// One test running both phases in sequence: an external Redis (`CRABCACHE_DIFF_REDIS`) is shared
+/// state, and test runners execute separate tests in parallel.
 #[test]
-fn random_commands_match_redis() {
+fn commands_match_redis() {
     let Some((redis_addr, _redis)) = connect_redis() else {
         return;
     };
+    sequential_commands_match(redis_addr);
+    pipelined_batches_match(redis_addr);
+}
+
+fn sequential_commands_match(redis_addr: SocketAddr) {
     let srv = TestServer::start(&[]);
     let mut redis = Raw::connect(redis_addr);
     let mut crab = srv.raw();
@@ -374,11 +382,7 @@ fn random_commands_match_redis() {
     }
 }
 
-#[test]
-fn pipelined_batches_match_redis() {
-    let Some((redis_addr, _redis)) = connect_redis() else {
-        return;
-    };
+fn pipelined_batches_match(redis_addr: SocketAddr) {
     let srv = TestServer::start(&[]);
     let mut redis = Raw::connect(redis_addr);
     let mut crab = srv.raw();

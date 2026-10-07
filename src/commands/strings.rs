@@ -61,9 +61,10 @@ enum Deadline {
     Past,
 }
 
-/// Parses an EX/PX/EXAT/PXAT argument with Redis 8 semantics, replying on error. A relative deadline
-/// that overflows when added to the current time wraps negative in Redis, which makes the key expire
-/// immediately instead of returning an error; that behavior is kept for compatibility.
+/// Parses an EX/PX/EXAT/PXAT argument with Redis semantics, replying on error. A relative deadline that
+/// overflows when added to the current time is rejected as an invalid expire time. Redis detects that
+/// case through signed overflow, which is undefined behavior in C: Linux (gcc) builds reject it as
+/// intended, while clang builds such as Homebrew's on macOS drop the check and accept the command.
 fn deadline(
     unit: ExpireUnit,
     arg: &[u8],
@@ -82,7 +83,13 @@ fn deadline(
     }
     let ms = if secs { n * 1000 } else { n };
     let at = match unit {
-        ExpireUnit::Ex | ExpireUnit::Px => ms.wrapping_add(now as i64),
+        ExpireUnit::Ex | ExpireUnit::Px => match ms.checked_add(now as i64) {
+            Some(at) => at,
+            None => {
+                reply::invalid_expire(out, cmd);
+                return None;
+            }
+        },
         _ => ms,
     };
     Some(if at <= now as i64 {
