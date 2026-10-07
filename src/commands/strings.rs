@@ -136,7 +136,7 @@ pub fn get(c: &mut Ctx, args: &Args) {
         }
         None => {
             g.stats.misses += 1;
-            reply::null(c.out);
+            reply::null(c.out, c.session.resp3);
         }
     }
 }
@@ -186,12 +186,12 @@ pub fn set(c: &mut Ctx, args: &Args) {
         if get {
             match existing {
                 Some(i) => reply::bulk(c.out, g.entry(i).value()),
-                None => reply::null(c.out),
+                None => reply::null(c.out, c.session.resp3),
             }
         }
         if (nx && existing.is_some()) || (xx && existing.is_none()) {
             if !get {
-                reply::null(c.out);
+                reply::null(c.out, c.session.resp3);
             }
             return;
         }
@@ -248,7 +248,7 @@ pub fn getset(c: &mut Ctx, args: &Args) {
     }
     match g.lookup(h, key, c.clock.ms) {
         Some(i) => reply::bulk(c.out, g.entry(i).value()),
-        None => reply::null(c.out),
+        None => reply::null(c.out, c.session.resp3),
     }
     store(&mut g, h, e, false, c.clock);
 }
@@ -264,7 +264,7 @@ pub fn getdel(c: &mut Ctx, args: &Args) {
         }
         None => {
             g.stats.misses += 1;
-            reply::null(c.out);
+            reply::null(c.out, c.session.resp3);
         }
     }
 }
@@ -293,7 +293,7 @@ pub fn getex(c: &mut Ctx, args: &Args) {
     let (mut g, h) = c.db.lock_key(key);
     let Some(i) = g.lookup(h, key, c.clock.ms) else {
         g.stats.misses += 1;
-        return reply::null(c.out);
+        return reply::null(c.out, c.session.resp3);
     };
     let at = match expire {
         Some((unit, arg)) => match deadline(unit, arg, c.clock.ms, "getex", c.out) {
@@ -327,7 +327,7 @@ pub fn mget(c: &mut Ctx, args: &Args) {
             }
             None => {
                 g.stats.misses += 1;
-                reply::null(c.out);
+                reply::null(c.out, c.session.resp3);
             }
         }
     }

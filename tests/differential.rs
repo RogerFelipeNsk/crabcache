@@ -344,15 +344,34 @@ fn commands_match_redis() {
     let Some((redis_addr, _redis)) = connect_redis() else {
         return;
     };
-    sequential_commands_match(redis_addr);
-    pipelined_batches_match(redis_addr);
+    for resp3 in [false, true] {
+        sequential_commands_match(redis_addr, resp3);
+        pipelined_batches_match(redis_addr, resp3);
+    }
 }
 
-fn sequential_commands_match(redis_addr: SocketAddr) {
-    let srv = TestServer::start(&[]);
+/// Connects to both servers, switching both to RESP3 when asked. HELLO replies differ by design
+/// (server name, version, client id), so they are not compared.
+fn connect_pair(redis_addr: SocketAddr, srv: &TestServer, resp3: bool) -> (Raw, Raw) {
     let mut redis = Raw::connect(redis_addr);
     let mut crab = srv.raw();
+    if resp3 {
+        for conn in [&mut redis, &mut crab] {
+            let hello = conn.cmd(&[b"HELLO", b"3"]);
+            assert!(
+                hello.starts_with(b"%"),
+                "HELLO 3 must reply with a map: {:?}",
+                String::from_utf8_lossy(&hello)
+            );
+        }
+    }
     redis.cmd(&[b"FLUSHALL"]);
+    (redis, crab)
+}
+
+fn sequential_commands_match(redis_addr: SocketAddr, resp3: bool) {
+    let srv = TestServer::start(&[]);
+    let (mut redis, mut crab) = connect_pair(redis_addr, &srv, resp3);
 
     let seeds = std::env::var("CRABCACHE_DIFF_SEEDS")
         .ok()
@@ -372,7 +391,7 @@ fn sequential_commands_match(redis_addr: SocketAddr) {
             }
             assert!(
                 a == b,
-                "seed {seed} step {step}: {}\n  redis:     {:?}\n  crabcache: {:?}\nlast commands:\n  {}",
+                "resp3={resp3} seed {seed} step {step}: {}\n  redis:     {:?}\n  crabcache: {:?}\nlast commands:\n  {}",
                 show(&cmd),
                 String::from_utf8_lossy(&a),
                 String::from_utf8_lossy(&b),
@@ -382,11 +401,9 @@ fn sequential_commands_match(redis_addr: SocketAddr) {
     }
 }
 
-fn pipelined_batches_match(redis_addr: SocketAddr) {
+fn pipelined_batches_match(redis_addr: SocketAddr, resp3: bool) {
     let srv = TestServer::start(&[]);
-    let mut redis = Raw::connect(redis_addr);
-    let mut crab = srv.raw();
-    redis.cmd(&[b"FLUSHALL"]);
+    let (mut redis, mut crab) = connect_pair(redis_addr, &srv, resp3);
 
     let mut r = Rng(0xDEAD_BEEF);
     for round in 0..50 {
@@ -403,7 +420,7 @@ fn pipelined_batches_match(redis_addr: SocketAddr) {
             let b = normalize(c, crab.read_reply().unwrap());
             assert!(
                 a == b,
-                "round {round} cmd {n}: {}\n  redis:     {:?}\n  crabcache: {:?}",
+                "resp3={resp3} round {round} cmd {n}: {}\n  redis:     {:?}\n  crabcache: {:?}",
                 show(c),
                 String::from_utf8_lossy(&a),
                 String::from_utf8_lossy(&b)

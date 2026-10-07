@@ -50,6 +50,8 @@ pub struct Session {
     pub addr: String,
     pub authenticated: bool,
     pub name: Option<Vec<u8>>,
+    /// Protocol selected with HELLO 3; RESP2 otherwise.
+    pub resp3: bool,
     /// Set by QUIT; the connection closes after flushing replies.
     pub close: bool,
     rng: u64,
@@ -63,6 +65,7 @@ impl Session {
             addr,
             authenticated: shared.config.requirepass.is_none(),
             name: None,
+            resp3: false,
             close: false,
             rng: 0x2545_F491_4F6C_DD1D ^ id,
         }

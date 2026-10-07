@@ -34,6 +34,7 @@ pub fn quit(c: &mut Ctx, _args: &Args) {
 
 pub fn reset(c: &mut Ctx, _args: &Args) {
     c.session.name = None;
+    c.session.resp3 = false;
     c.session.authenticated = c.shared.config.requirepass.is_none();
     reply::simple(c.out, b"RESET");
 }
@@ -82,10 +83,10 @@ pub fn auth(c: &mut Ctx, args: &Args) {
 
 pub fn hello(c: &mut Ctx, args: &Args) {
     let mut j = 1;
+    let mut resp3 = c.session.resp3;
     if args.len() > 1 {
         match parse_i64(args.get(1)) {
-            Some(2) => {}
-            // RESP3 is not implemented yet; clients fall back to RESP2 on NOPROTO.
+            Some(v @ 2..=3) => resp3 = v == 3,
             Some(_) => return reply::error(c.out, "NOPROTO unsupported protocol version"),
             None => {
                 return reply::error(
@@ -132,13 +133,14 @@ pub fn hello(c: &mut Ctx, args: &Args) {
     if name.is_some() {
         c.session.name = name;
     }
-    reply::array(c.out, 14);
+    c.session.resp3 = resp3;
+    reply::map(c.out, 7, resp3);
     for (k, v) in [("server", "crabcache"), ("version", crate::VERSION)] {
         reply::bulk(c.out, k.as_bytes());
         reply::bulk(c.out, v.as_bytes());
     }
     reply::bulk(c.out, b"proto");
-    reply::int(c.out, 2);
+    reply::int(c.out, if resp3 { 3 } else { 2 });
     reply::bulk(c.out, b"id");
     reply::int(c.out, c.session.id as i64);
     for (k, v) in [("mode", "standalone"), ("role", "master")] {
@@ -168,7 +170,7 @@ pub fn client(c: &mut Ctx, args: &Args) {
         (b"ID", 2) => reply::int(c.out, c.session.id as i64),
         (b"GETNAME", 2) => match &c.session.name {
             Some(n) => reply::bulk(c.out, n),
-            None => reply::null(c.out),
+            None => reply::null(c.out, c.session.resp3),
         },
         (b"SETNAME", 3) => {
             let n = args.get(2);
@@ -184,7 +186,7 @@ pub fn client(c: &mut Ctx, args: &Args) {
         (b"SETINFO", 4) | (b"NO-EVICT", 3) | (b"NO-TOUCH", 3) => reply::ok(c.out),
         (b"INFO", 2) | (b"LIST", _) => {
             let line = client_info_line(c);
-            reply::bulk(c.out, line.as_bytes());
+            reply::verbatim_text(c.out, line.as_bytes(), c.session.resp3);
         }
         _ => reply::error(
             c.out,
@@ -203,7 +205,8 @@ pub fn command(c: &mut Ctx, args: &Args) {
     }
     match args.get(1).to_ascii_uppercase().as_slice() {
         b"COUNT" => reply::int(c.out, 0),
-        b"DOCS" | b"INFO" | b"LIST" => reply::array(c.out, 0),
+        b"DOCS" => reply::map(c.out, 0, c.session.resp3),
+        b"INFO" | b"LIST" => reply::array(c.out, 0),
         _ => reply::error(
             c.out,
             &format!(
@@ -247,7 +250,7 @@ pub fn config(c: &mut Ctx, args: &Args) {
                         .any(|p| glob_match(p, k.as_bytes(), true))
                 })
                 .collect();
-            reply::array(c.out, matched.len() * 2);
+            reply::map(c.out, matched.len(), c.session.resp3);
             for (k, v) in matched {
                 reply::bulk(c.out, k.as_bytes());
                 reply::bulk(c.out, v.as_bytes());
@@ -410,7 +413,7 @@ pub fn info(c: &mut Ctx, args: &Args) {
             let _ = write!(s, "db0:keys={keys},expires={ttl_keys},avg_ttl=0\r\n");
         }
     }
-    reply::bulk(c.out, s.as_bytes());
+    reply::verbatim_text(c.out, s.as_bytes(), c.session.resp3);
 }
 
 pub fn time(c: &mut Ctx, _args: &Args) {
@@ -428,7 +431,7 @@ pub fn memory(c: &mut Ctx, args: &Args) {
         let (mut g, h) = c.db.lock_key(key);
         match g.lookup(h, key, c.clock.ms) {
             Some(i) => reply::int(c.out, g.entry(i).mem_usage() as i64),
-            None => reply::null(c.out),
+            None => reply::null(c.out, c.session.resp3),
         }
     } else {
         reply::error(

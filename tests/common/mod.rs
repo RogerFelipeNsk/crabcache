@@ -157,14 +157,23 @@ impl Raw {
     }
 }
 
-/// Length of the complete RESP value starting at `pos`, or None if incomplete.
+/// Length of the complete RESP2/RESP3 value starting at `pos`, or None if incomplete.
 pub fn reply_len(buf: &[u8], pos: usize) -> Option<usize> {
     let line_end = pos + buf.get(pos..)?.windows(2).position(|w| w == b"\r\n")?;
     let header = std::str::from_utf8(&buf[pos + 1..line_end]).ok()?;
     let after = line_end + 2 - pos;
+    let elements = |n: i64| -> Option<usize> {
+        let mut total = after;
+        for _ in 0..n.max(0) {
+            total += reply_len(buf, pos + total)?;
+        }
+        Some(total)
+    };
     match buf[pos] {
-        b'+' | b'-' | b':' => Some(after),
-        b'$' => {
+        // simple string, error, integer; RESP3 null, boolean, double, big number
+        b'+' | b'-' | b':' | b'_' | b'#' | b',' | b'(' => Some(after),
+        // bulk string; RESP3 verbatim string and blob error
+        b'$' | b'=' | b'!' => {
             let n: i64 = header.parse().ok()?;
             if n < 0 {
                 return Some(after);
@@ -172,14 +181,10 @@ pub fn reply_len(buf: &[u8], pos: usize) -> Option<usize> {
             let total = after + n as usize + 2;
             (buf.len() - pos >= total).then_some(total)
         }
-        b'*' => {
-            let n: i64 = header.parse().ok()?;
-            let mut total = after;
-            for _ in 0..n.max(0) {
-                total += reply_len(buf, pos + total)?;
-            }
-            Some(total)
-        }
+        // array; RESP3 set and push
+        b'*' | b'~' | b'>' => elements(header.parse().ok()?),
+        // RESP3 map
+        b'%' => elements(2 * header.parse::<i64>().ok()?),
         _ => panic!("bad reply byte {:?}", buf[pos] as char),
     }
 }
