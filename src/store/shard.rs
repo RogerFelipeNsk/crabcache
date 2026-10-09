@@ -6,7 +6,7 @@
 //! with the moved entry's index slot patched.
 
 use super::chunked::Chunked;
-use super::entry::Entry;
+use super::entry::{Entry, Packed};
 use super::{Clock, Policy};
 use ahash::RandomState;
 use hashbrown::HashTable;
@@ -25,6 +25,24 @@ pub struct ShardStats {
     pub evicted: u64,
 }
 
+/// Compressed (CrabPack) entries in a shard.
+#[derive(Default, Clone, Copy, Debug)]
+pub struct PackStats {
+    pub keys: u64,
+    /// Total uncompressed size of the packed values.
+    pub original_bytes: u64,
+    /// Total stored (compressed) size of the packed values.
+    pub stored_bytes: u64,
+}
+
+impl std::ops::AddAssign for PackStats {
+    fn add_assign(&mut self, o: Self) {
+        self.keys += o.keys;
+        self.original_bytes += o.original_bytes;
+        self.stored_bytes += o.stored_bytes;
+    }
+}
+
 impl std::ops::AddAssign for ShardStats {
     fn add_assign(&mut self, o: Self) {
         self.hits += o.hits;
@@ -41,6 +59,7 @@ pub struct Shard {
     expiries: BinaryHeap<Reverse<(u64, u64)>>,
     ttl_keys: usize,
     used: usize,
+    pack: PackStats,
     hasher: RandomState,
     rng: u64,
     pub stats: ShardStats,
@@ -54,6 +73,7 @@ impl Shard {
             expiries: BinaryHeap::new(),
             ttl_keys: 0,
             used: 0,
+            pack: PackStats::default(),
             hasher,
             rng: seed | 1,
             stats: ShardStats::default(),
@@ -75,6 +95,39 @@ impl Shard {
 
     pub fn ttl_keys(&self) -> usize {
         self.ttl_keys
+    }
+
+    pub fn pack_stats(&self) -> PackStats {
+        self.pack
+    }
+
+    /// Counts an entry entering the shard (memory and compression stats).
+    fn track_add(&mut self, e: &Entry) {
+        self.account(Footprint::of(e), true);
+    }
+
+    /// Counts an entry leaving the shard.
+    fn track_sub(&mut self, e: &Entry) {
+        self.account(Footprint::of(e), false);
+    }
+
+    fn account(&mut self, f: Footprint, add: bool) {
+        if add {
+            self.used += f.mem;
+        } else {
+            self.used -= f.mem;
+        }
+        if let Some((original, stored)) = f.packed {
+            if add {
+                self.pack.keys += 1;
+                self.pack.original_bytes += original;
+                self.pack.stored_bytes += stored;
+            } else {
+                self.pack.keys -= 1;
+                self.pack.original_bytes -= original;
+                self.pack.stored_bytes -= stored;
+            }
+        }
     }
 
     pub fn entries(&self) -> &Chunked<Entry> {
@@ -120,7 +173,7 @@ impl Shard {
     pub fn insert(&mut self, hash: u64, entry: Entry) -> usize {
         let i = self.entries.len();
         let expire_at = entry.expire_at();
-        self.used += entry.mem_usage();
+        self.track_add(&entry);
         self.entries.push(entry);
         let (entries, hasher) = (&self.entries, &self.hasher);
         self.index.insert_unique(hash, i as u32, |&j| {
@@ -141,9 +194,9 @@ impl Shard {
             (true, false) => self.ttl_keys -= 1,
             _ => {}
         }
-        self.used += entry.mem_usage();
+        self.track_add(&entry);
         let old = std::mem::replace(&mut self.entries[i], entry);
-        self.used -= old.mem_usage();
+        self.track_sub(&old);
         if new_at != 0 && new_at != old_at {
             self.push_expiry(new_at, hash);
         }
@@ -151,9 +204,11 @@ impl Shard {
     }
 
     pub fn set_value(&mut self, i: usize, value: &[u8]) {
-        self.used -= self.entries[i].mem_usage();
+        let before = Footprint::of(&self.entries[i]);
         self.entries[i].set_value(value);
-        self.used += self.entries[i].mem_usage();
+        let after = Footprint::of(&self.entries[i]);
+        self.account(before, false);
+        self.account(after, true);
     }
 
     /// Sets (`at > 0`) or clears (`at == 0`) the expiry of entry `i`.
@@ -165,9 +220,11 @@ impl Shard {
             _ => {}
         }
         // Adding or removing an expiry changes the allocation size.
-        self.used -= self.entries[i].mem_usage();
+        let before = Footprint::of(&self.entries[i]);
         self.entries[i].set_expire_at(at);
-        self.used += self.entries[i].mem_usage();
+        let after = Footprint::of(&self.entries[i]);
+        self.account(before, false);
+        self.account(after, true);
         if at != 0 && at != old {
             self.push_expiry(at, hash);
         }
@@ -188,7 +245,7 @@ impl Shard {
             }
         }
         let e = self.entries.swap_remove(i);
-        self.used -= e.mem_usage();
+        self.track_sub(&e);
         if e.expire_at() != 0 {
             self.ttl_keys -= 1;
         }
@@ -205,6 +262,33 @@ impl Shard {
         self.expiries = BinaryHeap::new();
         self.ttl_keys = 0;
         self.used = 0;
+        self.pack = PackStats::default();
+    }
+
+    /// Replaces entry `i` with its compressed form if it still holds `key` with the plain value
+    /// `value`. The compressor works outside the lock, so the entry may have changed or moved; the
+    /// current expiry and eviction metadata are kept.
+    pub fn pack_at(
+        &mut self,
+        i: usize,
+        key: &[u8],
+        value: &[u8],
+        compressed: &[u8],
+        dict: u32,
+    ) -> bool {
+        let packed = match self.entries.get(i) {
+            Some(e) if e.key() == key && e.plain() == Some(value) => {
+                let p = Packed {
+                    dict,
+                    original_len: value.len() as u32,
+                };
+                Entry::new_packed(key, compressed, e.expire_at(), e.meta, p)
+            }
+            _ => return false,
+        };
+        let hash = self.hash_of(key);
+        self.replace(i, hash, packed);
+        true
     }
 
     pub fn random_index(&mut self) -> Option<usize> {
@@ -309,6 +393,42 @@ impl Policy {
     }
 }
 
+/// What an entry contributes to a shard's memory and compression counters.
+#[derive(Clone, Copy)]
+struct Footprint {
+    mem: usize,
+    /// `(original_len, stored_len)` for packed entries.
+    packed: Option<(u64, u64)>,
+}
+
+impl Footprint {
+    fn of(e: &Entry) -> Self {
+        Self {
+            mem: e.mem_usage(),
+            packed: e
+                .packed()
+                .map(|p| (p.original_len as u64, e.stored().len() as u64)),
+        }
+    }
+}
+
+/// Seconds since the entry was last accessed, from its eviction metadata (minute resolution under LFU).
+pub fn idle_secs(meta: u32, policy: Policy, clock: Clock) -> u32 {
+    match policy {
+        Policy::AllKeysLfu => {
+            let ldt = meta >> 8;
+            let now = lfu_minutes(clock);
+            let minutes = if now >= ldt {
+                now - ldt
+            } else {
+                65535 - ldt + now
+            };
+            minutes.saturating_mul(60)
+        }
+        _ => clock.secs.saturating_sub(meta),
+    }
+}
+
 fn lfu_minutes(clock: Clock) -> u32 {
     (clock.secs / 60) & 0xFFFF
 }
@@ -370,7 +490,7 @@ mod tests {
     fn get(s: &mut Shard, k: &str, now: u64) -> Option<String> {
         let h = s.hash_of(k.as_bytes());
         s.lookup(h, k.as_bytes(), now)
-            .map(|i| String::from_utf8(s.entry(i).value().to_vec()).unwrap())
+            .map(|i| String::from_utf8(s.entry(i).plain().unwrap().to_vec()).unwrap())
     }
 
     #[test]

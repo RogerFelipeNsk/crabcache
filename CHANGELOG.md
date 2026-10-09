@@ -5,6 +5,19 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-09
+
+### Adicionado
+- **CrabPack** (`--compression`): compressão transparente de valores ociosos com dicionários zstd
+  treinados por prefixo de chave. Em JSON realista (sessões, produtos, respostas de API) a memória por
+  chave caiu para 39–41% da do Redis 8.10 (taxa de compressão de 3.6–4.1x). As leituras devolvem os
+  bytes originais; escritas gravam sem compressão e o valor volta a ser comprimido quando fica ocioso.
+- `INFO compression` (dicionários, chaves comprimidas, taxa) e `CONFIG GET/SET` para `compression`,
+  `compression-min-idle` e `compression-min-size`.
+- `examples/dataset.rs` (dados realistas para benchmarks) e `scripts/bench-compression.sh`.
+- Testes: integração da compressão e uma fase diferencial em que 5.000 comandos sobre valores
+  comprimidos precisam responder byte a byte igual ao Redis.
+
 ## [0.2.1] - 2026-10-07
 
 ### Adicionado

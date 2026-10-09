@@ -235,3 +235,49 @@ impl Rng {
         items[self.below(items.len() as u64) as usize]
     }
 }
+
+/// Deterministic JSON values with shared structure, like sessions in a real cache: compressible with a
+/// trained dictionary, not by plain compression.
+pub fn session_json(i: u64) -> Vec<u8> {
+    let mut r = Rng(i.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
+    let names = [
+        "Ana", "Bruno", "Carla", "Diego", "Elisa", "Felipe", "Gabriela", "Hugo",
+    ];
+    let themes = ["dark", "light", "system"];
+    let roles = ["user", "admin", "editor", "support"];
+    format!(
+        r#"{{"user_id":{},"name":"{} {}","email":"user{}@example.com","roles":["{}"],"locale":"pt-BR","theme":"{}","last_seen":"2026-{:02}-{:02}T{:02}:{:02}:00Z","cart":[{{"sku":"SKU-{}","qty":{}}}],"csrf":"{:016x}"}}"#,
+        r.below(10_000_000),
+        r.pick(&names),
+        r.pick(&names),
+        r.below(100_000),
+        r.pick(&roles),
+        r.pick(&themes),
+        1 + r.below(12),
+        1 + r.below(28),
+        r.below(24),
+        r.below(60),
+        1000 + r.below(90_000),
+        1 + r.below(4),
+        r.next()
+    )
+    .into_bytes()
+}
+
+/// Polls `INFO compression` until at least `min` keys are compressed or the timeout expires.
+pub fn wait_for_packed(raw: &mut Raw, min: u64, timeout: std::time::Duration) -> u64 {
+    let deadline = std::time::Instant::now() + timeout;
+    loop {
+        let info = raw.cmd(&[b"INFO", b"compression"]);
+        let text = String::from_utf8_lossy(&info);
+        let packed: u64 = text
+            .lines()
+            .find_map(|l| l.strip_prefix("compressed_keys:"))
+            .and_then(|v| v.trim().parse().ok())
+            .unwrap_or(0);
+        if packed >= min || std::time::Instant::now() > deadline {
+            return packed;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+}

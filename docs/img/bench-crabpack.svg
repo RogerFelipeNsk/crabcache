@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="464" viewBox="0 0 720 464" role="img" aria-labelledby="t d">
+<title id="t">Memória por chave com dados reais (JSON)</title>
+<desc id="d">300k chaves por conjunto · CrabPack treina um dicionário por prefixo e comprime valores ociosos. Sessões de usuário (298 B em média): Redis 8.10 415 B, CrabCache 391 B, CrabCache + CrabPack 164 B; Produtos (282 B): Redis 8.10 401 B, CrabCache 363 B, CrabCache + CrabPack 161 B; Respostas de API (316 B): Redis 8.10 415 B, CrabCache 388 B, CrabCache + CrabPack 171 B</desc>
+
+<style>
+  .surface { fill: #fcfcfb; }
+  .ring { fill: none; stroke: rgba(11,11,11,0.10); }
+  .title { fill: #0b0b0b; font-size: 16px; font-weight: 600; }
+  .subtitle { fill: #52514e; font-size: 12.5px; }
+  .panel { fill: #0b0b0b; font-size: 13px; font-weight: 600; }
+  .label { fill: #52514e; font-size: 12.5px; }
+  .value { fill: #0b0b0b; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .delta { fill: #006300; font-size: 12.5px; font-weight: 600; }
+  .axis { stroke: #c3c2b7; stroke-width: 1; }
+  .s-redis { fill: #2a78d6; }
+  .s-crab { fill: #eb6834; }
+  .s-pack { fill: #1baf7a; }
+  .note { fill: #898781; font-size: 11px; }
+  @media (prefers-color-scheme: dark) {
+    .surface { fill: #1a1a19; }
+    .ring { stroke: rgba(255,255,255,0.10); }
+    .title, .panel, .value { fill: #ffffff; }
+    .subtitle, .label { fill: #c3c2b7; }
+    .delta { fill: #0ca30c; }
+    .axis { stroke: #383835; }
+    .s-redis { fill: #3987e5; }
+    .s-crab { fill: #d95926; }
+    .s-pack { fill: #199e70; }
+  }
+  text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+</style>
+
+<rect class="surface" x="0.5" y="0.5" width="719" height="463" rx="10"/>
+<rect class="ring" x="0.5" y="0.5" width="719" height="463" rx="10"/>
+<text class="title" x="24" y="32">Memória por chave com dados reais (JSON)</text>
+<text class="subtitle" x="24" y="52">300k chaves por conjunto · CrabPack treina um dicionário por prefixo e comprime valores ociosos</text>
+<rect class="s-redis" x="24" y="66" width="12" height="12" rx="3"/>
+<text class="label" x="42" y="76">Redis 8.10</text>
+<rect class="s-crab" x="136" y="66" width="12" height="12" rx="3"/>
+<text class="label" x="154" y="76">CrabCache</text>
+<rect class="s-pack" x="240" y="66" width="12" height="12" rx="3"/>
+<text class="label" x="258" y="76">CrabCache + CrabPack</text>
+<text class="panel" x="24" y="110">Sessões de usuário (298 B em média)</text>
+<text class="label" x="114" y="136.5" text-anchor="end">Redis</text>
+<path class="s-redis" d="M124.0,122.0 H542.0 Q546.0,122.0 546.0,126.0 V138.0 Q546.0,142.0 542.0,142.0 H124.0 Z"/>
+<text class="value" x="554.0" y="136.5">415 B</text>
+<text class="label" x="114" y="158.5" text-anchor="end">CrabCache</text>
+<path class="s-crab" d="M124.0,144.0 H517.6 Q521.6,144.0 521.6,148.0 V160.0 Q521.6,164.0 517.6,164.0 H124.0 Z"/>
+<text class="value" x="529.6" y="158.5">391 B<tspan class="delta" dx="8">−6%</tspan></text>
+<text class="label" x="114" y="180.5" text-anchor="end">CrabPack</text>
+<path class="s-pack" d="M124.0,166.0 H286.8 Q290.8,166.0 290.8,170.0 V182.0 Q290.8,186.0 286.8,186.0 H124.0 Z"/>
+<text class="value" x="298.8" y="180.5">164 B<tspan class="delta" dx="8">−60%</tspan></text>
+<line class="axis" x1="124" y1="118" x2="124" y2="190"/>
+<text class="panel" x="24" y="222">Produtos (282 B)</text>
+<text class="label" x="114" y="248.5" text-anchor="end">Redis</text>
+<path class="s-redis" d="M124.0,234.0 H542.0 Q546.0,234.0 546.0,238.0 V250.0 Q546.0,254.0 542.0,254.0 H124.0 Z"/>
+<text class="value" x="554.0" y="248.5">401 B</text>
+<text class="label" x="114" y="270.5" text-anchor="end">CrabCache</text>
+<path class="s-crab" d="M124.0,256.0 H502.0 Q506.0,256.0 506.0,260.0 V272.0 Q506.0,276.0 502.0,276.0 H124.0 Z"/>
+<text class="value" x="514.0" y="270.5">363 B<tspan class="delta" dx="8">−9%</tspan></text>
+<text class="label" x="114" y="292.5" text-anchor="end">CrabPack</text>
+<path class="s-pack" d="M124.0,278.0 H289.4 Q293.4,278.0 293.4,282.0 V294.0 Q293.4,298.0 289.4,298.0 H124.0 Z"/>
+<text class="value" x="301.4" y="292.5">161 B<tspan class="delta" dx="8">−60%</tspan></text>
+<line class="axis" x1="124" y1="230" x2="124" y2="302"/>
+<text class="panel" x="24" y="334">Respostas de API (316 B)</text>
+<text class="label" x="114" y="360.5" text-anchor="end">Redis</text>
+<path class="s-redis" d="M124.0,346.0 H542.0 Q546.0,346.0 546.0,350.0 V362.0 Q546.0,366.0 542.0,366.0 H124.0 Z"/>
+<text class="value" x="554.0" y="360.5">415 B</text>
+<text class="label" x="114" y="382.5" text-anchor="end">CrabCache</text>
+<path class="s-crab" d="M124.0,368.0 H514.5 Q518.5,368.0 518.5,372.0 V384.0 Q518.5,388.0 514.5,388.0 H124.0 Z"/>
+<text class="value" x="526.5" y="382.5">388 B<tspan class="delta" dx="8">−7%</tspan></text>
+<text class="label" x="114" y="404.5" text-anchor="end">CrabPack</text>
+<path class="s-pack" d="M124.0,390.0 H293.9 Q297.9,390.0 297.9,394.0 V406.0 Q297.9,410.0 293.9,410.0 H124.0 Z"/>
+<text class="value" x="305.9" y="404.5">171 B<tspan class="delta" dx="8">−59%</tspan></text>
+<line class="axis" x1="124" y1="342" x2="124" y2="414"/>
+<text class="note" x="24" y="448">Apple M1 Pro, macOS · menor é melhor · scripts/bench-compression.sh</text>
+</svg>

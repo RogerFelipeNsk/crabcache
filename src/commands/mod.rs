@@ -27,6 +27,9 @@ impl Shared {
             config.maxmemory_policy,
             config.maxmemory_samples,
         );
+        db.codec.set_enabled(config.compression);
+        db.codec.set_min_idle_secs(config.compression_min_idle);
+        db.codec.set_min_size(config.compression_min_size);
         Self {
             db,
             config,

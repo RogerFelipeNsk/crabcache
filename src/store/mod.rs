@@ -2,11 +2,13 @@
 //! accounting for `maxmemory`.
 
 pub mod chunked;
+pub mod compress;
 pub mod entry;
 pub mod shard;
 
+pub use compress::Codec;
 pub use entry::Entry;
-pub use shard::{Shard, ShardStats};
+pub use shard::{PackStats, Shard, ShardStats};
 
 use ahash::RandomState;
 use parking_lot::{Mutex, MutexGuard};
@@ -82,6 +84,16 @@ pub struct Db {
     start: Instant,
     /// Wakes the background evictor when a writer could not free enough memory in its own shard.
     pub evict_notify: Notify,
+    /// CrabPack value compression (disabled until configured).
+    pub codec: Codec,
+    sample_rng: AtomicU64,
+}
+
+/// Position of the background compressor in the keyspace.
+#[derive(Default, Debug)]
+pub struct PackCursor {
+    shard: usize,
+    pos: usize,
 }
 
 impl Db {
@@ -107,6 +119,8 @@ impl Db {
             samples: AtomicUsize::new(samples),
             start: Instant::now(),
             evict_notify: Notify::new(),
+            codec: Codec::new(false, 60, 64),
+            sample_rng: AtomicU64::new(0x2545_F491_4F6C_DD1D),
         }
     }
 
@@ -200,6 +214,98 @@ impl Db {
             stats += g.stats;
         }
         (keys, ttl, stats)
+    }
+
+    /// Compression counters summed across shards.
+    pub fn pack_summary(&self) -> PackStats {
+        let mut total = PackStats::default();
+        for i in 0..self.shard_count() {
+            total += self.lock(i).pack_stats();
+        }
+        total
+    }
+
+    /// Samples up to `n` random values for dictionary training. Returns the prefixes that now have
+    /// enough samples; the caller trains them with `codec.train` on a blocking thread.
+    pub fn pack_sample(&self, n: usize) -> Vec<compress::SampleBatch> {
+        let mut ready = Vec::new();
+        if !self.codec.enabled() {
+            return ready;
+        }
+        let secs = self.clock().secs;
+        let min_size = self.codec.min_size();
+        for _ in 0..n {
+            let r = self.sample_rng.fetch_add(0x9E37_79B9_7F4A_7C15, Relaxed);
+            let shard = (r.rotate_left(17) as usize) % self.shard_count();
+            let sample = {
+                let mut g = self.lock(shard);
+                g.random_index().and_then(|i| {
+                    let e = g.entry(i);
+                    let value = e.plain()?;
+                    (value.len() >= min_size && self.codec.wants_samples(e.key(), secs))
+                        .then(|| (e.key().to_vec(), value.to_vec()))
+                })
+            };
+            let batch = sample.and_then(|(key, value)| self.codec.offer_sample(&key, &value, secs));
+            ready.extend(batch);
+        }
+        ready
+    }
+
+    /// Compresses idle values in the next `scan` positions of the keyspace. Candidates are copied
+    /// under the shard lock, compressed outside it, and swapped in only if unchanged. Returns the
+    /// number of values packed.
+    pub fn pack_step(&self, cursor: &mut PackCursor, scan: usize) -> usize {
+        if !self.codec.enabled() || self.codec.dicts().is_empty() {
+            return 0;
+        }
+        let clock = self.clock();
+        let policy = self.policy();
+        let min_idle = self.codec.min_idle_secs().min(u32::MAX as u64) as u32;
+        let min_size = self.codec.min_size();
+        let shard = cursor.shard % self.shard_count();
+        let candidates: Vec<(usize, Vec<u8>, Vec<u8>)> = {
+            let g = self.lock(shard);
+            let end = (cursor.pos + scan).min(g.len());
+            let picked = (cursor.pos..end)
+                .filter_map(|i| {
+                    let e = g.entry(i);
+                    let value = e.plain()?;
+                    (value.len() >= min_size
+                        && shard::idle_secs(e.meta, policy, clock) >= min_idle
+                        && self.codec.dict_for_key(e.key()).is_some())
+                    .then(|| (i, e.key().to_vec(), value.to_vec()))
+                })
+                .collect();
+            if end >= g.len() {
+                cursor.shard = (shard + 1) % self.shard_count();
+                cursor.pos = 0;
+            } else {
+                cursor.pos = end;
+            }
+            picked
+        };
+        let compressed: Vec<_> = candidates
+            .into_iter()
+            .filter_map(|(i, key, value)| {
+                let dict = self.codec.dict_for_key(&key)?;
+                let c = self.codec.compress(dict, &value)?;
+                Some((i, key, value, c, dict.id))
+            })
+            .collect();
+        if compressed.is_empty() {
+            return 0;
+        }
+        let mut g = self.lock(shard);
+        let packed = compressed
+            .iter()
+            .filter(|(i, key, value, c, dict)| g.pack_at(*i, key, value, c, *dict))
+            .count();
+        self.codec
+            .stats
+            .values_packed
+            .fetch_add(packed as u64, Relaxed);
+        packed
     }
 
     pub fn dbsize(&self) -> usize {

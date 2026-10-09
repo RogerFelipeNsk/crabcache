@@ -52,6 +52,18 @@ pub struct Config {
     #[arg(long, env = "CRABCACHE_IO_CONNS_PER_THREAD", default_value_t = 32)]
     pub io_conns_per_thread: usize,
 
+    /// CrabPack: compress idle values with zstd dictionaries trained per key prefix.
+    #[arg(long, env = "CRABCACHE_COMPRESSION")]
+    pub compression: bool,
+
+    /// Seconds without access before a value may be compressed.
+    #[arg(long, env = "CRABCACHE_COMPRESSION_MIN_IDLE", default_value_t = 60)]
+    pub compression_min_idle: u64,
+
+    /// Values smaller than this many bytes are never compressed.
+    #[arg(long, env = "CRABCACHE_COMPRESSION_MIN_SIZE", default_value_t = 64)]
+    pub compression_min_size: usize,
+
     /// Largest accepted bulk string (value or key).
     #[arg(long, env = "CRABCACHE_PROTO_MAX_BULK_LEN", default_value = "512mb", value_parser = parse_mem_arg)]
     pub proto_max_bulk_len: u64,

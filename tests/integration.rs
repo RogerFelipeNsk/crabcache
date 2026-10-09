@@ -500,3 +500,85 @@ fn many_connections_are_served() {
     assert_eq!(info_field(&mut con, "connected_clients"), 501);
     let _: Value = redis::cmd("PING").query(&mut con).unwrap();
 }
+
+#[test]
+fn crabpack_compresses_idle_values_transparently() {
+    use common::{session_json, wait_for_packed};
+    let srv = TestServer::start(&["--compression", "--compression-min-idle", "0"]);
+    let mut con = srv.client();
+    const N: u64 = 3000;
+    let mut pipe = redis::pipe();
+    for i in 0..N {
+        pipe.set(format!("session:{i}"), session_json(i)).ignore();
+    }
+    let _: () = pipe.query(&mut con).unwrap();
+    let used_before = info_field(&mut con, "used_memory");
+
+    let mut raw = srv.raw();
+    let packed = wait_for_packed(&mut raw, N * 9 / 10, Duration::from_secs(30));
+    assert!(
+        packed >= N * 9 / 10,
+        "only {packed} of {N} values were compressed"
+    );
+    assert!(info_field(&mut con, "compression_dicts") >= 1);
+    let used_after = info_field(&mut con, "used_memory");
+    assert!(
+        used_after * 2 < used_before,
+        "used_memory {used_before} -> {used_after}"
+    );
+
+    // Every value reads back byte for byte, one by one and in bulk.
+    for i in 0..N {
+        let v: Vec<u8> = con.get(format!("session:{i}")).unwrap();
+        assert_eq!(v, session_json(i), "session:{i}");
+    }
+    let keys: Vec<String> = (0..100).map(|i| format!("session:{i}")).collect();
+    let vals: Vec<Vec<u8>> = con.mget(&keys).unwrap();
+    assert_eq!(vals, (0..100).map(session_json).collect::<Vec<_>>());
+
+    // Commands that read or rewrite packed values.
+    let v = session_json(1);
+    assert_eq!(con.strlen::<_, usize>("session:1").unwrap(), v.len());
+    let part: Vec<u8> = con.getrange("session:1", 2, 20).unwrap();
+    assert_eq!(part, v[2..=20]);
+    assert_eq!(
+        con.append::<_, _, usize>("session:1", "!").unwrap(),
+        v.len() + 1
+    );
+    let mut appended = v.clone();
+    appended.push(b'!');
+    assert_eq!(con.get::<_, Vec<u8>>("session:1").unwrap(), appended);
+    let _: () = con.rename("session:2", "renamed:2").unwrap();
+    assert_eq!(con.get::<_, Vec<u8>>("renamed:2").unwrap(), session_json(2));
+    let _: bool = con.expire("session:3", 1000).unwrap();
+    assert_eq!(con.get::<_, Vec<u8>>("session:3").unwrap(), session_json(3));
+    let old: Vec<u8> = redis::cmd("GETSET")
+        .arg("session:4")
+        .arg("x")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(old, session_json(4));
+    let old: Vec<u8> = redis::cmd("GETDEL")
+        .arg("session:5")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(old, session_json(5));
+    let old: Vec<u8> = redis::cmd("SET")
+        .arg("session:6")
+        .arg("y")
+        .arg("GET")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(old, session_json(6));
+    let e = con.incr::<_, _, i64>("session:7", 1).unwrap_err();
+    assert!(e.to_string().contains("not an integer"), "{e}");
+
+    // Turning compression off keeps packed values readable.
+    let _: () = redis::cmd("CONFIG")
+        .arg("SET")
+        .arg("compression")
+        .arg("no")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(con.get::<_, Vec<u8>>("session:9").unwrap(), session_json(9));
+}

@@ -79,11 +79,40 @@ O que fez a diferença (ver `docs/ARCHITECTURE.md`):
 | + mimalloc devolvendo páginas livres na hora | 71 | 165 |
 | + entrada de 16 B e entradas em blocos fixos | **63** | **159** |
 
+## 4. CrabPack: dados reais em JSON
+
+`scripts/bench-compression.sh` gera três conjuntos realistas com `examples/dataset.rs` (sessões de
+usuário, produtos de e-commerce e respostas de API, em JSON com a variedade típica de ids, nomes,
+datas e tokens) e carrega 300 mil chaves de cada em instâncias novas. O CrabPack roda com
+`--compression --compression-min-idle 0`; a medição é feita depois que 99% das chaves foram comprimidas.
+
+| Conjunto | Valor médio | Redis 8.10 | CrabCache | **CrabCache + CrabPack** | Taxa |
+|---|---|---|---|---|---|
+| Sessões | 298 B | 415 B/chave | 391 B | **164 B (39% do Redis)** | 3.61x |
+| Produtos | 282 B | 401 B | 363 B | **161 B (40%)** | 4.07x |
+| Respostas de API | 316 B | 415 B | 388 B | **171 B (41%)** | 3.59x |
+
+Pico de memória durante a compactação inicial: 510–545 B/chave, ou seja, ~1.3–1.4x o tamanho sem
+compressão. A memória volta a cair quando as páginas antigas ficam livres.
+
+**Leitura com todas as chaves comprimidas** (o pior caso; com o padrão de 60 s, só chaves frias ficam
+comprimidas). GET aleatório nas sessões, 1 thread de servidor cada, `memtier_benchmark` 4×12 clientes:
+
+| | Sem pipeline | Pipeline 16 |
+|---|---|---|
+| Redis 8.10 | 132.2k ops/s · p99 0.57 ms | 1.20M · p99 0.86 ms |
+| CrabCache, sem compressão | 133.5k · p99 0.48 ms | 1.61M · p99 0.59 ms |
+| CrabCache, comprimido | 132.8k · p99 0.50 ms | 1.06M · p99 0.86 ms |
+
+Sem pipeline, o custo da descompressão não aparece. Com pipeline 16, ela tira 34% do throughput do
+CrabCache e o deixa 12% abaixo do Redis nesse cenário.
+
 ## Corretude
 
 Throughput só vale com respostas certas. Antes de qualquer medição:
 
-* `tests/differential.rs` compara respostas byte a byte com um Redis real. 750 mil comandos aleatórios
+* `tests/differential.rs` compara respostas byte a byte com um Redis real, inclusive 5.000 comandos
+  aleatórios sobre valores comprimidos pelo CrabPack. 750 mil comandos aleatórios
   (500 seeds) bateram com o Redis 8.10.2 no Linux (imagem oficial) e no macOS (Homebrew).
 * `tests/integration.rs` valida, com o cliente oficial `redis` do Rust, valores binários, 10.000
   comandos em pipeline, contadores atômicos com 8 clientes concorrentes, expiração ativa, eviction e
@@ -102,4 +131,5 @@ target/release/crabcache --port 7379 --threads 1 &   # mesmo número de núcleos
 scripts/bench-1cpu.sh 7379 6379
 
 scripts/bench-memory.sh                              # sobe as próprias instâncias
+scripts/bench-compression.sh                         # CrabPack; sobe as próprias instâncias
 ```

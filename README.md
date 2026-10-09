@@ -4,7 +4,7 @@
 
 <p align="center">
   Servidor de cache em memória escrito em Rust, compatível com o protocolo do Redis.<br>
-  Mais eficiente por núcleo e mais econômico em memória que o Redis 8.10, medido na mesma máquina.
+  Mais eficiente por núcleo que o Redis 8.10 e, com o CrabPack, até 60% mais econômico em memória.
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 O CrabCache fala RESP2 e RESP3, então `redis-cli`, `redis-benchmark`, `memtier_benchmark` e as
 bibliotecas cliente do Redis funcionam sem nenhuma adaptação.
 
-> **Status:** v0.2, reescrita completa. Só strings e sem persistência; ainda não é para produção.
+> **Status:** v0.3. Projeto educacional. Só strings e sem persistência; ainda não é para produção.
 > A versão 0.1 está na tag [`legacy-v1`](https://github.com/RogerFelipeNsk/crabcache/tree/legacy-v1);
 > veja a errata no [CHANGELOG](CHANGELOG.md) e o guia de [migração](#migrando-da-01).
 
@@ -44,6 +44,44 @@ Com a configuração padrão, usando o `redis-benchmark` (valores de 100 B):
 
 Com 50 conexões sem pipeline, o próprio `redis-benchmark` (single-thread) limita os dois em ~150k;
 a diferença aparece na latência.
+
+## CrabPack: compressão que aprende com os seus dados
+
+Valores de cache costumam ser pequenos (centenas de bytes) e parecidos entre si: mesmos campos, mesmos
+formatos, mesmos enums. Sozinho, cada valor comprime mal; o zstd comum reduz só 1.2–1.5x. O CrabPack
+aproveita o que os valores têm **em comum**:
+
+1. Agrupa as chaves pelo prefixo (`user:`, `session:`, `product:`…) e coleta amostras em background.
+2. Treina um dicionário zstd por prefixo e só o mantém se ele comprimir amostras separadas em pelo
+   menos 25%.
+3. Comprime os valores que ficaram ociosos (`--compression-min-idle`, 60 s por padrão). Chaves acessadas
+   com frequência continuam sem compressão, e qualquer escrita grava o valor sem compressão de novo.
+4. Descomprime de forma transparente: o `GET` devolve exatamente os bytes gravados, e nenhum cliente
+   muda nada.
+
+<p align="center"><img src="docs/img/bench-crabpack.svg" alt="Memória por chave com dados reais em JSON: sessões, Redis 415 B, CrabCache 391 B, CrabCache com CrabPack 164 B (−60%); produtos, 401 B, 363 B e 161 B (−60%); respostas de API, 415 B, 388 B e 171 B (−59%)." width="720"></p>
+
+Ative com `--compression` (ou `CONFIG SET compression yes`) e acompanhe em `INFO compression`:
+
+```bash
+crabcache --compression
+redis-cli info compression
+# compression_dicts:1
+# compressed_keys:300000
+# compression_ratio:3.61
+# dict0:prefix=session:,trained_ratio=3.61
+```
+
+**Custos, medidos com todas as chaves comprimidas (o pior caso), 1 thread:**
+* **Leitura:** sem pipeline, o GET de um valor comprimido empata com o Redis (133k contra 132k ops/s).
+  Com pipeline 16, a descompressão pesa: 1.06M ops/s, contra 1.20M do Redis e 1.61M do CrabCache sem
+  compressão.
+* **Memória durante a compactação inicial:** enquanto os valores são comprimidos pela primeira vez, a
+  memória física sobe temporariamente (até ~1.3x o tamanho sem compressão) antes de cair.
+* **Dados aleatórios ou já comprimidos** (imagens, tokens): o dicionário é rejeitado e nada muda.
+
+Por isso a compressão ainda é opcional nesta versão. Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#compressão-crabpack)
+e números completos em [docs/BENCHMARKS.md](docs/BENCHMARKS.md#4-crabpack-dados-reais-em-json).
 
 ## Início rápido
 
@@ -120,9 +158,12 @@ Toda opção pode vir da linha de comando ou de variável de ambiente (`crabcach
 | `--maxclients` | `CRABCACHE_MAXCLIENTS` | `10000` | |
 | `--proto-max-bulk-len` | `CRABCACHE_PROTO_MAX_BULK_LEN` | `512mb` | |
 | `--client-query-buffer-limit` | `CRABCACHE_CLIENT_QUERY_BUFFER_LIMIT` | `1gb` | |
+| `--compression` | `CRABCACHE_COMPRESSION` | desligado | Ativa o CrabPack |
+| `--compression-min-idle` | `CRABCACHE_COMPRESSION_MIN_IDLE` | `60` | Segundos sem acesso antes de comprimir |
+| `--compression-min-size` | `CRABCACHE_COMPRESSION_MIN_SIZE` | `64` | Valores menores nunca são comprimidos |
 
-`maxmemory`, `maxmemory-policy` e `maxmemory-samples` também podem mudar em tempo de execução com
-`CONFIG SET`. Para usar como cache com limite de memória:
+`maxmemory`, `maxmemory-policy`, `maxmemory-samples`, `compression`, `compression-min-idle` e
+`compression-min-size` também podem mudar em tempo de execução com `CONFIG SET`. Para usar como cache com limite de memória:
 
 ```bash
 crabcache --maxmemory 2gb --maxmemory-policy allkeys-lfu
@@ -152,6 +193,8 @@ replicação.
 * **Armazenamento compacto:** cada chave ocupa uma entrada de 16 bytes, mais uma única alocação com
   chave, valor e TTL (que só existe se a chave expirar). As entradas ficam em blocos fixos, sem a folga
   e as cópias de um vetor que cresce.
+* **CrabPack:** dicionários zstd treinados por prefixo de chave comprimem valores ociosos; a entrada
+  marca o valor como comprimido e guarda o dicionário e o tamanho original.
 * **Parser incremental** com os mesmos limites de protocolo do Redis, para que um cliente lento ou
   malicioso não consuma CPU nem memória sem limite.
 
@@ -176,8 +219,8 @@ cargo nextest run      # ou: cargo test
 O CI roda fmt, clippy com `-D warnings`, todos os testes em Linux e macOS, `cargo audit` e um teste da
 imagem Docker. Nenhum passo tolera falha.
 
-Para reproduzir os benchmarks: `scripts/bench.sh`, `scripts/bench-1cpu.sh` e
-`scripts/bench-memory.sh` (instruções em [docs/BENCHMARKS.md](docs/BENCHMARKS.md)).
+Para reproduzir os benchmarks: `scripts/bench.sh`, `scripts/bench-1cpu.sh`,
+`scripts/bench-memory.sh` e `scripts/bench-compression.sh` (instruções em [docs/BENCHMARKS.md](docs/BENCHMARKS.md)).
 
 ## Migrando da 0.1
 
@@ -196,8 +239,9 @@ A 0.2 é incompatível com a 0.1:
 
 1. Tipos de dados: hashes, listas, sets e sorted sets.
 2. Persistência (snapshot + log) e `MULTI`/`EXEC`.
-3. Armazenamento ainda mais compacto: alocação em slabs por shard e valores pequenos inline.
-4. Formatos de valor compactos (como TOON e compressão) como diferencial.
+3. CrabPack fase 2: retreino de dicionários quando os dados mudam, descompressão mais rápida e um
+   formato estruturado para JSON (consultas como `JSON.GET user:1 $.email` sem descomprimir tudo).
+4. Armazenamento ainda mais compacto: alocação em slabs por shard e valores pequenos inline.
 5. Benchmarks em Linux com cliente e servidor em máquinas separadas, e migração de conexões entre
    threads.
 

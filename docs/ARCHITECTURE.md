@@ -45,10 +45,10 @@ threads de I/O (1 por núcleo), cada uma com seu runtime tokio e seu kqueue/epol
 * `Db` faz hash das chaves com `ahash` e semente aleatória por processo (resistente a hash flooding).
   O shard é escolhido pelos bits 40+ do hash, independentes dos bits que o `hashbrown` usa para
   buckets e tags. O padrão é 64 shards por thread, cada mutex na sua própria linha de cache de 128 bytes.
-* **`Entry` tem 16 bytes**: um ponteiro para uma única alocação, o tamanho da chave (o bit mais alto
-  indica se há TTL) e 32 bits de metadados de eviction. A alocação contém
-  `[tamanho do valor: u32][expiração: u64, só se houver TTL][chave][valor]`. Chaves sem TTL não pagam
-  pela expiração. Fora as duas chamadas de configuração do mimalloc em `src/main.rs`, este é o único
+* **`Entry` tem 16 bytes**: um ponteiro para uma única alocação, o tamanho da chave (os dois bits mais
+  altos indicam TTL e compressão) e 32 bits de metadados de eviction. A alocação contém
+  `[tamanho armazenado: u32][expiração: u64, só com TTL][dicionário: u32, tamanho original: u32, só se
+  comprimido][chave][valor]`. Campos opcionais não custam nada quando ausentes. Fora as duas chamadas de configuração do mimalloc em `src/main.rs`, este é o único
   código `unsafe` do projeto, isolado em `src/store/entry.rs`.
 * **Entradas em blocos fixos de 256** (`src/store/chunked.rs`, 4 KB cada). Um `Vec` comum realoca e
   copia ao crescer, deixando folga e buffers antigos; blocos fixos nunca se movem. A posição continua
@@ -60,6 +60,37 @@ threads de I/O (1 por núcleo), cada uma com seu runtime tokio e seu kqueue/epol
   liberada quando o índice crescia; isso custava ~14 bytes por chave.
 
 Custo medido por chave com valores de 100 B: 159 bytes, contra 184 do Redis 8.10 (ver `BENCHMARKS.md`).
+
+## Compressão (CrabPack)
+
+Valores de cache pequenos comprimem mal sozinhos, mas valores com o mesmo prefixo de chave
+compartilham estrutura. O CrabPack (`src/store/compress.rs`) treina um dicionário zstd por prefixo e
+comprime cada valor individualmente com ele. Medido em JSON de ~300 B, o zstd comum dá 1.2–1.5x e o zstd
+com um dicionário de 16 KB dá 3.6–4.1x.
+
+* **Prefixo:** tudo até o primeiro `:` (nos primeiros 32 bytes); chaves sem `:` formam um grupo próprio.
+* **Amostragem:** a task de background lê entradas aleatórias e guarda até 1.000 amostras (ou 256 KB)
+  por prefixo.
+* **Treino:** roda numa thread de bloqueio, fora das threads de I/O. Quatro quintos das amostras
+  treinam o dicionário e o quinto restante mede o ganho; abaixo de 1.25x o dicionário é descartado e o
+  prefixo só é amostrado de novo após 10 minutos. No máximo 64 dicionários, que nunca são liberados;
+  por isso as leituras os acessam sem lock e sem contagem de referência.
+* **Compactação:** um cursor percorre os shards. Entradas sem compressão, com pelo menos
+  `compression-min-size` bytes, ociosas há `compression-min-idle` segundos (pelo relógio LRU ou LFU da
+  eviction) e com dicionário para o prefixo são copiadas sob o lock, comprimidas fora dele e trocadas
+  só se a entrada não mudou nesse meio-tempo. Só se troca se a compressão economizar pelo menos 1/8.
+* **Frame enxuto:** a entrada já guarda o dicionário e o tamanho original, então o frame zstd omite o
+  magic number, o id do dicionário e o tamanho (~7 bytes por valor).
+* **Leitura:** os comandos acessam valores por `Codec::with_value`, que descomprime num buffer da thread
+  quando necessário. `STRLEN` e `GETRANGE` usam o tamanho original do cabeçalho; `APPEND`, `SET` e
+  `INCR` gravam o valor sem compressão; `RENAME` e `EXPIRE` mantêm a compressão.
+* **Contabilidade:** `used_memory` e `maxmemory` usam o tamanho comprimido. Cada shard mantém o total
+  de chaves comprimidas, bytes originais e bytes armazenados, que aparecem em `INFO compression`.
+
+Limitações desta versão: um dicionário não é retreinado se os dados mudarem; uma chave comprimida
+que volta a ser lida com frequência continua comprimida até ser reescrita; e, durante a compactação
+inicial, a memória física sobe temporariamente antes de cair, porque os blocos liberados só voltam ao
+sistema quando a página inteira fica livre.
 
 ## Expiração
 

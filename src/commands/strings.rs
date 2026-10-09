@@ -2,10 +2,19 @@
 
 use super::Ctx;
 use crate::protocol::{Args, reply};
-use crate::store::{Clock, Entry, ShardGuard, entry::ENTRY_OVERHEAD};
+use crate::store::{Clock, Db, Entry, ShardGuard, entry::ENTRY_OVERHEAD};
 use crate::util::{eq_ic, parse_i64};
 
 const MAX_STRING: usize = 512 * 1024 * 1024;
+
+const CORRUPT: &str = "ERR stored value could not be decompressed";
+
+/// Writes the value of `e` as a bulk reply, decompressing it if it is stored packed.
+fn reply_value(db: &Db, out: &mut Vec<u8>, e: &Entry) {
+    if db.codec.with_value(e, |v| reply::bulk(out, v)).is_err() {
+        reply::error(out, CORRUPT);
+    }
+}
 
 fn oom(out: &mut Vec<u8>) {
     reply::error(
@@ -132,7 +141,7 @@ pub fn get(c: &mut Ctx, args: &Args) {
             g.stats.hits += 1;
             let p = g.policy();
             g.touch(i, p, c.clock);
-            reply::bulk(c.out, g.entry(i).value());
+            reply_value(c.db, c.out, g.entry(i));
         }
         None => {
             g.stats.misses += 1;
@@ -185,7 +194,7 @@ pub fn set(c: &mut Ctx, args: &Args) {
         let existing = g.lookup(h, key, c.clock.ms);
         if get {
             match existing {
-                Some(i) => reply::bulk(c.out, g.entry(i).value()),
+                Some(i) => reply_value(c.db, c.out, g.entry(i)),
                 None => reply::null(c.out, c.session.resp3),
             }
         }
@@ -247,7 +256,7 @@ pub fn getset(c: &mut Ctx, args: &Args) {
         return oom(c.out);
     }
     match g.lookup(h, key, c.clock.ms) {
-        Some(i) => reply::bulk(c.out, g.entry(i).value()),
+        Some(i) => reply_value(c.db, c.out, g.entry(i)),
         None => reply::null(c.out, c.session.resp3),
     }
     store(&mut g, h, e, false, c.clock);
@@ -260,7 +269,7 @@ pub fn getdel(c: &mut Ctx, args: &Args) {
         Some(i) => {
             g.stats.hits += 1;
             let e = g.remove_at(i, h);
-            reply::bulk(c.out, e.value());
+            reply_value(c.db, c.out, &e);
         }
         None => {
             g.stats.misses += 1;
@@ -303,7 +312,7 @@ pub fn getex(c: &mut Ctx, args: &Args) {
         None => None,
     };
     g.stats.hits += 1;
-    reply::bulk(c.out, g.entry(i).value());
+    reply_value(c.db, c.out, g.entry(i));
     match at {
         Some(Deadline::Past) => {
             g.remove_at(i, h);
@@ -323,7 +332,7 @@ pub fn mget(c: &mut Ctx, args: &Args) {
                 g.stats.hits += 1;
                 let p = g.policy();
                 g.touch(i, p, c.clock);
-                reply::bulk(c.out, g.entry(i).value());
+                reply_value(c.db, c.out, g.entry(i));
             }
             None => {
                 g.stats.misses += 1;
@@ -411,8 +420,10 @@ fn incr_by(c: &mut Ctx, key: &[u8], delta: i64) {
     let mut buf = itoa::Buffer::new();
     match g.lookup(h, key, c.clock.ms) {
         Some(i) => {
-            let Some(cur) = parse_i64(g.entry(i).value()) else {
-                return reply::not_integer(c.out);
+            let cur = match c.db.codec.with_value(g.entry(i), parse_i64) {
+                Ok(Some(cur)) => cur,
+                Ok(None) => return reply::not_integer(c.out),
+                Err(_) => return reply::error(c.out, CORRUPT),
             };
             let Some(new) = cur.checked_add(delta) else {
                 return reply::error(c.out, "ERR increment or decrement would overflow");
@@ -461,16 +472,22 @@ pub fn append(c: &mut Ctx, args: &Args) {
     }
     match g.lookup(h, key, c.clock.ms) {
         Some(i) => {
-            let old = g.entry(i).value();
-            if old.len() + add.len() > MAX_STRING {
+            let old_len = g.entry(i).value_len();
+            if old_len + add.len() > MAX_STRING {
                 return reply::error(
                     c.out,
                     "ERR string exceeds maximum allowed size (proto-max-bulk-len)",
                 );
             }
-            let mut v = Vec::with_capacity(old.len() + add.len());
-            v.extend_from_slice(old);
-            v.extend_from_slice(add);
+            let joined = c.db.codec.with_value(g.entry(i), |old| {
+                let mut v = Vec::with_capacity(old.len() + add.len());
+                v.extend_from_slice(old);
+                v.extend_from_slice(add);
+                v
+            });
+            let Ok(v) = joined else {
+                return reply::error(c.out, CORRUPT);
+            };
             g.set_value(i, &v);
             reply::int(c.out, v.len() as i64);
         }
@@ -487,7 +504,7 @@ pub fn strlen(c: &mut Ctx, args: &Args) {
     let (mut g, h) = c.db.lock_key(key);
     let n = g
         .lookup(h, key, c.clock.ms)
-        .map_or(0, |i| g.entry(i).value().len());
+        .map_or(0, |i| g.entry(i).value_len());
     reply::int(c.out, n as i64);
 }
 
@@ -500,8 +517,7 @@ pub fn getrange(c: &mut Ctx, args: &Args) {
     let Some(i) = g.lookup(h, key, c.clock.ms) else {
         return reply::bulk(c.out, b"");
     };
-    let v = g.entry(i).value();
-    let len = v.len() as i64;
+    let len = g.entry(i).value_len() as i64;
     if start < 0 && end < 0 && start > end {
         return reply::bulk(c.out, b"");
     }
@@ -519,5 +535,12 @@ pub fn getrange(c: &mut Ctx, args: &Args) {
     if start > end || len == 0 {
         return reply::bulk(c.out, b"");
     }
-    reply::bulk(c.out, &v[start as usize..=end as usize]);
+    let range = start as usize..=end as usize;
+    if c.db
+        .codec
+        .with_value(g.entry(i), |v| reply::bulk(c.out, &v[range]))
+        .is_err()
+    {
+        reply::error(c.out, CORRUPT);
+    }
 }

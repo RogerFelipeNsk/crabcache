@@ -12,7 +12,7 @@
 
 mod common;
 
-use common::{Raw, Rng, TestServer, array_items};
+use common::{Raw, Rng, TestServer, array_items, session_json, wait_for_packed};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -347,6 +347,72 @@ fn commands_match_redis() {
     for resp3 in [false, true] {
         sequential_commands_match(redis_addr, resp3);
         pipelined_batches_match(redis_addr, resp3);
+    }
+    packed_values_match(redis_addr);
+}
+
+/// CrabPack: values compressed in the background must behave exactly like Redis' plain values, also
+/// while the compressor keeps re-packing keys that commands just rewrote.
+fn packed_values_match(redis_addr: SocketAddr) {
+    const N: u64 = 2000;
+    let srv = TestServer::start(&["--compression", "--compression-min-idle", "0"]);
+    let (mut redis, mut crab) = connect_pair(redis_addr, &srv, false);
+    let mut wire = Vec::new();
+    for i in 0..N {
+        wire.extend(Raw::encode(&[
+            b"SET",
+            format!("session:{i}").as_bytes(),
+            &session_json(i),
+        ]));
+    }
+    for conn in [&mut redis, &mut crab] {
+        conn.send(&wire);
+        for _ in 0..N {
+            assert_eq!(conn.read_reply().unwrap(), b"+OK\r\n");
+        }
+    }
+    let packed = wait_for_packed(&mut crab, N * 9 / 10, Duration::from_secs(30));
+    assert!(
+        packed >= N * 9 / 10,
+        "only {packed} of {N} values were compressed"
+    );
+
+    let mut r = Rng(0xC0FF_EE11);
+    let key = |r: &mut Rng| format!("session:{}", r.below(N + 50)).into_bytes();
+    let int = |r: &mut Rng| {
+        r.pick(&["0", "5", "-1", "-20", "40", "1000", "-1000"])
+            .as_bytes()
+            .to_vec()
+    };
+    let s = |x: &str| x.as_bytes().to_vec();
+    for step in 0..5000 {
+        let cmd: Vec<Vec<u8>> = match r.below(16) {
+            0..=4 => vec![s("GET"), key(&mut r)],
+            5 => vec![s("MGET"), key(&mut r), key(&mut r), key(&mut r)],
+            6 => vec![s("STRLEN"), key(&mut r)],
+            7 => vec![s("GETRANGE"), key(&mut r), int(&mut r), int(&mut r)],
+            8 => vec![s("APPEND"), key(&mut r), s(",\"x\":1")],
+            9 => vec![s("GETSET"), key(&mut r), session_json(r.next())],
+            10 => vec![s("GETDEL"), key(&mut r)],
+            11 => vec![s("SET"), key(&mut r), session_json(r.next()), s("GET")],
+            12 => vec![s("RENAME"), key(&mut r), key(&mut r)],
+            13 => vec![
+                s(r.pick(&["EXISTS", "TYPE", "INCR", "PERSIST"])),
+                key(&mut r),
+            ],
+            14 => vec![s("EXPIRE"), key(&mut r), s("100000")],
+            _ => vec![s("GETEX"), key(&mut r), s("PERSIST")],
+        };
+        let args: Vec<&[u8]> = cmd.iter().map(Vec::as_slice).collect();
+        let a = redis.cmd(&args);
+        let b = crab.cmd(&args);
+        assert!(
+            a == b,
+            "packed step {step}: {}\n  redis:     {:?}\n  crabcache: {:?}",
+            show(&cmd),
+            String::from_utf8_lossy(&a),
+            String::from_utf8_lossy(&b)
+        );
     }
 }
 
