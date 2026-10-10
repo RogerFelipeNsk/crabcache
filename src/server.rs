@@ -365,6 +365,9 @@ pub fn log_startup(config: &Config, addr: SocketAddr) {
         shards = config.shard_count(),
         maxmemory = config.maxmemory,
         policy = config.maxmemory_policy.name(),
+        compression = config.compression,
+        compression_min_idle = config.compression_min_idle,
+        compression_min_size = config.compression_min_size,
         "crabcache ready"
     );
     if !addr.ip().is_loopback() && config.requirepass.is_none() {

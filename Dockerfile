@@ -9,6 +9,10 @@ RUN cargo build --release --locked \
 
 # Distroless: no shell or package manager, runs as an unprivileged user.
 FROM gcr.io/distroless/cc-debian12:nonroot
+LABEL org.opencontainers.image.title="CrabCache" \
+      org.opencontainers.image.description="Redis-compatible cache with optional CrabPack dictionary compression" \
+      org.opencontainers.image.source="https://github.com/RogerFelipeNsk/crabcache" \
+      org.opencontainers.image.licenses="MIT"
 COPY --from=build /crabcache /usr/local/bin/crabcache
 # Listen on all interfaces inside the container. Set CRABCACHE_REQUIREPASS when the port is reachable
 # from outside the host.

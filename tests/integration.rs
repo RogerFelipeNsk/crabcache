@@ -504,7 +504,7 @@ fn many_connections_are_served() {
 #[test]
 fn crabpack_compresses_idle_values_transparently() {
     use common::{session_json, wait_for_packed};
-    let srv = TestServer::start(&["--compression", "--compression-min-idle", "0"]);
+    let srv = TestServer::start(&["--compression-min-idle", "0"]);
     let mut con = srv.client();
     const N: u64 = 3000;
     let mut pipe = redis::pipe();
@@ -513,13 +513,16 @@ fn crabpack_compresses_idle_values_transparently() {
     }
     let _: () = pipe.query(&mut con).unwrap();
     let used_before = info_field(&mut con, "used_memory");
+    let _: () = redis::cmd("CONFIG")
+        .arg("SET")
+        .arg("compression")
+        .arg("yes")
+        .query(&mut con)
+        .unwrap();
 
     let mut raw = srv.raw();
-    let packed = wait_for_packed(&mut raw, N * 9 / 10, Duration::from_secs(30));
-    assert!(
-        packed >= N * 9 / 10,
-        "only {packed} of {N} values were compressed"
-    );
+    let packed = wait_for_packed(&mut raw, N, Duration::from_secs(30));
+    assert!(packed == N, "only {packed} of {N} values were compressed");
     assert!(info_field(&mut con, "compression_dicts") >= 1);
     let used_after = info_field(&mut con, "used_memory");
     assert!(
@@ -581,4 +584,98 @@ fn crabpack_compresses_idle_values_transparently() {
         .query(&mut con)
         .unwrap();
     assert_eq!(con.get::<_, Vec<u8>>("session:9").unwrap(), session_json(9));
+}
+
+#[test]
+fn absolute_expiry_keeps_exact_deadlines_through_string_operations() {
+    let srv = TestServer::start(&[]);
+    let mut con = srv.client();
+    let deadline = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64
+        + 120_000;
+    let _: () = redis::cmd("SET")
+        .arg("k")
+        .arg("value")
+        .arg("PXAT")
+        .arg(deadline)
+        .query(&mut con)
+        .unwrap();
+    for operation in ["initial", "append", "rename", "keepttl"] {
+        match operation {
+            "append" => {
+                let _: usize = con.append("k", "!").unwrap();
+            }
+            "rename" => {
+                let _: () = con.rename("k", "moved").unwrap();
+                let _: () = con.rename("moved", "k").unwrap();
+            }
+            "keepttl" => {
+                let _: () = redis::cmd("SET")
+                    .arg("k")
+                    .arg("new")
+                    .arg("KEEPTTL")
+                    .query(&mut con)
+                    .unwrap();
+            }
+            _ => {}
+        }
+        let actual: u64 = redis::cmd("PEXPIRETIME").arg("k").query(&mut con).unwrap();
+        assert_eq!(actual, deadline, "{operation}");
+        let seconds: u64 = redis::cmd("EXPIRETIME").arg("k").query(&mut con).unwrap();
+        assert_eq!(seconds, deadline / 1000, "{operation}");
+    }
+    let _: () = con.set("k", "plain").unwrap();
+    assert_eq!(con.pttl::<_, i64>("k").unwrap(), -1);
+}
+
+#[test]
+fn packed_binary_values_keep_expiry_and_survive_flush_and_reload() {
+    use common::{session_json, wait_for_packed};
+    let srv = TestServer::start(&["--compression", "--compression-min-idle", "0"]);
+    let mut con = srv.client();
+    const N: u64 = 1500;
+    let deadline = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64
+        + 120_000;
+    let value = |i| {
+        let mut bytes = session_json(i);
+        bytes.extend_from_slice(b"\0\xff\xfe\r\n$-1\r\n");
+        bytes
+    };
+    for round in 0..2 {
+        let mut pipe = redis::pipe();
+        for i in 0..N {
+            pipe.cmd("SET")
+                .arg(format!("binary:{i}"))
+                .arg(value(i + round * N))
+                .arg("PXAT")
+                .arg(deadline)
+                .ignore();
+        }
+        let _: () = pipe.query(&mut con).unwrap();
+        assert_eq!(
+            wait_for_packed(&mut srv.raw(), N, Duration::from_secs(30)),
+            N
+        );
+        for i in 0..N {
+            let key = format!("binary:{i}");
+            assert_eq!(con.get::<_, Vec<u8>>(&key).unwrap(), value(i + round * N));
+            assert_eq!(
+                redis::cmd("PEXPIRETIME")
+                    .arg(&key)
+                    .query::<u64>(&mut con)
+                    .unwrap(),
+                deadline
+            );
+        }
+        let _: () = redis::cmd("FLUSHALL").query(&mut con).unwrap();
+        assert_eq!(info_field(&mut con, "compressed_keys"), 0);
+        assert_eq!(info_field(&mut con, "compressed_original_bytes"), 0);
+        assert_eq!(info_field(&mut con, "compressed_stored_bytes"), 0);
+        assert_eq!(redis::cmd("DBSIZE").query::<u64>(&mut con).unwrap(), 0);
+    }
 }

@@ -1,0 +1,86 @@
+   Compiling crabcache v0.3.0 (/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache)
+    Finished `release` profile [optimized + debuginfo] target(s) in 21.37s
+     Running unittests src/lib.rs (target/release/deps/crabcache-df94310ebfd5668f)
+
+running 32 tests
+test protocol::parser::tests::binary_safe_bulk ... ok
+test protocol::parser::tests::empty_and_negative_multibulk_are_skipped ... ok
+test protocol::parser::tests::reports_needed_size_for_large_bulk ... ok
+test protocol::parser::tests::inline_with_quotes_and_escapes ... ok
+test server::tests::packs_connections_before_spreading ... ok
+test protocol::parser::tests::inline_scan_is_incremental ... ok
+test protocol::parser::tests::oversized_requests_are_rejected_without_newline ... ok
+test store::chunked::tests::drains_to_empty ... ok
+test protocol::parser::tests::protocol_errors ... ok
+test store::compress::tests::prefixes ... ok
+test store::chunked::tests::matches_vec_semantics ... ok
+test store::compress::tests::unknown_dictionary_is_reported_not_panicking ... ok
+test store::entry::tests::accessors_and_mutation ... ok
+test store::entry::tests::is_sixteen_bytes ... ok
+test store::entry::tests::memory_usage_counts_optional_fields_only_when_present ... ok
+test store::entry::tests::packed_entries_keep_their_header_through_every_mutation ... ok
+test protocol::parser::tests::multibulk_any_split_gives_same_commands ... ok
+test store::compress::tests::sampler_hands_over_a_batch_once ... ok
+test store::shard::tests::lazy_and_active_expiry ... ok
+test store::shard::tests::persist_leaves_stale_deadline_harmless ... ok
+test store::shard::tests::expiry_heap_is_compacted ... ok
+test util::tests::globs ... ok
+test util::tests::memory_sizes ... ok
+test util::tests::strict_integers ... ok
+test store::shard::tests::lru_eviction_prefers_old_entries ... ok
+test store::tests::noeviction_rejects_writes_over_limit ... ok
+test store::tests::memory_accounting_tracks_writes_and_flush ... ok
+test store::shard::tests::insert_overwrite_remove_keep_index_consistent ... ok
+test store::shard::tests::lfu_counter_grows_logarithmically_and_decays ... ok
+test store::compress::tests::rejects_dictionaries_that_do_not_help ... ok
+test store::compress::tests::trains_compresses_and_round_trips ... ok
+test store::tests::eviction_keeps_memory_near_limit ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/main.rs (target/release/deps/crabcache-3545242f99b73fda)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/differential.rs (target/release/deps/differential-2431cd137f52965d)
+
+running 1 test
+test commands_match_redis ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.78s
+
+     Running tests/integration.rs (target/release/deps/integration-208e13eadbd82525)
+
+running 21 tests
+test inline_commands_work ... ok
+test incr_errors ... ok
+test config_set_and_get ... ok
+test newline_flood_is_rejected_fast_without_spinning ... ok
+test pipelined_batch_replies_in_order ... ok
+test protocol_error_replies_and_closes ... ok
+test query_buffer_limit_closes_hoarding_clients ... ok
+test requirepass_gates_commands ... ok
+test resp3_after_hello_3 ... ok
+test set_options_and_ttl ... ok
+test unknown_command_and_arity_messages_match_redis ... ok
+test values_are_binary_safe_and_keep_spaces_and_protocol_words ... ok
+test overwrite_returns_latest_value ... ok
+test mset_mget_rename_across_shards ... ok
+test maxmemory_noeviction_rejects_writes_but_allows_reads ... ok
+test many_connections_are_served ... ok
+test counters_are_atomic_across_concurrent_clients ... ok
+test keys_and_scan_see_every_key ... ok
+test keys_expire_lazily_and_actively ... ok
+test maxmemory_with_eviction_stays_under_limit ... ok
+test crabpack_compresses_idle_values_transparently ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.53s
+
+     Running unittests examples/dataset.rs (target/release/examples/dataset-bc0df1a370d3991d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

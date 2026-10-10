@@ -1,0 +1,525 @@
+{
+  "metadata": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "mode": "default",
+    "seconds": 10,
+    "repeats": 3,
+    "memory_metric": "physical_footprint",
+    "git_commit": "9fbe8f0260f2f216f8d0210d0d04e65828116b36",
+    "git_dirty": true,
+    "binary_sha256": "61036a028b8827dfde7648cc18c4ae4ffebff1ca3eb6d90b0b061ebceb5ec448",
+    "cpu_model": "Apple M1 Pro",
+    "memory_bytes": 17179869184,
+    "redis": "Redis server v=8.10.2 sha=00000000:1 malloc=libc bits=64 build=764b3e45065a66fb",
+    "crabcache": "crabcache 0.3.0",
+    "redis_benchmark": "redis-benchmark 8.10.2"
+  },
+  "results": [
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 1,
+      "clients": 1,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 38454.14,
+        "p50_ms": 0.023,
+        "p99_ms": 0.055
+      },
+      "GET": {
+        "ops_s": 39564.79,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 1,
+      "clients": 1,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 40233.35,
+        "p50_ms": 0.023,
+        "p99_ms": 0.055
+      },
+      "GET": {
+        "ops_s": 41186.16,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 2,
+      "clients": 1,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 41347.95,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      },
+      "GET": {
+        "ops_s": 41814.76,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 2,
+      "clients": 1,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 38910.51,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      },
+      "GET": {
+        "ops_s": 39285.01,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 3,
+      "clients": 1,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 38850.04,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      },
+      "GET": {
+        "ops_s": 39416.63,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 3,
+      "clients": 1,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 41203.13,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      },
+      "GET": {
+        "ops_s": 41126.88,
+        "p50_ms": 0.023,
+        "p99_ms": 0.047
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 1,
+      "clients": 50,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 117226.41,
+        "p50_ms": 0.271,
+        "p99_ms": 0.599
+      },
+      "GET": {
+        "ops_s": 129023.93,
+        "p50_ms": 0.207,
+        "p99_ms": 0.567
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 1,
+      "clients": 50,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 130157.49,
+        "p50_ms": 0.183,
+        "p99_ms": 0.367
+      },
+      "GET": {
+        "ops_s": 129015.61,
+        "p50_ms": 0.183,
+        "p99_ms": 0.359
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 2,
+      "clients": 50,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 125070.35,
+        "p50_ms": 0.191,
+        "p99_ms": 0.407
+      },
+      "GET": {
+        "ops_s": 130335.61,
+        "p50_ms": 0.183,
+        "p99_ms": 0.359
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 2,
+      "clients": 50,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 123961.81,
+        "p50_ms": 0.247,
+        "p99_ms": 0.583
+      },
+      "GET": {
+        "ops_s": 120962.86,
+        "p50_ms": 0.247,
+        "p99_ms": 0.575
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 3,
+      "clients": 50,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 116883.88,
+        "p50_ms": 0.271,
+        "p99_ms": 0.599
+      },
+      "GET": {
+        "ops_s": 125849.48,
+        "p50_ms": 0.231,
+        "p99_ms": 0.551
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 3,
+      "clients": 50,
+      "pipeline": 1,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 132749.23,
+        "p50_ms": 0.183,
+        "p99_ms": 0.351
+      },
+      "GET": {
+        "ops_s": 130140.55,
+        "p50_ms": 0.183,
+        "p99_ms": 0.359
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 1,
+      "clients": 50,
+      "pipeline": 16,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1025115.31,
+        "p50_ms": 0.663,
+        "p99_ms": 1.223
+      },
+      "GET": {
+        "ops_s": 1308044.38,
+        "p50_ms": 0.511,
+        "p99_ms": 0.847
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 1,
+      "clients": 50,
+      "pipeline": 16,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1707941.88,
+        "p50_ms": 0.239,
+        "p99_ms": 0.431
+      },
+      "GET": {
+        "ops_s": 1611603.5,
+        "p50_ms": 0.239,
+        "p99_ms": 0.671
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 2,
+      "clients": 50,
+      "pipeline": 16,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1676446.0,
+        "p50_ms": 0.247,
+        "p99_ms": 0.455
+      },
+      "GET": {
+        "ops_s": 1682085.75,
+        "p50_ms": 0.239,
+        "p99_ms": 0.431
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 2,
+      "clients": 50,
+      "pipeline": 16,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1086956.5,
+        "p50_ms": 0.639,
+        "p99_ms": 0.959
+      },
+      "GET": {
+        "ops_s": 1308900.5,
+        "p50_ms": 0.511,
+        "p99_ms": 0.847
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 3,
+      "clients": 50,
+      "pipeline": 16,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1067235.88,
+        "p50_ms": 0.647,
+        "p99_ms": 0.991
+      },
+      "GET": {
+        "ops_s": 1257861.62,
+        "p50_ms": 0.519,
+        "p99_ms": 0.967
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 3,
+      "clients": 50,
+      "pipeline": 16,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1620745.62,
+        "p50_ms": 0.255,
+        "p99_ms": 0.671
+      },
+      "GET": {
+        "ops_s": 1650165.0,
+        "p50_ms": 0.239,
+        "p99_ms": 0.439
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 1,
+      "clients": 50,
+      "pipeline": 64,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1425516.75,
+        "p50_ms": 2.103,
+        "p99_ms": 2.463
+      },
+      "GET": {
+        "ops_s": 1838235.25,
+        "p50_ms": 1.567,
+        "p99_ms": 2.127
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 1,
+      "clients": 50,
+      "pipeline": 64,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 4329004.0,
+        "p50_ms": 0.559,
+        "p99_ms": 0.951
+      },
+      "GET": {
+        "ops_s": 4291845.5,
+        "p50_ms": 0.423,
+        "p99_ms": 0.583
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 2,
+      "clients": 50,
+      "pipeline": 64,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 4329004.0,
+        "p50_ms": 0.503,
+        "p99_ms": 0.983
+      },
+      "GET": {
+        "ops_s": 4237288.0,
+        "p50_ms": 0.431,
+        "p99_ms": 0.839
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 2,
+      "clients": 50,
+      "pipeline": 64,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1431639.25,
+        "p50_ms": 2.095,
+        "p99_ms": 2.431
+      },
+      "GET": {
+        "ops_s": 1851851.75,
+        "p50_ms": 1.575,
+        "p99_ms": 1.943
+      }
+    },
+    {
+      "mode": "default",
+      "server": "redis",
+      "repeat": 3,
+      "clients": 50,
+      "pipeline": 64,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 1416430.62,
+        "p50_ms": 2.087,
+        "p99_ms": 2.655
+      },
+      "GET": {
+        "ops_s": 1867413.62,
+        "p50_ms": 1.559,
+        "p99_ms": 1.951
+      }
+    },
+    {
+      "mode": "default",
+      "server": "crabcache",
+      "repeat": 3,
+      "clients": 50,
+      "pipeline": 64,
+      "keys": 100000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "3f4c2d9add08676c1dd7d1edeb51d8c565eea0e7f7f10efd302eda4143e7a012",
+      "SET": {
+        "ops_s": 4376367.5,
+        "p50_ms": 0.503,
+        "p99_ms": 0.935
+      },
+      "GET": {
+        "ops_s": 4329004.0,
+        "p50_ms": 0.423,
+        "p99_ms": 0.655
+      }
+    }
+  ]
+}

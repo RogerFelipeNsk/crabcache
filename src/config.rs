@@ -9,7 +9,7 @@ use clap::Parser;
 #[command(
     name = "crabcache",
     version,
-    about = "Redis-compatible in-memory cache server"
+    about = "Redis-compatible in-memory cache with optional CrabPack compression"
 )]
 pub struct Config {
     /// Address to listen on. Use 0.0.0.0 only together with --requirepass or a firewall.

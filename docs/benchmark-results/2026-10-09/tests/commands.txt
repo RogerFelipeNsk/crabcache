@@ -1,0 +1,8 @@
+Initial suite: CRABCACHE_REQUIRE_REDIS=1 CRABCACHE_DIFF_SEEDS=100 cargo test --release --all-targets
+Final suite: CRABCACHE_REQUIRE_REDIS=1 CRABCACHE_DIFF_SEEDS=500 cargo test --release --all-targets
+Independent build: CRABCACHE_REQUIRE_REDIS=1 CRABCACHE_DIFF_SEEDS=100 cargo test --all-targets
+cargo test --doc
+cargo clippy --all-targets -- -D warnings
+cargo fmt --all --check
+shellcheck scripts/bench*.sh
+python3 -m unittest discover -s scripts -p test_*.py -v

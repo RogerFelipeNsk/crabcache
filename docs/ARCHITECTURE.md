@@ -59,14 +59,15 @@ threads de I/O (1 por núcleo), cada uma com seu runtime tokio e seu kqueue/epol
   imediatamente (`purge_delay = 0`). Com o padrão (1 s), uma thread ociosa nunca devolvia a memória
   liberada quando o índice crescia; isso custava ~14 bytes por chave.
 
-Custo medido por chave com valores de 100 B: 159 bytes, contra 184 do Redis 8.10 (ver `BENCHMARKS.md`).
+As medições atuais de custo por chave, incluindo baseline e variação entre rodadas, estão em
+[`BENCHMARKS.md`](BENCHMARKS.md).
 
 ## Compressão (CrabPack)
 
 Valores de cache pequenos comprimem mal sozinhos, mas valores com o mesmo prefixo de chave
 compartilham estrutura. O CrabPack (`src/store/compress.rs`) treina um dicionário zstd por prefixo e
-comprime cada valor individualmente com ele. Medido em JSON de ~300 B, o zstd comum dá 1.2–1.5x e o zstd
-com um dicionário de 16 KB dá 3.6–4.1x.
+comprime cada valor individualmente com ele. As taxas medidas em JSON sintético e seu impacto na
+memória física estão em [`BENCHMARKS.md`](BENCHMARKS.md).
 
 * **Prefixo:** tudo até o primeiro `:` (nos primeiros 32 bytes); chaves sem `:` formam um grupo próprio.
 * **Amostragem:** a task de background lê entradas aleatórias e guarda até 1.000 amostras (ou 256 KB)
@@ -113,7 +114,9 @@ sistema quando a página inteira fica livre.
 
 `tests/differential.rs` envia sequências aleatórias de comandos (válidos, inválidos, com overflow,
 com aridade errada) a um Redis real e ao CrabCache, e exige respostas idênticas byte a byte. Respostas
-que dependem do tempo (TTL restante) são comparadas por classe, e a saída de `KEYS` é ordenada. O CI
+que dependem do tempo são comparadas numericamente, com tolerância de 100 ms mais o tempo da
+requisição/lote (e arredondamento de 1 s para comandos em segundos); `-1` e `-2` devem coincidir
+exatamente. A saída de `KEYS` é ordenada. Valores e TTLs finais também são comparados. O CI
 roda contra o Redis 8 e falha se o Redis não estiver disponível, em vez de pular o teste.
 
 Entradas que o gerador evita de propósito:
@@ -125,8 +128,10 @@ Entradas que o gerador evita de propósito:
 * `GT`/`LT` com expirações relativas: aplicar o mesmo TTL duas vezes no mesmo milissegundo produz
   prazos iguais, então a resposta dependeria do tempo.
 
-O teste passou com 500 seeds (750 mil comandos) contra o Redis 8.10.2 tanto no Linux (imagem oficial)
-quanto no macOS (Homebrew).
+Na auditoria de 09/10/2026, 500 sementes × 1.500 comandos × 2 protocolos, mais 20.000 comandos
+em pipeline e 10.000 sobre valores comprimidos, passaram contra Redis 8.10.2 no macOS: 1.530.000
+comandos gerados, além de preparação e conferência de estado. A mesma suíte passou em debug com
+100 sementes. Linux continua coberto pelo CI, mas não foi reexecutado nesta auditoria local.
 
 ## Lacunas conhecidas
 

@@ -5,18 +5,41 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-10-09
+## [0.3.0] - 2026-10-10
 
 ### Adicionado
-- **CrabPack** (`--compression`): compressão transparente de valores ociosos com dicionários zstd
-  treinados por prefixo de chave. Em JSON realista (sessões, produtos, respostas de API) a memória por
-  chave caiu para 39–41% da do Redis 8.10 (taxa de compressão de 3.6–4.1x). As leituras devolvem os
-  bytes originais; escritas gravam sem compressão e o valor volta a ser comprimido quando fica ocioso.
-- `INFO compression` (dicionários, chaves comprimidas, taxa) e `CONFIG GET/SET` para `compression`,
-  `compression-min-idle` e `compression-min-size`.
-- `examples/dataset.rs` (dados realistas para benchmarks) e `scripts/bench-compression.sh`.
-- Testes: integração da compressão e uma fase diferencial em que 5.000 comandos sobre valores
-  comprimidos precisam responder byte a byte igual ao Redis.
+- **CrabPack** (`--compression`): compressão transparente e opcional de valores ociosos com
+  dicionários zstd treinados por prefixo de chave (`session:`, `user:`). Na auditoria local de JSON
+  sintético, as medianas de três rodadas mostraram 55–63% menos memória que o Redis 8.10.2.
+  Leituras devolvem os bytes originais; escritas gravam sem compressão e valores voltam a ser
+  candidatos quando ficam ociosos. Descompressão custa CPU; limites e resultados por rodada estão
+  em [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+- `INFO compression` e `CONFIG GET/SET` para `compression`, `compression-min-idle` e
+  `compression-min-size`. Ativação também por `CRABCACHE_COMPRESSION=true`; padrão desligado,
+  idle de 60 s e tamanho mínimo de 64 B. Desativar mantém os valores já comprimidos legíveis.
+- Gerador determinístico de JSON sintético (`examples/dataset.rs`), benchmarks com três repetições,
+  artefatos brutos preservados e geração de tabelas/gráficos a partir dos resumos.
+- Testes reforçados em RESP2/RESP3: 57 testes em release e debug, incluindo 1,53 milhão de comandos
+  gerados comparados ao Redis na auditoria local, além de bytes binários, TTL exato e FLUSHALL/reuso.
+- Sete regressões do benchmark, conferência independente de 99 registros e validação no CI de que
+  os documentos/gráficos publicados coincidem com os dados.
+- Smoke test do CrabPack na imagem Docker, cobrindo compactação e conferência integral de 2.000
+  valores binários, TTL e leitura/escrita após desativar a compactação.
+- README com ativação por CLI, Docker, configuração em tempo de execução e demonstração local.
+
+### Corrigido
+- A comparação diferencial de TTL preserva o valor numérico, em vez de considerar todo TTL
+  positivo equivalente. Valores e TTLs finais também são comparados.
+- Benchmarks agora verificam carga completa, zero misses, cobertura integral da compressão,
+  contagem limitada aos pedidos em trânsito e consumo real de CPU. Tamanhos de valores são
+  medidos em bytes RESP, incluindo UTF-8, e timeouts invalidam a rodada.
+- Descrições e resultados antigos foram substituídos por informações auditáveis. JSON gerado é
+  identificado como sintético; amostras posteriores à carga não são apresentadas como pico máximo.
+
+### Limitações
+- CrabPack fase 1: sem retreino dos dicionários; valores comprimidos permanecem assim até serem
+  reescritos. Memória temporária de treino e custo de descompressão variam conforme os dados.
+- Continua um projeto experimental: somente strings, sem persistência, replicação ou transações.
 
 ## [0.2.1] - 2026-10-07
 

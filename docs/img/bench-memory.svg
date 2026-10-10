@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="398" viewBox="0 0 720 398" role="img" aria-labelledby="t d">
 <title id="t">Memória por chave</title>
-<desc id="d">1M de chaves (300k para 1 KB) carregadas via redis-cli --pipe · memória física (footprint). Valores de 10 B: Redis 8.10 86 B, CrabCache 0.2 63 B; Valores de 100 B: Redis 8.10 184 B, CrabCache 0.2 159 B; Valores de 1 KB: Redis 8.10 1.110 B, CrabCache 0.2 1.066 B</desc>
+<desc id="d">Mediana de 3 rodadas · 1M de chaves (300k para 1000 B) · footprint menos baseline. Valores de 10 B: Redis 8.10 85 B, CrabCache 0.3 63 B; Valores de 100 B: Redis 8.10 183 B, CrabCache 0.3 159 B; Valores de 1000 B: Redis 8.10 1.111 B, CrabCache 0.3 1.066 B</desc>
 
 <style>
   .surface { fill: #fcfcfb; }
@@ -11,6 +11,7 @@
   .label { fill: #52514e; font-size: 12.5px; }
   .value { fill: #0b0b0b; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .delta { fill: #006300; font-size: 12.5px; font-weight: 600; }
+  .delta-bad { fill: #a32d00; font-size: 12.5px; font-weight: 600; }
   .axis { stroke: #c3c2b7; stroke-width: 1; }
   .s-redis { fill: #2a78d6; }
   .s-crab { fill: #eb6834; }
@@ -22,6 +23,7 @@
     .title, .panel, .value { fill: #ffffff; }
     .subtitle, .label { fill: #c3c2b7; }
     .delta { fill: #0ca30c; }
+    .delta-bad { fill: #ff8f6b; }
     .axis { stroke: #383835; }
     .s-redis { fill: #3987e5; }
     .s-crab { fill: #d95926; }
@@ -33,34 +35,34 @@
 <rect class="surface" x="0.5" y="0.5" width="719" height="397" rx="10"/>
 <rect class="ring" x="0.5" y="0.5" width="719" height="397" rx="10"/>
 <text class="title" x="24" y="32">Memória por chave</text>
-<text class="subtitle" x="24" y="52">1M de chaves (300k para 1 KB) carregadas via redis-cli --pipe · memória física (footprint)</text>
+<text class="subtitle" x="24" y="52">Mediana de 3 rodadas · 1M de chaves (300k para 1000 B) · footprint menos baseline</text>
 <rect class="s-redis" x="24" y="66" width="12" height="12" rx="3"/>
 <text class="label" x="42" y="76">Redis 8.10</text>
 <rect class="s-crab" x="136" y="66" width="12" height="12" rx="3"/>
-<text class="label" x="154" y="76">CrabCache 0.2</text>
+<text class="label" x="154" y="76">CrabCache 0.3</text>
 <text class="panel" x="24" y="110">Valores de 10 B</text>
 <text class="label" x="114" y="136.5" text-anchor="end">Redis</text>
 <path class="s-redis" d="M124.0,122.0 H542.0 Q546.0,122.0 546.0,126.0 V138.0 Q546.0,142.0 542.0,142.0 H124.0 Z"/>
-<text class="value" x="554.0" y="136.5">86 B</text>
+<text class="value" x="554.0" y="136.5">85 B</text>
 <text class="label" x="114" y="158.5" text-anchor="end">CrabCache</text>
-<path class="s-crab" d="M124.0,144.0 H429.1 Q433.1,144.0 433.1,148.0 V160.0 Q433.1,164.0 429.1,164.0 H124.0 Z"/>
-<text class="value" x="441.1" y="158.5">63 B<tspan class="delta" dx="8">−27%</tspan></text>
+<path class="s-crab" d="M124.0,144.0 H433.7 Q437.7,144.0 437.7,148.0 V160.0 Q437.7,164.0 433.7,164.0 H124.0 Z"/>
+<text class="value" x="445.7" y="158.5">63 B<tspan class="delta" dx="8">-26%</tspan></text>
 <line class="axis" x1="124" y1="118" x2="124" y2="168"/>
 <text class="panel" x="24" y="200">Valores de 100 B</text>
 <text class="label" x="114" y="226.5" text-anchor="end">Redis</text>
 <path class="s-redis" d="M124.0,212.0 H542.0 Q546.0,212.0 546.0,216.0 V228.0 Q546.0,232.0 542.0,232.0 H124.0 Z"/>
-<text class="value" x="554.0" y="226.5">184 B</text>
+<text class="value" x="554.0" y="226.5">183 B</text>
 <text class="label" x="114" y="248.5" text-anchor="end">CrabCache</text>
-<path class="s-crab" d="M124.0,234.0 H484.7 Q488.7,234.0 488.7,238.0 V250.0 Q488.7,254.0 484.7,254.0 H124.0 Z"/>
-<text class="value" x="496.7" y="248.5">159 B<tspan class="delta" dx="8">−14%</tspan></text>
+<path class="s-crab" d="M124.0,234.0 H487.0 Q491.0,234.0 491.0,238.0 V250.0 Q491.0,254.0 487.0,254.0 H124.0 Z"/>
+<text class="value" x="499.0" y="248.5">159 B<tspan class="delta" dx="8">-13%</tspan></text>
 <line class="axis" x1="124" y1="208" x2="124" y2="258"/>
-<text class="panel" x="24" y="290">Valores de 1 KB</text>
+<text class="panel" x="24" y="290">Valores de 1000 B</text>
 <text class="label" x="114" y="316.5" text-anchor="end">Redis</text>
 <path class="s-redis" d="M124.0,302.0 H542.0 Q546.0,302.0 546.0,306.0 V318.0 Q546.0,322.0 542.0,322.0 H124.0 Z"/>
-<text class="value" x="554.0" y="316.5">1.110 B</text>
+<text class="value" x="554.0" y="316.5">1.111 B</text>
 <text class="label" x="114" y="338.5" text-anchor="end">CrabCache</text>
-<path class="s-crab" d="M124.0,324.0 H525.3 Q529.3,324.0 529.3,328.0 V340.0 Q529.3,344.0 525.3,344.0 H124.0 Z"/>
-<text class="value" x="537.3" y="338.5">1.066 B<tspan class="delta" dx="8">−4%</tspan></text>
+<path class="s-crab" d="M124.0,324.0 H525.0 Q529.0,324.0 529.0,328.0 V340.0 Q529.0,344.0 525.0,344.0 H124.0 Z"/>
+<text class="value" x="537.0" y="338.5">1.066 B<tspan class="delta" dx="8">-4%</tspan></text>
 <line class="axis" x1="124" y1="298" x2="124" y2="348"/>
-<text class="note" x="24" y="382">Apple M1 Pro, macOS · menor é melhor · scripts/bench-memory.sh</text>
+<text class="note" x="24" y="382">M1 Pro, macOS · menor é melhor · todos os valores relidos e conferidos · 09/10/2026</text>
 </svg>
