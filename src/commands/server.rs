@@ -224,6 +224,15 @@ fn config_params(c: &Ctx) -> Vec<(&'static str, String)> {
         ("maxmemory-policy", c.db.policy().name().to_string()),
         ("maxmemory-samples", c.db.samples().to_string()),
         ("maxclients", cfg.maxclients.to_string()),
+        (
+            "compression",
+            if c.db.codec.enabled() { "yes" } else { "no" }.to_string(),
+        ),
+        (
+            "compression-min-idle",
+            c.db.codec.min_idle_secs().to_string(),
+        ),
+        ("compression-min-size", c.db.codec.min_size().to_string()),
         ("port", cfg.port.to_string()),
         ("bind", cfg.bind.clone()),
         ("databases", "1".to_string()),
@@ -261,6 +270,9 @@ pub fn config(c: &mut Ctx, args: &Args) {
                 MaxMemory(u64),
                 Policy(Policy),
                 Samples(usize),
+                Compression(bool),
+                CompressionMinIdle(u64),
+                CompressionMinSize(usize),
             }
             // Validate everything before applying anything, like Redis.
             let mut updates = Vec::new();
@@ -286,6 +298,24 @@ pub fn config(c: &mut Ctx, args: &Args) {
                             );
                         }
                     },
+                    b"compression" => match v.to_ascii_lowercase().as_slice() {
+                        b"yes" => updates.push(Update::Compression(true)),
+                        b"no" => updates.push(Update::Compression(false)),
+                        _ => {
+                            return reply::error(
+                                c.out,
+                                "ERR CONFIG SET failed (possibly related to argument 'compression') - argument must be 'yes' or 'no'",
+                            );
+                        }
+                    },
+                    b"compression-min-idle" => match parse_i64(v).filter(|&n| n >= 0) {
+                        Some(n) => updates.push(Update::CompressionMinIdle(n as u64)),
+                        None => return reply::error(c.out, &bad()),
+                    },
+                    b"compression-min-size" => match parse_i64(v).filter(|&n| n >= 0) {
+                        Some(n) => updates.push(Update::CompressionMinSize(n as usize)),
+                        None => return reply::error(c.out, &bad()),
+                    },
                     b"maxmemory-samples" => match parse_i64(v).filter(|&n| (1..=64).contains(&n)) {
                         Some(n) => updates.push(Update::Samples(n as usize)),
                         None => return reply::error(c.out, &bad()),
@@ -306,6 +336,9 @@ pub fn config(c: &mut Ctx, args: &Args) {
                     Update::MaxMemory(m) => c.db.set_maxmemory(m),
                     Update::Policy(p) => c.db.set_policy(p),
                     Update::Samples(n) => c.db.set_samples(n),
+                    Update::Compression(on) => c.db.codec.set_enabled(on),
+                    Update::CompressionMinIdle(n) => c.db.codec.set_min_idle_secs(n),
+                    Update::CompressionMinSize(n) => c.db.codec.set_min_size(n),
                 }
             }
             reply::ok(c.out);
@@ -406,6 +439,39 @@ pub fn info(c: &mut Ctx, args: &Args) {
             stats.hits,
             stats.misses,
         );
+    }
+    if show("compression") {
+        let codec = &c.db.codec;
+        let pack = c.db.pack_summary();
+        let dicts = codec.dicts();
+        let ratio = if pack.stored_bytes > 0 {
+            pack.original_bytes as f64 / pack.stored_bytes as f64
+        } else {
+            1.0
+        };
+        let _ = write!(
+            s,
+            "# Compression\r\ncompression:{}\r\ncompression_min_idle:{}\r\ncompression_min_size:{}\r\ncompression_dicts:{}\r\ncompression_dicts_rejected:{}\r\ncompressed_keys:{}\r\ncompressed_original_bytes:{}\r\ncompressed_stored_bytes:{}\r\ncompression_ratio:{:.2}\r\n",
+            if codec.enabled() { "yes" } else { "no" },
+            codec.min_idle_secs(),
+            codec.min_size(),
+            dicts.len(),
+            codec.stats.dicts_rejected.load(Relaxed),
+            pack.keys,
+            pack.original_bytes,
+            pack.stored_bytes,
+            ratio,
+        );
+        for d in &dicts {
+            let _ = write!(
+                s,
+                "dict{}:prefix={},trained_ratio={:.2}\r\n",
+                d.id,
+                String::from_utf8_lossy(&d.prefix),
+                d.trained_ratio
+            );
+        }
+        s.push_str("\r\n");
     }
     if show("keyspace") {
         s.push_str("# Keyspace\r\n");

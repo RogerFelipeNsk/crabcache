@@ -12,7 +12,7 @@
 
 mod common;
 
-use common::{Raw, Rng, TestServer, array_items};
+use common::{Raw, Rng, TestServer, array_items, session_json, wait_for_packed};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -310,12 +310,6 @@ fn random_command(r: &mut Rng) -> Vec<Vec<u8>> {
 fn normalize(cmd: &[Vec<u8>], reply: Vec<u8>) -> Vec<u8> {
     let name = cmd[0].to_ascii_uppercase();
     match name.as_slice() {
-        // Remaining TTLs and deadlines depend on timing: keep only their class.
-        b"TTL" | b"PTTL" | b"EXPIRETIME" | b"PEXPIRETIME"
-            if reply.starts_with(b":") && !reply.starts_with(b":-") =>
-        {
-            b":<positive>\r\n".to_vec()
-        }
         // KEYS order is hash order.
         b"KEYS" if reply.starts_with(b"*") => {
             let mut items = array_items(&reply);
@@ -327,6 +321,83 @@ fn normalize(cmd: &[Vec<u8>], reply: Vec<u8>) -> Vec<u8> {
             out
         }
         _ => reply,
+    }
+}
+
+/// Preserve TTL magnitude: collapsing every positive value hid unit/deadline errors.
+/// Relative deadlines differ by request timing; second-based replies also round.
+fn replies_match(cmd: &[Vec<u8>], a: &[u8], b: &[u8], elapsed: Duration) -> bool {
+    if a == b {
+        return true;
+    }
+    let name = cmd[0].to_ascii_uppercase();
+    let millis = match name.as_slice() {
+        b"PTTL" | b"PEXPIRETIME" => true,
+        b"TTL" | b"EXPIRETIME" => false,
+        _ => return false,
+    };
+    let integer = |v: &[u8]| -> Option<i64> {
+        std::str::from_utf8(v.strip_prefix(b":")?.strip_suffix(b"\r\n")?)
+            .ok()?
+            .parse()
+            .ok()
+    };
+    match (integer(a), integer(b)) {
+        (Some(a), Some(b)) if a >= 0 && b >= 0 => {
+            let tolerance = if millis {
+                elapsed.as_millis() as u64 + 2
+            } else {
+                elapsed.as_secs() + 1
+            };
+            a.abs_diff(b) <= tolerance
+        }
+        _ => false,
+    }
+}
+
+#[test]
+fn ttl_comparison_rejects_wrong_units_and_preserves_missing_sentinels() {
+    for name in ["TTL", "PTTL", "EXPIRETIME", "PEXPIRETIME"] {
+        let cmd = vec![name.as_bytes().to_vec()];
+        assert!(!replies_match(
+            &cmd,
+            b":1000\r\n",
+            b":1000000\r\n",
+            Duration::ZERO
+        ));
+        assert!(!replies_match(&cmd, b":-1\r\n", b":-2\r\n", Duration::ZERO));
+        assert!(!replies_match(&cmd, b":-1\r\n", b":0\r\n", Duration::ZERO));
+        assert!(replies_match(
+            &cmd,
+            b":1000\r\n",
+            b":1001\r\n",
+            Duration::ZERO
+        ));
+    }
+}
+
+/// Check final state as well as immediate replies: a wrong write can otherwise go unread.
+fn compare_state(redis: &mut Raw, crab: &mut Raw) {
+    let cmd = vec![b"KEYS".to_vec(), b"*".to_vec()];
+    let keys = normalize(&cmd, redis.cmd(&[b"KEYS", b"*"]));
+    assert_eq!(keys, normalize(&cmd, crab.cmd(&[b"KEYS", b"*"])));
+    for encoded in array_items(&keys) {
+        let header = encoded.windows(2).position(|w| w == b"\r\n").unwrap() + 2;
+        let key = &encoded[header..encoded.len() - 2];
+        assert_eq!(
+            redis.cmd(&[b"GET", key]),
+            crab.cmd(&[b"GET", key]),
+            "key {key:?}"
+        );
+        let cmd = vec![b"PTTL".to_vec(), key.to_vec()];
+        let started = Instant::now();
+        let a = redis.cmd(&[b"PTTL", key]);
+        let b = crab.cmd(&[b"PTTL", key]);
+        // Deadlines may have been set earlier in the sequence by separate requests.
+        assert!(
+            replies_match(&cmd, &a, &b, started.elapsed() + Duration::from_millis(100)),
+            "TTL state for {key:?}: {a:?} != {b:?}"
+        );
     }
 }
 
@@ -347,7 +418,71 @@ fn commands_match_redis() {
     for resp3 in [false, true] {
         sequential_commands_match(redis_addr, resp3);
         pipelined_batches_match(redis_addr, resp3);
+        packed_values_match(redis_addr, resp3);
     }
+}
+
+/// CrabPack: values compressed in the background must behave exactly like Redis' plain values, also
+/// while the compressor keeps re-packing keys that commands just rewrote.
+fn packed_values_match(redis_addr: SocketAddr, resp3: bool) {
+    const N: u64 = 2000;
+    let srv = TestServer::start(&["--compression", "--compression-min-idle", "0"]);
+    let (mut redis, mut crab) = connect_pair(redis_addr, &srv, resp3);
+    let mut wire = Vec::new();
+    for i in 0..N {
+        wire.extend(Raw::encode(&[
+            b"SET",
+            format!("session:{i}").as_bytes(),
+            &session_json(i),
+        ]));
+    }
+    for conn in [&mut redis, &mut crab] {
+        conn.send(&wire);
+        for _ in 0..N {
+            assert_eq!(conn.read_reply().unwrap(), b"+OK\r\n");
+        }
+    }
+    let packed = wait_for_packed(&mut crab, N, Duration::from_secs(30));
+    assert!(packed == N, "only {packed} of {N} values were compressed");
+
+    let mut r = Rng(0xC0FF_EE11);
+    let key = |r: &mut Rng| format!("session:{}", r.below(N + 50)).into_bytes();
+    let int = |r: &mut Rng| {
+        r.pick(&["0", "5", "-1", "-20", "40", "1000", "-1000"])
+            .as_bytes()
+            .to_vec()
+    };
+    let s = |x: &str| x.as_bytes().to_vec();
+    for step in 0..5000 {
+        let cmd: Vec<Vec<u8>> = match r.below(16) {
+            0..=4 => vec![s("GET"), key(&mut r)],
+            5 => vec![s("MGET"), key(&mut r), key(&mut r), key(&mut r)],
+            6 => vec![s("STRLEN"), key(&mut r)],
+            7 => vec![s("GETRANGE"), key(&mut r), int(&mut r), int(&mut r)],
+            8 => vec![s("APPEND"), key(&mut r), s(",\"x\":1")],
+            9 => vec![s("GETSET"), key(&mut r), session_json(r.next())],
+            10 => vec![s("GETDEL"), key(&mut r)],
+            11 => vec![s("SET"), key(&mut r), session_json(r.next()), s("GET")],
+            12 => vec![s("RENAME"), key(&mut r), key(&mut r)],
+            13 => vec![
+                s(r.pick(&["EXISTS", "TYPE", "INCR", "PERSIST"])),
+                key(&mut r),
+            ],
+            14 => vec![s("EXPIRE"), key(&mut r), s("100000")],
+            _ => vec![s("GETEX"), key(&mut r), s("PERSIST")],
+        };
+        let args: Vec<&[u8]> = cmd.iter().map(Vec::as_slice).collect();
+        let a = redis.cmd(&args);
+        let b = crab.cmd(&args);
+        assert!(
+            a == b,
+            "packed step {step}: {}\n  redis:     {:?}\n  crabcache: {:?}",
+            show(&cmd),
+            String::from_utf8_lossy(&a),
+            String::from_utf8_lossy(&b)
+        );
+    }
+    compare_state(&mut redis, &mut crab);
 }
 
 /// Connects to both servers, switching both to RESP3 when asked. HELLO replies differ by design
@@ -374,15 +509,19 @@ fn sequential_commands_match(redis_addr: SocketAddr, resp3: bool) {
     let (mut redis, mut crab) = connect_pair(redis_addr, &srv, resp3);
 
     let seeds = std::env::var("CRABCACHE_DIFF_SEEDS")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(20u64);
+        .map(|s| {
+            s.parse::<u64>()
+                .expect("CRABCACHE_DIFF_SEEDS must be a positive integer")
+        })
+        .unwrap_or(20);
+    assert!(seeds > 0, "CRABCACHE_DIFF_SEEDS must be positive");
     let mut history: Vec<String> = Vec::new();
     for seed in 1..=seeds {
         let mut r = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
         for step in 0..1500 {
             let cmd = random_command(&mut r);
             let args: Vec<&[u8]> = cmd.iter().map(Vec::as_slice).collect();
+            let started = Instant::now();
             let a = normalize(&cmd, redis.cmd(&args));
             let b = normalize(&cmd, crab.cmd(&args));
             history.push(show(&cmd));
@@ -390,7 +529,7 @@ fn sequential_commands_match(redis_addr: SocketAddr, resp3: bool) {
                 history.remove(0);
             }
             assert!(
-                a == b,
+                replies_match(&cmd, &a, &b, started.elapsed() + Duration::from_millis(100)),
                 "resp3={resp3} seed {seed} step {step}: {}\n  redis:     {:?}\n  crabcache: {:?}\nlast commands:\n  {}",
                 show(&cmd),
                 String::from_utf8_lossy(&a),
@@ -398,6 +537,7 @@ fn sequential_commands_match(redis_addr: SocketAddr, resp3: bool) {
                 history.join("\n  ")
             );
         }
+        compare_state(&mut redis, &mut crab);
     }
 }
 
@@ -413,13 +553,14 @@ fn pipelined_batches_match(redis_addr: SocketAddr, resp3: bool) {
             let args: Vec<&[u8]> = c.iter().map(Vec::as_slice).collect();
             wire.extend(Raw::encode(&args));
         }
+        let started = Instant::now();
         redis.send(&wire);
         crab.send(&wire);
         for (n, c) in cmds.iter().enumerate() {
             let a = normalize(c, redis.read_reply().unwrap());
             let b = normalize(c, crab.read_reply().unwrap());
             assert!(
-                a == b,
+                replies_match(c, &a, &b, started.elapsed() + Duration::from_millis(100)),
                 "resp3={resp3} round {round} cmd {n}: {}\n  redis:     {:?}\n  crabcache: {:?}",
                 show(c),
                 String::from_utf8_lossy(&a),
@@ -427,4 +568,5 @@ fn pipelined_batches_match(redis_addr: SocketAddr, resp3: bool) {
             );
         }
     }
+    compare_state(&mut redis, &mut crab);
 }

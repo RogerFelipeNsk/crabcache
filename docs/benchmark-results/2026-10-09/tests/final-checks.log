@@ -1,0 +1,6 @@
+PASS: cargo fmt --all --check
+PASS: shellcheck scripts/bench*.sh
+PASS: git diff --check
+PASS: 99 benchmark records independently recalculated
+PASS: regenerated BENCHMARKS.md exactly matches the published file
+PASS: regenerated SVG charts exactly match the published files

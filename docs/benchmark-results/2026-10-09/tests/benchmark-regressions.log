@@ -1,0 +1,12 @@
+test_compression_timeout_rejects_partial_coverage (test_benchmark.BenchmarkValidation) ... ok
+test_get_count_difference_is_bounded_by_inflight_pipeline (test_benchmark.BenchmarkValidation) ... ok
+test_load_checks_errors_reply_count_and_dbsize (test_benchmark.BenchmarkValidation) ... ok
+test_memtier_requires_hits_and_no_errors (test_benchmark.BenchmarkValidation) ... ok
+test_missing_or_invalid_csv_results_are_rejected (test_benchmark.BenchmarkValidation) ... ok
+test_resp_byte_count_handles_utf8_newlines_and_binary (test_benchmark.BenchmarkValidation) ... ok
+test_truncated_or_error_replies_are_rejected (test_benchmark.BenchmarkValidation) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.004s
+
+OK

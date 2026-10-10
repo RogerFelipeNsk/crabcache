@@ -1,15 +1,33 @@
 """Generates the README benchmark charts (docs/img/*.svg) as static SVG with light/dark themes.
 
-Usage: python3 scripts/gen-charts.py docs/img   (update the numbers below from docs/BENCHMARKS.md)
+Usage: python3 scripts/gen-charts.py docs/img [results-directory]
+
+Numbers are derived from the recorded benchmark summaries, never copied manually.
 
 Small multiples: one panel per scenario, each with its own zero-based scale, horizontal bars with the
-value at the tip. Redis is blue and CrabCache orange; the pair was checked for color-vision-deficiency
-separation and >= 3:1 contrast against both chart surfaces.
+value at the tip. Series colors (Redis blue, CrabCache orange, CrabCache + CrabPack green) were checked
+for color-vision-deficiency separation in both themes; the green sits below 3:1 contrast on the light
+surface, so every bar carries a visible row label and value.
 """
 import sys
+import json
+from statistics import median
 from pathlib import Path
 
 OUT = Path(sys.argv[1])
+DATA = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).resolve().parents[1] / "docs/benchmark-results/2026-10-09"
+
+
+def rows(kind):
+    return json.loads((DATA / kind / "summary.json").read_text())["results"]
+
+
+def value(kind, metric, **filters):
+    values = [r[metric] for r in rows(kind) if all(r.get(k) == v for k, v in filters.items())]
+    if len(values) < 3:
+        raise ValueError(f"need at least 3 runs: {kind}, {filters}")
+    return median(values)
+
 
 STYLE = """
 <style>
@@ -21,9 +39,11 @@ STYLE = """
   .label { fill: #52514e; font-size: 12.5px; }
   .value { fill: #0b0b0b; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .delta { fill: #006300; font-size: 12.5px; font-weight: 600; }
+  .delta-bad { fill: #a32d00; font-size: 12.5px; font-weight: 600; }
   .axis { stroke: #c3c2b7; stroke-width: 1; }
   .s-redis { fill: #2a78d6; }
   .s-crab { fill: #eb6834; }
+  .s-pack { fill: #1baf7a; }
   .note { fill: #898781; font-size: 11px; }
   @media (prefers-color-scheme: dark) {
     .surface { fill: #1a1a19; }
@@ -31,9 +51,11 @@ STYLE = """
     .title, .panel, .value { fill: #ffffff; }
     .subtitle, .label { fill: #c3c2b7; }
     .delta { fill: #0ca30c; }
+    .delta-bad { fill: #ff8f6b; }
     .axis { stroke: #383835; }
     .s-redis { fill: #3987e5; }
     .s-crab { fill: #d95926; }
+    .s-pack { fill: #199e70; }
   }
   text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 </style>
@@ -45,7 +67,9 @@ LABEL_W = 100
 VALUE_W = 150
 BAR_H = 20
 GAP = 2  # surface gap between adjacent bars
-PANEL_H = 30 + 2 * BAR_H + GAP + 18
+
+REDIS = ("Redis", "Redis 8.10", "s-redis")
+CRAB = ("CrabCache", "CrabCache 0.3", "s-crab")
 
 
 def bar(x, y, w, cls):
@@ -58,50 +82,56 @@ def bar(x, y, w, cls):
     )
 
 
-def chart(name, title, subtitle, panels, fmt, delta_fmt, note):
-    """panels: list of (panel title, redis value, crabcache value)."""
-    head = 70
-    h = head + len(panels) * PANEL_H + 34
+def chart(name, title, subtitle, panels, fmt, delta_fmt, note, series=(REDIS, CRAB)):
+    """panels: list of (panel title, [value per series]); series: (row label, legend name, css class).
+    The first series is the baseline; the others get a delta against it."""
+    n = len(series)
+    panel_h = 30 + n * BAR_H + (n - 1) * GAP + 18
+    head = 94
+    h = head + len(panels) * panel_h + 34
     plot_x = PAD + LABEL_W
     plot_w = W - plot_x - VALUE_W - PAD
+    desc = "; ".join(
+        f"{p}: " + ", ".join(f"{s[1]} {fmt(v)}" for s, v in zip(series, vals)) for p, vals in panels
+    )
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{h}" viewBox="0 0 {W} {h}" '
         f'role="img" aria-labelledby="t d">',
         f"<title id=\"t\">{title}</title>",
-        f"<desc id=\"d\">{subtitle}. "
-        + "; ".join(f"{p}: Redis {fmt(r)}, CrabCache {fmt(c)}" for p, r, c in panels)
-        + "</desc>",
+        f"<desc id=\"d\">{subtitle}. {desc}</desc>",
         STYLE,
         f'<rect class="surface" x="0.5" y="0.5" width="{W - 1}" height="{h - 1}" rx="10"/>',
         f'<rect class="ring" x="0.5" y="0.5" width="{W - 1}" height="{h - 1}" rx="10"/>',
         f'<text class="title" x="{PAD}" y="32">{title}</text>',
         f'<text class="subtitle" x="{PAD}" y="52">{subtitle}</text>',
     ]
-    # Legend (two series): swatch + name, top right.
-    lx = W - PAD - 220
-    for i, (cls, name_) in enumerate((("s-redis", "Redis 8.10"), ("s-crab", "CrabCache 0.2"))):
-        x = lx + i * 104
-        parts.append(f'<rect class="{cls}" x="{x}" y="22" width="12" height="12" rx="3"/>')
-        parts.append(f'<text class="label" x="{x + 18}" y="32">{name_}</text>')
+    # Legend on its own row under the subtitle: swatch + name, left to right.
+    x = PAD
+    for _, legend, cls in series:
+        parts.append(f'<rect class="{cls}" x="{x}" y="66" width="12" height="12" rx="3"/>')
+        parts.append(f'<text class="label" x="{x + 18}" y="76">{legend}</text>')
+        x += int(len(legend) * 7.2) + 18 + 22
 
     y = head
-    for ptitle, redis, crab in panels:
-        scale = plot_w / max(redis, crab)
+    for ptitle, vals in panels:
+        scale = plot_w / max(vals)
         parts.append(f'<text class="panel" x="{PAD}" y="{y + 16}">{ptitle}</text>')
         by = y + 28
-        for i, (label, val, cls) in enumerate((("Redis", redis, "s-redis"), ("CrabCache", crab, "s-crab"))):
+        for i, ((label, _, cls), val) in enumerate(zip(series, vals)):
             yy = by + i * (BAR_H + GAP)
             w = max(val * scale, 2)
             parts.append(f'<text class="label" x="{plot_x - 10}" y="{yy + 14.5}" text-anchor="end">{label}</text>')
             parts.append(bar(plot_x, yy, w, cls))
             txt = f'<text class="value" x="{plot_x + w + 8:.1f}" y="{yy + 14.5}">{fmt(val)}'
-            if cls == "s-crab":
-                txt += f'<tspan class="delta" dx="8">{delta_fmt(redis, crab)}</tspan>'
+            if i > 0:
+                favorable = val >= vals[0] if delta_fmt == more else val <= vals[0]
+                cls = "delta" if favorable else "delta-bad"
+                txt += f'<tspan class="{cls}" dx="8">{delta_fmt(vals[0], val)}</tspan>'
             parts.append(txt + "</text>")
         parts.append(
-            f'<line class="axis" x1="{plot_x}" y1="{by - 4}" x2="{plot_x}" y2="{by + 2 * BAR_H + GAP + 4}"/>'
+            f'<line class="axis" x1="{plot_x}" y1="{by - 4}" x2="{plot_x}" y2="{by + n * BAR_H + (n - 1) * GAP + 4}"/>'
         )
-        y += PANEL_H
+        y += panel_h
     parts.append(f'<text class="note" x="{PAD}" y="{h - 16}">{note}</text>')
     parts.append("</svg>")
     (OUT / name).write_text("\n".join(parts) + "\n")
@@ -112,30 +142,45 @@ def ops(v):
 
 
 def more(r, c):
-    return f"+{(c / r - 1) * 100:.0f}%"
+    return f"{(c / r - 1) * 100:+.0f}%"
 
 
 def less(r, c):
-    return f"−{(1 - c / r) * 100:.0f}%"
+    return f"{(c / r - 1) * 100:+.0f}%"
 
 
 OUT.mkdir(parents=True, exist_ok=True)
 chart(
     "bench-per-core.svg",
-    "Throughput com o mesmo núcleo",
-    "Ambos limitados a ~1 núcleo de CPU (medido) · memtier_benchmark, 48 conexões, 90% GET, valores de 100 B",
-    [("Sem pipeline", 112_212, 136_121), ("Pipeline de 16 comandos", 923_529, 1_711_115)],
+    "Throughput com uma thread de I/O",
+    "Mediana de 3 rodadas · 48 conexões, 90% GET · 100k chaves de 100 B, zero misses",
+    [(label, [value("core", "ops_s", server=s, pipeline=p) for s in ("redis", "crabcache")])
+     for label, p in [("Sem pipeline", 1), ("Pipeline de 16 comandos", 16)]],
     ops,
     more,
-    "Apple M1 Pro, macOS, loopback · CrabCache com --threads 1 · scripts/bench-1cpu.sh",
+    "M1 Pro, macOS · loopback · 10 s/rodada · CPU medida nos artefatos · 09/10/2026",
 )
 chart(
     "bench-memory.svg",
     "Memória por chave",
-    "1M de chaves (300k para 1 KB) carregadas via redis-cli --pipe · memória física (footprint)",
-    [("Valores de 10 B", 86, 63), ("Valores de 100 B", 184, 159), ("Valores de 1 KB", 1110, 1066)],
-    lambda v: f"{v:,} B".replace(",", "."),
+    "Mediana de 3 rodadas · 1M de chaves (300k para 1000 B) · footprint menos baseline",
+    [(f"Valores de {size} B", [value("memory", "bytes_per_key", server=s, value_size=size)
+                               for s in ("redis", "crabcache")]) for size in (10, 100, 1000)],
+    lambda v: f"{v:,.0f} B".replace(",", "."),
     less,
-    "Apple M1 Pro, macOS · menor é melhor · scripts/bench-memory.sh",
+    "M1 Pro, macOS · menor é melhor · todos os valores relidos e conferidos · 09/10/2026",
+)
+chart(
+    "bench-crabpack.svg",
+    "Memória por chave com JSON sintético",
+    "Mediana de 3 rodadas · 300k chaves por conjunto · 100% comprimidas antes da medição",
+    [(f"{label} ({value('compression', 'mean_value_bytes', mode='memory', dataset=kind, server='redis'):.1f} B em média)",
+      [value("compression", "bytes_per_key", mode="memory", dataset=kind, server=s)
+       for s in ("redis", "crabcache", "crabpack")])
+     for label, kind in [("Sessões", "session"), ("Produtos", "product"), ("Respostas de API", "api")]],
+    lambda v: f"{v:,.0f} B".replace(",", "."),
+    less,
+    "M1 Pro, macOS · footprint menos baseline · menor é melhor · 09/10/2026",
+    series=(REDIS, ("CrabCache", "CrabCache", "s-crab"), ("CrabPack", "CrabCache + CrabPack", "s-pack")),
 )
 print("ok")

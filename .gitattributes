@@ -1,0 +1,2 @@
+# Captured tool logs keep their original terminal newlines as audit evidence.
+docs/benchmark-results/**/tests/*.log whitespace=-blank-at-eof

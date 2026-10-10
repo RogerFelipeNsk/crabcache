@@ -1,0 +1,453 @@
+{
+  "metadata": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "mode": "memory",
+    "seconds": 10,
+    "repeats": 3,
+    "memory_metric": "physical_footprint",
+    "git_commit": "9fbe8f0260f2f216f8d0210d0d04e65828116b36",
+    "git_dirty": true,
+    "binary_sha256": "61036a028b8827dfde7648cc18c4ae4ffebff1ca3eb6d90b0b061ebceb5ec448",
+    "cpu_model": "Apple M1 Pro",
+    "memory_bytes": 17179869184,
+    "redis": "Redis server v=8.10.2 sha=00000000:1 malloc=libc bits=64 build=764b3e45065a66fb",
+    "crabcache": "crabcache 0.3.0",
+    "memtier": "memtier_benchmark v=2.5.1 sha=00000000:0 bits=64 libevent=2.1.13-stable openssl=OpenSSL 3.6.3 9 Jun 2026 prometheus=yes\nCopyright (C) 2011-2026 Redis Ltd.\nThis is free software.  You may redistribute copies of it under the terms of\nthe GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\nThere is NO WARRANTY, to the extent permitted by law."
+  },
+  "results": [
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 10,
+      "repeat": 1,
+      "server": "redis",
+      "keys": 1000000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 10.0,
+      "sha256": "6f19f554278296b2301021a634e5bc8401325c242c0905c6000afd1520962f44",
+      "baseline_bytes": 3424256,
+      "final_bytes": 85983232,
+      "final_samples_bytes": [
+        85983232,
+        85983232,
+        85983232
+      ],
+      "post_load_samples_bytes": [
+        90177536
+      ],
+      "bytes_per_key": 82.558976,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 86.75328
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 10,
+      "repeat": 1,
+      "server": "crabcache",
+      "keys": 1000000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 10.0,
+      "sha256": "6f19f554278296b2301021a634e5bc8401325c242c0905c6000afd1520962f44",
+      "baseline_bytes": 4194304,
+      "final_bytes": 67108864,
+      "final_samples_bytes": [
+        67108864,
+        67108864,
+        67108864
+      ],
+      "post_load_samples_bytes": [
+        67108864
+      ],
+      "bytes_per_key": 62.91456,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 62.91456
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 10,
+      "repeat": 2,
+      "server": "crabcache",
+      "keys": 1000000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 10.0,
+      "sha256": "6f19f554278296b2301021a634e5bc8401325c242c0905c6000afd1520962f44",
+      "baseline_bytes": 4210688,
+      "final_bytes": 67108864,
+      "final_samples_bytes": [
+        67108864,
+        67108864,
+        67108864
+      ],
+      "post_load_samples_bytes": [
+        67108864
+      ],
+      "bytes_per_key": 62.898176,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 62.898176
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 10,
+      "repeat": 2,
+      "server": "redis",
+      "keys": 1000000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 10.0,
+      "sha256": "6f19f554278296b2301021a634e5bc8401325c242c0905c6000afd1520962f44",
+      "baseline_bytes": 3440640,
+      "final_bytes": 88080384,
+      "final_samples_bytes": [
+        88080384,
+        88080384,
+        88080384
+      ],
+      "post_load_samples_bytes": [
+        89128960
+      ],
+      "bytes_per_key": 84.639744,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 85.68832
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 10,
+      "repeat": 3,
+      "server": "redis",
+      "keys": 1000000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 10.0,
+      "sha256": "6f19f554278296b2301021a634e5bc8401325c242c0905c6000afd1520962f44",
+      "baseline_bytes": 3424256,
+      "final_bytes": 89128960,
+      "final_samples_bytes": [
+        89128960,
+        89128960,
+        89128960
+      ],
+      "post_load_samples_bytes": [
+        90177536
+      ],
+      "bytes_per_key": 85.704704,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 86.75328
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 10,
+      "repeat": 3,
+      "server": "crabcache",
+      "keys": 1000000,
+      "value_bytes": 10000000,
+      "mean_value_bytes": 10.0,
+      "sha256": "6f19f554278296b2301021a634e5bc8401325c242c0905c6000afd1520962f44",
+      "baseline_bytes": 4177920,
+      "final_bytes": 67108864,
+      "final_samples_bytes": [
+        67108864,
+        67108864,
+        67108864
+      ],
+      "post_load_samples_bytes": [
+        67108864
+      ],
+      "bytes_per_key": 62.930944,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 62.930944
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 100,
+      "repeat": 1,
+      "server": "redis",
+      "keys": 1000000,
+      "value_bytes": 100000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "7f7dd251f44078b9c000cad9af476bb6e01cc38a6c9a659cc189ef33ad8b57ad",
+      "baseline_bytes": 3375104,
+      "final_bytes": 187695104,
+      "final_samples_bytes": [
+        187695104,
+        187695104,
+        187695104
+      ],
+      "post_load_samples_bytes": [
+        187695104
+      ],
+      "bytes_per_key": 184.32,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 184.32
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 100,
+      "repeat": 1,
+      "server": "crabcache",
+      "keys": 1000000,
+      "value_bytes": 100000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "7f7dd251f44078b9c000cad9af476bb6e01cc38a6c9a659cc189ef33ad8b57ad",
+      "baseline_bytes": 4177920,
+      "final_bytes": 163577856,
+      "final_samples_bytes": [
+        163577856,
+        163577856,
+        163577856
+      ],
+      "post_load_samples_bytes": [
+        163577856
+      ],
+      "bytes_per_key": 159.399936,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 159.399936
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 100,
+      "repeat": 2,
+      "server": "crabcache",
+      "keys": 1000000,
+      "value_bytes": 100000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "7f7dd251f44078b9c000cad9af476bb6e01cc38a6c9a659cc189ef33ad8b57ad",
+      "baseline_bytes": 4210688,
+      "final_bytes": 163577856,
+      "final_samples_bytes": [
+        163577856,
+        163577856,
+        163577856
+      ],
+      "post_load_samples_bytes": [
+        163577856
+      ],
+      "bytes_per_key": 159.367168,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 159.367168
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 100,
+      "repeat": 2,
+      "server": "redis",
+      "keys": 1000000,
+      "value_bytes": 100000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "7f7dd251f44078b9c000cad9af476bb6e01cc38a6c9a659cc189ef33ad8b57ad",
+      "baseline_bytes": 3391488,
+      "final_bytes": 186646528,
+      "final_samples_bytes": [
+        186646528,
+        186646528,
+        186646528
+      ],
+      "post_load_samples_bytes": [
+        186646528
+      ],
+      "bytes_per_key": 183.25504,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 183.25504
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 100,
+      "repeat": 3,
+      "server": "redis",
+      "keys": 1000000,
+      "value_bytes": 100000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "7f7dd251f44078b9c000cad9af476bb6e01cc38a6c9a659cc189ef33ad8b57ad",
+      "baseline_bytes": 3407872,
+      "final_bytes": 186646528,
+      "final_samples_bytes": [
+        186646528,
+        186646528,
+        186646528
+      ],
+      "post_load_samples_bytes": [
+        186646528
+      ],
+      "bytes_per_key": 183.238656,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 183.238656
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 100,
+      "repeat": 3,
+      "server": "crabcache",
+      "keys": 1000000,
+      "value_bytes": 100000000,
+      "mean_value_bytes": 100.0,
+      "sha256": "7f7dd251f44078b9c000cad9af476bb6e01cc38a6c9a659cc189ef33ad8b57ad",
+      "baseline_bytes": 4210688,
+      "final_bytes": 162529280,
+      "final_samples_bytes": [
+        162529280,
+        162529280,
+        162529280
+      ],
+      "post_load_samples_bytes": [
+        162529280
+      ],
+      "bytes_per_key": 158.318592,
+      "verified_values": 1000000,
+      "observed_post_load_max_bytes_per_key": 158.318592
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 1000,
+      "repeat": 1,
+      "server": "redis",
+      "keys": 300000,
+      "value_bytes": 300000000,
+      "mean_value_bytes": 1000.0,
+      "sha256": "c29dd1cbd7477a749daa457310879e8b5e8e10ea36ff69a5df99007421dfa8ac",
+      "baseline_bytes": 3407872,
+      "final_bytes": 335544320,
+      "final_samples_bytes": [
+        335544320,
+        335544320,
+        335544320
+      ],
+      "post_load_samples_bytes": [
+        335544320
+      ],
+      "bytes_per_key": 1107.1214933333333,
+      "verified_values": 300000,
+      "observed_post_load_max_bytes_per_key": 1107.1214933333333
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 1000,
+      "repeat": 1,
+      "server": "crabcache",
+      "keys": 300000,
+      "value_bytes": 300000000,
+      "mean_value_bytes": 1000.0,
+      "sha256": "c29dd1cbd7477a749daa457310879e8b5e8e10ea36ff69a5df99007421dfa8ac",
+      "baseline_bytes": 4210688,
+      "final_bytes": 324009984,
+      "final_samples_bytes": [
+        324009984,
+        324009984,
+        324009984
+      ],
+      "post_load_samples_bytes": [
+        324009984
+      ],
+      "bytes_per_key": 1065.9976533333333,
+      "verified_values": 300000,
+      "observed_post_load_max_bytes_per_key": 1065.9976533333333
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 1000,
+      "repeat": 2,
+      "server": "crabcache",
+      "keys": 300000,
+      "value_bytes": 300000000,
+      "mean_value_bytes": 1000.0,
+      "sha256": "c29dd1cbd7477a749daa457310879e8b5e8e10ea36ff69a5df99007421dfa8ac",
+      "baseline_bytes": 4194304,
+      "final_bytes": 324009984,
+      "final_samples_bytes": [
+        324009984,
+        324009984,
+        324009984
+      ],
+      "post_load_samples_bytes": [
+        324009984
+      ],
+      "bytes_per_key": 1066.0522666666666,
+      "verified_values": 300000,
+      "observed_post_load_max_bytes_per_key": 1066.0522666666666
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 1000,
+      "repeat": 2,
+      "server": "redis",
+      "keys": 300000,
+      "value_bytes": 300000000,
+      "mean_value_bytes": 1000.0,
+      "sha256": "c29dd1cbd7477a749daa457310879e8b5e8e10ea36ff69a5df99007421dfa8ac",
+      "baseline_bytes": 3391488,
+      "final_bytes": 336592896,
+      "final_samples_bytes": [
+        336592896,
+        336592896,
+        336592896
+      ],
+      "post_load_samples_bytes": [
+        336592896
+      ],
+      "bytes_per_key": 1110.67136,
+      "verified_values": 300000,
+      "observed_post_load_max_bytes_per_key": 1110.67136
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 1000,
+      "repeat": 3,
+      "server": "redis",
+      "keys": 300000,
+      "value_bytes": 300000000,
+      "mean_value_bytes": 1000.0,
+      "sha256": "c29dd1cbd7477a749daa457310879e8b5e8e10ea36ff69a5df99007421dfa8ac",
+      "baseline_bytes": 3391488,
+      "final_bytes": 336592896,
+      "final_samples_bytes": [
+        336592896,
+        336592896,
+        336592896
+      ],
+      "post_load_samples_bytes": [
+        336592896
+      ],
+      "bytes_per_key": 1110.67136,
+      "verified_values": 300000,
+      "observed_post_load_max_bytes_per_key": 1110.67136
+    },
+    {
+      "mode": "memory",
+      "dataset": "fixed",
+      "value_size": 1000,
+      "repeat": 3,
+      "server": "crabcache",
+      "keys": 300000,
+      "value_bytes": 300000000,
+      "mean_value_bytes": 1000.0,
+      "sha256": "c29dd1cbd7477a749daa457310879e8b5e8e10ea36ff69a5df99007421dfa8ac",
+      "baseline_bytes": 4194304,
+      "final_bytes": 324009984,
+      "final_samples_bytes": [
+        324009984,
+        324009984,
+        324009984
+      ],
+      "post_load_samples_bytes": [
+        324009984
+      ],
+      "bytes_per_key": 1066.0522666666666,
+      "verified_values": 300000,
+      "observed_post_load_max_bytes_per_key": 1066.0522666666666
+    }
+  ]
+}

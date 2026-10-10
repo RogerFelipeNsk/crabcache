@@ -17,6 +17,8 @@
 use crate::commands::{self, Session, Shared, Stats};
 use crate::config::Config;
 use crate::protocol::{Args, Parsed, Parser, reply};
+use crate::store::PackCursor;
+use crate::store::compress::TrainOutcome;
 use bytes::{Buf, BytesMut};
 use std::future::Future;
 use std::io;
@@ -99,6 +101,7 @@ impl Server {
 
         let expire = tokio::spawn(expire_task(self.shared()));
         let evict = tokio::spawn(evict_task(self.shared()));
+        let pack = tokio::spawn(pack_task(self.shared()));
         tokio::pin!(shutdown);
         loop {
             tokio::select! {
@@ -126,6 +129,7 @@ impl Server {
         }
         expire.abort();
         evict.abort();
+        pack.abort();
         let _ = stop_tx.send(true);
         drop(workers);
         let _ = tokio::task::spawn_blocking(move || {
@@ -314,6 +318,44 @@ async fn evict_task(shared: Arc<Shared>) {
     }
 }
 
+/// CrabPack: samples values, trains dictionaries on a blocking thread, and compresses idle values.
+/// Bounded work per tick keeps the acceptor responsive.
+async fn pack_task(shared: Arc<Shared>) {
+    const SAMPLES_PER_TICK: usize = 64;
+    const SCAN_PER_STEP: usize = 256;
+    const STEPS_PER_TICK: usize = 64;
+    let mut cursor = PackCursor::default();
+    let mut tick = tokio::time::interval(Duration::from_millis(200));
+    loop {
+        tick.tick().await;
+        if !shared.db.codec.enabled() {
+            continue;
+        }
+        for (prefix, samples) in shared.db.pack_sample(SAMPLES_PER_TICK) {
+            let shared = Arc::clone(&shared);
+            tokio::task::spawn_blocking(move || {
+                let label = String::from_utf8_lossy(&prefix).into_owned();
+                let secs = shared.db.clock().secs;
+                match shared.db.codec.train(prefix, samples, secs) {
+                    TrainOutcome::Accepted { id, ratio } => {
+                        info!(prefix = %label, id, ratio = format!("{ratio:.2}"), "crabpack: dictionary trained")
+                    }
+                    TrainOutcome::Rejected { ratio } => {
+                        info!(prefix = %label, ratio = format!("{ratio:.2}"), "crabpack: dictionary rejected (too little gain)")
+                    }
+                    TrainOutcome::Failed => {
+                        warn!(prefix = %label, "crabpack: dictionary training failed")
+                    }
+                }
+            });
+        }
+        for _ in 0..STEPS_PER_TICK {
+            shared.db.pack_step(&mut cursor, SCAN_PER_STEP);
+            tokio::task::yield_now().await;
+        }
+    }
+}
+
 /// Logs the listening address and warns about unauthenticated public binds.
 pub fn log_startup(config: &Config, addr: SocketAddr) {
     info!(
@@ -323,6 +365,9 @@ pub fn log_startup(config: &Config, addr: SocketAddr) {
         shards = config.shard_count(),
         maxmemory = config.maxmemory,
         policy = config.maxmemory_policy.name(),
+        compression = config.compression,
+        compression_min_idle = config.compression_min_idle,
+        compression_min_size = config.compression_min_size,
         "crabcache ready"
     );
     if !addr.ip().is_loopback() && config.requirepass.is_none() {
