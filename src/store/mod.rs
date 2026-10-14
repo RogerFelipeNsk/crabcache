@@ -148,6 +148,10 @@ impl Db {
         }
     }
 
+    pub fn maintenance_clock_ms(&self) -> u64 {
+        self.start.elapsed().as_millis() as u64
+    }
+
     pub fn uptime_secs(&self) -> u64 {
         self.start.elapsed().as_secs()
     }
@@ -261,6 +265,7 @@ impl Db {
                     let value = e.plain()?;
                     (value.len() >= min_size
                         && !e.is_expired(clock.ms)
+                        && self.codec.ttl_eligible(e, clock.ms)
                         && self.codec.wants_samples(e.key(), secs))
                     .then(|| {
                         (
@@ -318,6 +323,12 @@ impl Db {
                 let i = cursor.pos;
                 let e = g.entry(i);
                 if let Some(value) = e.plain().filter(|v| v.len() >= min_size) {
+                    if !self.codec.ttl_eligible(e, clock.ms) {
+                        self.codec.stats.short_ttl_skips.fetch_add(1, Relaxed);
+                        cursor.pos += 1;
+                        work.scanned += 1;
+                        continue;
+                    }
                     let access_secs = g.last_access_secs(i);
                     let dict = (!e.is_expired(clock.ms)
                         && clock.secs.saturating_sub(access_secs) >= min_idle)
@@ -364,7 +375,12 @@ impl Db {
                 continue;
             };
             let mut g = self.lock(shard);
-            if g.pack_at(&candidate, &compressed, self.clock(), min_idle) {
+            let clock = self.clock();
+            if g.entries()
+                .get(candidate.index)
+                .is_some_and(|e| self.codec.ttl_eligible(e, clock.ms))
+                && g.pack_at(&candidate, &compressed, clock, min_idle)
+            {
                 work.packed += 1;
             } else {
                 self.codec.stats.candidates_discarded.fetch_add(1, Relaxed);
@@ -384,6 +400,12 @@ impl Db {
     pub fn access_clock_bytes(&self) -> usize {
         (0..self.shard_count())
             .map(|i| self.lock(i).access_clock_bytes())
+            .sum()
+    }
+
+    pub fn hot_resident_bytes(&self) -> usize {
+        (0..self.shard_count())
+            .map(|i| self.lock(i).hot_resident_bytes())
             .sum()
     }
 
@@ -481,6 +503,54 @@ impl ShardGuard<'_> {
 
     fn effective_used(&self) -> i64 {
         self.db.used.load(Relaxed) + self.shard.used() as i64 - self.base as i64
+    }
+
+    pub fn wants_hot_promotion(&self, i: usize) -> bool {
+        let budget = self.db.codec.hot_max_bytes();
+        if budget == 0 || !self.db.codec.enabled() || self.policy() != Policy::AllKeysLfu {
+            return false;
+        }
+        let limit = (budget / self.db.shard_count() as u64).min(usize::MAX as u64) as usize;
+        self.shard.hot_promotion_growth(i, limit).is_some()
+    }
+
+    /// Reserve the growth globally before altering the entry, without eviction or changing a GET
+    /// into an OOM response. Synchronize this guard's pending accounting so concurrent promotions
+    /// cannot all spend the same headroom. The resident budget is partitioned across shards.
+    pub fn promote_hot(&mut self, i: usize, value: &[u8], clock: Clock) -> bool {
+        if value.len() != self.shard.entry(i).value_len() || !self.wants_hot_promotion(i) {
+            return false;
+        }
+        let limit = (self.db.codec.hot_max_bytes() / self.db.shard_count() as u64)
+            .min(usize::MAX as u64) as usize;
+        let Some(growth) = self.shard.hot_promotion_growth(i, limit) else {
+            return false;
+        };
+        let delta = self.shard.used() as i64 - self.base as i64;
+        self.db.used.fetch_add(delta, Relaxed);
+        self.base = self.shard.used();
+        let max = self.db.maxmemory();
+        let mut used = self.db.used.load(Relaxed);
+        loop {
+            let Some(next) = used.checked_add(growth as i64) else {
+                return false;
+            };
+            if max != 0 && next.max(0) as u64 > max {
+                return false;
+            }
+            match self
+                .db
+                .used
+                .compare_exchange_weak(used, next, Relaxed, Relaxed)
+            {
+                Ok(_) => break,
+                Err(actual) => used = actual,
+            }
+        }
+        self.shard.promote_hot_at(i, value, clock);
+        self.base = self.shard.used(); // Already charged by the reservation.
+        self.db.codec.stats.hot_promotions.fetch_add(1, Relaxed);
+        true
     }
 
     pub fn policy(&self) -> Policy {
@@ -669,5 +739,132 @@ mod tests {
         assert_eq!((work.input_bytes, work.packed), (0, 0));
         assert_eq!(db.codec.stats.oversized_skips.load(Relaxed), 50);
         assert_eq!(db.pack_summary().keys, 0);
+    }
+}
+
+#[cfg(test)]
+mod hot_tests {
+    use super::entry::Packed;
+    use super::*;
+
+    fn packed(db: &Db, key: &[u8], clock: Clock) {
+        let (mut g, h) = db.lock_key(key);
+        g.insert(
+            h,
+            Entry::new_packed(
+                key,
+                b"compressed",
+                clock.ms + 60000,
+                8,
+                Packed {
+                    dict: 0,
+                    original_len: 512,
+                },
+            ),
+            clock.secs,
+        );
+    }
+
+    #[test]
+    fn promotion_preserves_ttl_metadata_budget_and_dense_index_moves() {
+        let db = Db::new(1, 0, Policy::AllKeysLfu, 5);
+        db.codec.set_enabled(true);
+        db.codec.set_hot_max_bytes(4096);
+        let clock = db.clock();
+        for k in [b"a", b"b"] {
+            packed(&db, k, clock);
+        }
+        let before = db.used_memory();
+        for k in [b"a", b"b"] {
+            let (mut g, h) = db.lock_key(k);
+            let i = g.lookup(h, k, clock.ms).unwrap();
+            assert!(g.promote_hot(i, &[b'x'; 512], clock));
+            assert_eq!(g.entry(i).expire_at(), clock.ms + 60000);
+            assert_eq!(g.entry(i).meta, 8);
+            assert!(g.entry(i).packed().is_none());
+        }
+        assert!(db.hot_resident_bytes() <= 4096);
+        assert!(db.used_memory() > before);
+        {
+            let (mut g, h) = db.lock_key(b"a");
+            let i = g.lookup(h, b"a", clock.ms).unwrap();
+            g.remove_at(i, h); // Moves promoted b to index 0.
+        }
+        {
+            let (mut g, h) = db.lock_key(b"b");
+            let i = g.lookup(h, b"b", clock.ms).unwrap();
+            assert_eq!(i, 0);
+            g.set_value(i, b"replacement", clock.secs);
+        }
+        assert_eq!(db.hot_resident_bytes(), 0);
+        db.flush();
+        assert_eq!(db.used_memory(), 0);
+    }
+
+    #[test]
+    fn promotion_cannot_evict_or_exceed_maxmemory_or_resident_budget() {
+        let db = Db::new(1, 0, Policy::AllKeysLfu, 5);
+        db.codec.set_enabled(true);
+        db.codec.set_hot_max_bytes(4096);
+        let clock = db.clock();
+        packed(&db, b"a", clock);
+        let before = db.used_memory();
+        db.set_maxmemory(before);
+        {
+            let (mut g, h) = db.lock_key(b"a");
+            let i = g.lookup(h, b"a", clock.ms).unwrap();
+            assert!(!g.promote_hot(i, &[b'x'; 512], clock));
+            assert!(g.entry(i).packed().is_some());
+        }
+        assert_eq!(db.used_memory(), before);
+        assert_eq!(db.dbsize(), 1);
+        db.set_maxmemory(0);
+        db.codec.set_hot_max_bytes(100); // Less than value + tracking.
+        let (mut g, h) = db.lock_key(b"a");
+        let i = g.lookup(h, b"a", clock.ms).unwrap();
+        assert!(!g.promote_hot(i, &[b'x'; 512], clock));
+    }
+    #[test]
+    fn concurrent_promotions_share_one_maxmemory_reservation() {
+        let db = Db::new(2, 0, Policy::AllKeysLfu, 5);
+        db.codec.set_enabled(true);
+        db.codec.set_hot_max_bytes(8192);
+        let a = b"a".to_vec();
+        let b = (0..10000)
+            .map(|i| format!("b{i}").into_bytes())
+            .find(|k| db.shard_index(db.hash(k)) != db.shard_index(db.hash(&a)))
+            .unwrap();
+        let clock = db.clock();
+        packed(&db, &a, clock);
+        packed(&db, &b, clock);
+        let growth = {
+            let (mut g, h) = db.lock_key(&a);
+            let i = g.lookup(h, &a, clock.ms).unwrap();
+            g.hot_promotion_growth(i, 4096).unwrap()
+        };
+        db.set_maxmemory(db.used_memory() + growth as u64);
+        let barrier = std::sync::Barrier::new(2);
+        let results = std::thread::scope(|scope| {
+            let workers: Vec<_> = [&a, &b]
+                .into_iter()
+                .map(|key| {
+                    let db = &db;
+                    let barrier = &barrier;
+                    scope.spawn(move || {
+                        let (mut g, h) = db.lock_key(key);
+                        let i = g.lookup(h, key, clock.ms).unwrap();
+                        barrier.wait();
+                        g.promote_hot(i, &[b'x'; 512], clock)
+                    })
+                })
+                .collect();
+            workers
+                .into_iter()
+                .map(|w| w.join().unwrap())
+                .collect::<Vec<_>>()
+        });
+        assert_eq!(results.iter().filter(|&&ok| ok).count(), 1);
+        assert!(db.used_memory() <= db.maxmemory());
+        assert_eq!(db.dbsize(), 2);
     }
 }

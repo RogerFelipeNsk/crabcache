@@ -25,7 +25,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering::Relaxed};
 use std::time::Instant;
 use zstd::zstd_safe::{CCtx, CDict, CParameter, DCtx, DDict, DParameter, FrameFormat};
 
-/// Maximum dictionary size. 16 KB was the knee of the curve on the measured datasets.
+/// Maximum adaptive dictionary size; fixed mode uses this size and level 3.
 pub const DICT_SIZE: usize = 16 * 1024;
 /// Samples gathered per prefix before training.
 pub const SAMPLES_PER_PREFIX: usize = 1000;
@@ -65,6 +65,8 @@ pub struct Dict {
     /// Compression ratio measured on held-out samples when the dictionary was accepted.
     pub trained_ratio: f64,
     pub prepared_bytes: usize,
+    pub raw_bytes: usize,
+    pub level: i32,
     cdict: CDict<'static>,
     ddict: DDict<'static>,
 }
@@ -103,6 +105,9 @@ pub struct CodecStats {
     pub pack_input_bytes: AtomicU64,
     pub candidates_discarded: AtomicU64,
     pub oversized_skips: AtomicU64,
+    pub short_ttl_skips: AtomicU64,
+    pub hot_promotions: AtomicU64,
+    pub maintenance_backoffs: AtomicU64,
 }
 
 pub struct Codec {
@@ -117,6 +122,11 @@ pub struct Codec {
     pack_max_bytes: AtomicU64,
     pack_budget_ms: AtomicU64,
     sample_hasher: RandomState,
+    adaptive_dicts: AtomicBool,
+    adaptive_maintenance: AtomicBool,
+    min_ttl_secs: AtomicU64,
+    hot_max_bytes: AtomicU64,
+    pressure_until_ms: AtomicU64,
     pub stats: CodecStats,
 }
 
@@ -194,6 +204,11 @@ impl Codec {
             pack_max_bytes: AtomicU64::new(DEFAULT_PACK_BYTES),
             pack_budget_ms: AtomicU64::new(DEFAULT_PACK_BUDGET_MS),
             sample_hasher: RandomState::new(),
+            adaptive_dicts: AtomicBool::new(true),
+            adaptive_maintenance: AtomicBool::new(true),
+            min_ttl_secs: AtomicU64::new(2),
+            hot_max_bytes: AtomicU64::new(0),
+            pressure_until_ms: AtomicU64::new(0),
             stats: CodecStats::default(),
         }
     }
@@ -234,6 +249,45 @@ impl Codec {
     pub fn set_pack_budget_ms(&self, ms: u64) {
         self.pack_budget_ms.store(ms.clamp(1, 1000), Relaxed);
     }
+    pub fn adaptive_dicts(&self) -> bool {
+        self.adaptive_dicts.load(Relaxed)
+    }
+    pub fn set_adaptive_dicts(&self, on: bool) {
+        self.adaptive_dicts.store(on, Relaxed);
+    }
+    pub fn adaptive_maintenance(&self) -> bool {
+        self.adaptive_maintenance.load(Relaxed)
+    }
+    pub fn set_adaptive_maintenance(&self, on: bool) {
+        self.adaptive_maintenance.store(on, Relaxed);
+    }
+    pub fn min_ttl_secs(&self) -> u64 {
+        self.min_ttl_secs.load(Relaxed)
+    }
+    pub fn set_min_ttl_secs(&self, secs: u64) {
+        self.min_ttl_secs.store(secs, Relaxed);
+    }
+    pub fn hot_max_bytes(&self) -> u64 {
+        self.hot_max_bytes.load(Relaxed)
+    }
+    pub fn set_hot_max_bytes(&self, bytes: u64) {
+        self.hot_max_bytes.store(bytes, Relaxed);
+    }
+    pub fn ttl_eligible(&self, e: &Entry, now_ms: u64) -> bool {
+        let at = e.expire_at();
+        at == 0 || at.saturating_sub(now_ms) >= self.min_ttl_secs().saturating_mul(1000)
+    }
+    /// Sampled command execution time, excluding socket reads/writes; not CPU time.
+    pub fn observe_request(&self, elapsed_us: u64, now_ms: u64) {
+        if elapsed_us >= 1000 {
+            self.pressure_until_ms
+                .fetch_max(now_ms.saturating_add(1000), Relaxed);
+        }
+    }
+    pub fn under_pressure(&self, now_ms: u64) -> bool {
+        self.adaptive_maintenance() && now_ms < self.pressure_until_ms.load(Relaxed)
+    }
+
     pub fn has_dicts(&self) -> bool {
         self.count.load(Relaxed) != 0
     }
@@ -293,6 +347,31 @@ impl Codec {
             }
             Ok(f(&buf))
         })
+    }
+
+    /// Append exactly one value without a scratch-to-output copy. On any error, restore the
+    /// previous initialized output; Cursor delegates initialized-length tracking to zstd-safe.
+    pub fn append_packed(
+        &self,
+        p: Packed,
+        stored: &[u8],
+        out: &mut Vec<u8>,
+    ) -> Result<(), Corrupt> {
+        let dict = self.dict(p.dict).ok_or(Corrupt)?;
+        let start = out.len();
+        out.reserve(p.original_len as usize);
+        let result = DCTX.with(|d| {
+            let mut d = d.borrow_mut();
+            d.ref_ddict(&dict.ddict)?;
+            let mut destination = std::io::Cursor::new(&mut *out);
+            destination.set_position(start as u64);
+            d.decompress(&mut destination, stored)
+        });
+        if result.ok() != Some(p.original_len as usize) {
+            out.truncate(start);
+            return Err(Corrupt);
+        }
+        Ok(())
     }
 
     /// Compresses `value` with `dict`. Returns `None` when it would not save at least 1/8 of the size.
@@ -419,38 +498,69 @@ impl Codec {
         }
         let split = samples.len() * 4 / 5;
         let (train, test) = samples.split_at(split);
-        let Ok(raw) = zstd::dict::from_samples(train, DICT_SIZE) else {
-            return TrainOutcome::Failed;
+        let adaptive = self.adaptive_dicts();
+        let mut best = None;
+        let mut best_cost = usize::MAX;
+        let mut best_ratio: f64 = 1.0;
+        let original: usize = test.iter().map(Vec::len).sum();
+        // Evaluate prepared tables, not just raw dictionary size. Use only the observed population
+        // to amortize fixed cost; future key counts are unknown. Fixed mode retains old admission.
+        let sizes: &[usize] = if adaptive {
+            &[4096, 8192, DICT_SIZE]
+        } else {
+            &[DICT_SIZE]
         };
-        let cdict = CDict::create(&raw, LEVEL);
-        // Measure with a private context before registering anything, so a rejected dictionary is
-        // simply dropped and readers are never held up by training.
-        let ratio = {
-            let mut cctx = CCtx::create();
-            configure_compressor(&mut cctx);
-            let original: usize = test.iter().map(Vec::len).sum();
-            let compressed: usize = test
-                .iter()
-                .map(|v| compress_with(&mut cctx, &cdict, v).map_or(v.len(), |c| c.len()))
-                .sum();
-            original as f64 / compressed.max(1) as f64
-        };
-        if ratio < MIN_GAIN {
-            return TrainOutcome::Rejected { ratio };
+        let levels: &[i32] = if adaptive { &[1, LEVEL] } else { &[LEVEL] };
+        for &size in sizes {
+            let Ok(raw) = zstd::dict::from_samples(train, size) else {
+                continue;
+            };
+            for &level in levels {
+                let cdict = CDict::create(&raw, level);
+                let ddict = DDict::create(&raw);
+                let prepared =
+                    cdict.sizeof() + ddict.sizeof() + prefix.len() + std::mem::size_of::<Dict>();
+                let (stored, physical) = {
+                    let mut cctx = compressor();
+                    let mut stored = 0usize;
+                    let mut physical = 0usize;
+                    for value in test {
+                        if let Some(packed) = compress_with(&mut cctx, &cdict, value) {
+                            stored += packed.len();
+                            physical += packed.len() + super::entry::PACKED_BYTES;
+                        } else {
+                            stored += value.len();
+                            physical += value.len();
+                        }
+                    }
+                    (stored, physical)
+                };
+                let ratio = original as f64 / stored.max(1) as f64;
+                best_ratio = best_ratio.max(ratio);
+                let population_cost = physical.saturating_mul(samples.len()) / test.len().max(1);
+                let cost = prepared.saturating_add(population_cost);
+                let population_plain = original.saturating_mul(samples.len()) / test.len().max(1);
+                if ratio >= MIN_GAIN && (!adaptive || cost < population_plain) && cost < best_cost {
+                    best_cost = cost;
+                    best = Some((raw.len(), level, ratio, prepared, cdict, ddict));
+                }
+            }
         }
+        let Some((raw_bytes, level, ratio, prepared_bytes, cdict, ddict)) = best else {
+            return TrainOutcome::Rejected { ratio: best_ratio };
+        };
         let mut by_prefix = self.by_prefix.write();
         let id = self.count.load(Relaxed);
         if id >= MAX_DICTS {
             return TrainOutcome::Failed;
         }
-        let ddict = DDict::create(&raw);
-        let prepared_bytes =
-            cdict.sizeof() + ddict.sizeof() + prefix.len() + std::mem::size_of::<Dict>();
         let dict: &'static Dict = Box::leak(Box::new(Dict {
             id: id as u32,
             prefix: prefix.into(),
             trained_ratio: ratio,
             prepared_bytes,
+            raw_bytes,
+            level,
             cdict,
             ddict,
         }));
@@ -703,5 +813,109 @@ pub(crate) mod tests {
         assert_eq!(codec.stats.training_jobs.load(Relaxed), 0);
         assert_eq!(codec.stats.training_bytes.load(Relaxed), 0);
         assert!(dict.prepared_bytes > DICT_SIZE);
+    }
+}
+
+#[cfg(test)]
+mod adaptive_tests {
+    use super::tests::sample_values;
+    use super::*;
+
+    #[test]
+    fn adaptive_dictionary_optimizes_observed_total_not_only_ratio() {
+        let values = sample_values(1000, 123);
+        let fixed = Codec::new(true, 0, 64);
+        fixed.set_adaptive_dicts(false);
+        let adaptive = Codec::new(true, 0, 64);
+        for codec in [&fixed, &adaptive] {
+            assert!(matches!(
+                codec.train(b"session:".as_slice().into(), values.clone(), 0),
+                TrainOutcome::Accepted { .. }
+            ));
+        }
+        let cost = |codec: &Codec| {
+            let d = codec.dict(0).unwrap();
+            let payload: usize = values[800..]
+                .iter()
+                .map(|v| {
+                    codec
+                        .compress(d, v)
+                        .map_or(v.len(), |c| c.len() + super::super::entry::PACKED_BYTES)
+                })
+                .sum();
+            d.prepared_bytes + payload * 5
+        };
+        assert!(cost(&adaptive) <= cost(&fixed));
+        assert!(adaptive.dict(0).unwrap().prepared_bytes < fixed.dict(0).unwrap().prepared_bytes);
+        assert!(adaptive.dict(0).unwrap().raw_bytes <= DICT_SIZE);
+    }
+
+    #[test]
+    fn prepared_memory_cannot_be_amortized_by_a_tiny_population() {
+        let codec = Codec::new(true, 0, 40);
+        assert!(!matches!(
+            codec.train(b"small:".as_slice().into(), vec![vec![b'x'; 100]; 20], 0),
+            TrainOutcome::Accepted { .. }
+        ));
+        assert_eq!(codec.dicts().len(), 0);
+    }
+
+    #[test]
+    fn direct_decode_appends_binary_and_rolls_back_on_length_or_frame_errors() {
+        let codec = Codec::new(true, 0, 64);
+        codec.train(b"session:".as_slice().into(), sample_values(1000, 123), 0);
+        let value = [
+            sample_values(1, 32).remove(0).repeat(300),
+            b"\x00\xff\xfe\r\n".to_vec(),
+        ]
+        .concat();
+        let dict = codec.dict(0).unwrap();
+        let e = codec
+            .pack(dict, &Entry::new(b"session:test", &value, 0, 0))
+            .unwrap();
+        let p = e.packed().unwrap();
+        let prefix = b"+OK\r\n*3\r\n";
+        let mut out = prefix.to_vec();
+        codec.append_packed(p, e.stored(), &mut out).unwrap();
+        assert_eq!(&out[prefix.len()..], value);
+        for (packed, frame) in [
+            (
+                Packed {
+                    original_len: p.original_len + 1,
+                    ..p
+                },
+                e.stored(),
+            ),
+            (
+                Packed {
+                    original_len: p.original_len - 1,
+                    ..p
+                },
+                e.stored(),
+            ),
+            (p, &e.stored()[..e.stored().len() / 2]),
+            (Packed { dict: 63, ..p }, e.stored()),
+        ] {
+            let mut out = prefix.to_vec();
+            assert!(codec.append_packed(packed, frame, &mut out).is_err());
+            assert_eq!(out, prefix);
+        }
+    }
+
+    #[test]
+    fn ttl_and_pressure_controls_have_explicit_boundaries() {
+        let codec = Codec::new(true, 0, 64);
+        assert!(codec.ttl_eligible(&Entry::new(b"k", b"v", 0, 0), 100));
+        assert!(codec.ttl_eligible(&Entry::new(b"k", b"v", 2100, 0), 100));
+        assert!(!codec.ttl_eligible(&Entry::new(b"k", b"v", 2099, 0), 100));
+        codec.set_min_ttl_secs(0);
+        assert!(codec.ttl_eligible(&Entry::new(b"k", b"v", 101, 0), 100));
+        codec.observe_request(999, 100);
+        assert!(!codec.under_pressure(100));
+        codec.observe_request(1000, 100);
+        assert!(codec.under_pressure(1099));
+        assert!(!codec.under_pressure(1100));
+        codec.set_adaptive_maintenance(false);
+        assert!(!codec.under_pressure(100));
     }
 }

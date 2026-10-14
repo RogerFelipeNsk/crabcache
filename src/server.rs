@@ -248,7 +248,18 @@ async fn serve(mut stream: TcpStream, shared: &Shared, addr: SocketAddr) -> io::
                     {
                         let base: &[u8] = if inline { &parser.scratch } else { &buf[pos..] };
                         let args = Args::new(base, &parser.args);
+                        session.pressure_sample = session.pressure_sample.wrapping_add(1);
+                        let sampled = session.pressure_sample & 63 == 0
+                            && shared.db.codec.enabled()
+                            && shared.db.codec.adaptive_maintenance();
+                        let start = sampled.then(Instant::now);
                         commands::execute(shared, &mut session, &args, clock, &mut out);
+                        if let Some(start) = start {
+                            shared.db.codec.observe_request(
+                                start.elapsed().as_micros() as u64,
+                                shared.db.maintenance_clock_ms(),
+                            );
+                        }
                     }
                     pos += consumed;
                     executed += 1;
@@ -323,16 +334,38 @@ async fn pack_task(shared: Arc<Shared>) {
     let mut cursor = PackCursor::default();
     let mut tick = tokio::time::interval(Duration::from_millis(200));
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut pressure_tick = false;
     loop {
         tick.tick().await;
         if !shared.db.codec.enabled() {
+            continue;
+        }
+        let pressure = shared
+            .db
+            .codec
+            .under_pressure(shared.db.maintenance_clock_ms());
+        // Memory pressure overrides skipping/deferred training to avoid starvation near maxmemory.
+        let memory_pressure = shared.db.maxmemory() != 0
+            && shared.db.used_memory() >= shared.db.maxmemory().saturating_mul(3) / 4;
+        pressure_tick = !pressure_tick;
+        if pressure && !memory_pressure && pressure_tick {
+            shared
+                .db
+                .codec
+                .stats
+                .maintenance_backoffs
+                .fetch_add(1, Relaxed);
             continue;
         }
         let mut job_cursor = std::mem::take(&mut cursor);
         let job_shared = Arc::clone(&shared);
         let job = tokio::task::spawn_blocking(move || {
             // Sampling and training are also off the acceptor runtime, and train serially.
-            for (prefix, samples) in job_shared.db.pack_sample(64) {
+            for (prefix, samples) in
+                job_shared
+                    .db
+                    .pack_sample(if pressure && !memory_pressure { 0 } else { 64 })
+            {
                 let label = String::from_utf8_lossy(&prefix).into_owned();
                 let secs = job_shared.db.clock().secs;
                 match job_shared.db.codec.train(prefix, samples, secs) {
@@ -352,7 +385,12 @@ async fn pack_task(shared: Arc<Shared>) {
             let mut budget = PackBudget {
                 bytes: max_bytes,
                 max_value_bytes: max_bytes,
-                until: start + Duration::from_millis(job_shared.db.codec.pack_budget_ms()),
+                until: start
+                    + Duration::from_millis(if pressure {
+                        (job_shared.db.codec.pack_budget_ms() / 2).max(1)
+                    } else {
+                        job_shared.db.codec.pack_budget_ms()
+                    }),
             };
             for _ in 0..64 {
                 if budget.bytes == 0 || Instant::now() >= budget.until {

@@ -72,6 +72,22 @@ pub struct Config {
     #[arg(long, env = "CRABCACHE_COMPRESSION_TIME_BUDGET_MS", default_value_t = 2, value_parser = clap::value_parser!(u64).range(1..=1000))]
     pub compression_time_budget_ms: u64,
 
+    /// Select dictionary size/level by payload plus prepared-table memory.
+    #[arg(long, env = "CRABCACHE_COMPRESSION_ADAPTIVE_DICTS", default_value_t = true, action = clap::ArgAction::Set)]
+    pub compression_adaptive_dicts: bool,
+
+    /// Back off maintenance after sampled slow commands; does not preempt training.
+    #[arg(long, env = "CRABCACHE_COMPRESSION_ADAPTIVE_MAINTENANCE", default_value_t = true, action = clap::ArgAction::Set)]
+    pub compression_adaptive_maintenance: bool,
+
+    /// Skip values with less than this many seconds of TTL left (0 disables).
+    #[arg(long, env = "CRABCACHE_COMPRESSION_MIN_TTL", default_value_t = 2)]
+    pub compression_min_ttl: u64,
+
+    /// Optional resident budget for promoting hot LFU packed values to plain (0 disables).
+    #[arg(long, env = "CRABCACHE_COMPRESSION_HOT_MAXMEMORY", default_value = "0", value_parser = parse_mem_arg)]
+    pub compression_hot_maxmemory: u64,
+
     /// Largest accepted bulk string (value or key).
     #[arg(long, env = "CRABCACHE_PROTO_MAX_BULK_LEN", default_value = "512mb", value_parser = parse_mem_arg)]
     pub proto_max_bulk_len: u64,

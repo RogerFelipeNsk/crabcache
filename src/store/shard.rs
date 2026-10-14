@@ -64,6 +64,8 @@ pub struct PackCandidate {
 pub struct Shard {
     /// Allocated lazily when CrabPack is enabled; does not enlarge the 16-byte Entry.
     access_secs: Option<Chunked<u32>>,
+    /// Optional LFU promotions; dense indices are repaired on swap removal.
+    hot_promoted: Vec<(usize, usize)>,
     entries: Chunked<Entry>,
     index: HashTable<u32>,
     /// `(deadline_ms, key_hash)`. May hold stale deadlines; they are skipped when popped.
@@ -80,6 +82,7 @@ impl Shard {
     pub fn new(hasher: RandomState, seed: u64) -> Self {
         Self {
             access_secs: None,
+            hot_promoted: Vec::new(),
             entries: Chunked::default(),
             index: HashTable::new(),
             expiries: BinaryHeap::new(),
@@ -102,7 +105,64 @@ impl Shard {
 
     /// Estimated memory used by the entries of this shard.
     pub fn used(&self) -> usize {
-        self.used + self.access_clock_bytes()
+        self.used
+            + self.access_clock_bytes()
+            + self.hot_promoted.capacity() * std::mem::size_of::<(usize, usize)>()
+    }
+
+    pub fn hot_resident_bytes(&self) -> usize {
+        self.hot_promoted
+            .iter()
+            .map(|(_, bytes)| bytes)
+            .sum::<usize>()
+            + self.hot_promoted.capacity() * std::mem::size_of::<(usize, usize)>()
+    }
+
+    fn forget_hot(&mut self, i: usize) {
+        if let Some(pos) = self.hot_promoted.iter().position(|&(index, _)| index == i) {
+            self.hot_promoted.swap_remove(pos);
+            if self.hot_promoted.is_empty() {
+                self.hot_promoted = Vec::new();
+            }
+        }
+    }
+
+    pub(crate) fn hot_promotion_growth(&self, i: usize, limit: usize) -> Option<usize> {
+        let e = self.entry(i);
+        let p = e.packed()?;
+        // Uses the existing LFU counter: no per-read heat map or extra clock per key.
+        if e.meta & 255 < 8 || self.hot_promoted.len() >= 64 {
+            return None;
+        }
+        let plain_bytes = e
+            .mem_usage()
+            .checked_add(p.original_len as usize)?
+            .checked_sub(e.stored().len())?
+            .checked_sub(super::entry::PACKED_BYTES)?;
+        let growth = plain_bytes.checked_sub(e.mem_usage())?;
+        let metadata = if self.hot_promoted.capacity() == 0 {
+            64 * std::mem::size_of::<(usize, usize)>()
+        } else {
+            0
+        };
+        if limit == 0
+            || self
+                .hot_resident_bytes()
+                .saturating_add(plain_bytes)
+                .saturating_add(metadata)
+                > limit
+        {
+            return None;
+        }
+        Some(growth + metadata)
+    }
+
+    pub(crate) fn promote_hot_at(&mut self, i: usize, value: &[u8], clock: Clock) {
+        self.set_value(i, value, clock.secs); // Preserves current TTL and LFU metadata.
+        if self.hot_promoted.capacity() == 0 {
+            self.hot_promoted = Vec::with_capacity(64);
+        }
+        self.hot_promoted.push((i, self.entry(i).mem_usage()));
     }
 
     pub fn tracks_access(&self) -> bool {
@@ -236,6 +296,7 @@ impl Shard {
 
     /// Replaces entry `i` (same key) with a prebuilt entry, so the allocation can happen outside the lock.
     pub fn replace(&mut self, i: usize, hash: u64, entry: Entry) -> Entry {
+        self.forget_hot(i);
         let (old_at, new_at) = (self.entries[i].expire_at(), entry.expire_at());
         match (old_at != 0, new_at != 0) {
             (false, true) => self.ttl_keys += 1,
@@ -252,6 +313,7 @@ impl Shard {
     }
 
     pub fn set_value(&mut self, i: usize, value: &[u8], now_secs: u32) {
+        self.forget_hot(i);
         self.record_access(i, now_secs);
         let before = Footprint::of(&self.entries[i]);
         self.entries[i].set_value(value);
@@ -281,6 +343,12 @@ impl Shard {
 
     pub fn remove_at(&mut self, i: usize, hash: u64) -> Entry {
         let last = self.entries.len() - 1;
+        self.forget_hot(i);
+        for (index, _) in &mut self.hot_promoted {
+            if *index == last {
+                *index = i;
+            }
+        }
         match self.index.find_entry(hash, |&j| j as usize == i) {
             Ok(slot) => {
                 slot.remove();
@@ -309,6 +377,7 @@ impl Shard {
     }
 
     pub fn clear(&mut self) {
+        self.hot_promoted = Vec::new();
         self.entries.clear();
         if let Some(clocks) = &mut self.access_secs {
             clocks.clear();

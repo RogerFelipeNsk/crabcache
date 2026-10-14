@@ -10,9 +10,22 @@ const MAX_STRING: usize = 512 * 1024 * 1024;
 const CORRUPT: &str = "ERR stored value could not be decompressed";
 
 /// Writes the value of `e` as a bulk reply, decompressing it if it is stored packed.
-fn reply_value(db: &Db, out: &mut Vec<u8>, e: &Entry) {
-    if db.codec.with_value(e, |v| reply::bulk(out, v)).is_err() {
+fn reply_packed(db: &Db, out: &mut Vec<u8>, p: crate::store::entry::Packed, stored: &[u8]) {
+    let start = out.len();
+    reply::bulk_header(out, p.original_len as usize);
+    if db.codec.append_packed(p, stored, out).is_err() {
+        out.truncate(start);
         reply::error(out, CORRUPT);
+    } else {
+        out.extend_from_slice(b"\r\n");
+    }
+}
+
+fn reply_value(db: &Db, out: &mut Vec<u8>, e: &Entry) {
+    if let Some(p) = e.packed() {
+        reply_packed(db, out, p, e.stored());
+    } else {
+        reply::bulk(out, e.stored());
     }
 }
 
@@ -20,20 +33,27 @@ fn reply_value(db: &Db, out: &mut Vec<u8>, e: &Entry) {
 // throughout large decompression/output. Small GETs keep the allocation-free path.
 const UNLOCK_PACKED_ABOVE: usize = 64 * 1024;
 
-fn reply_read_value(db: &Db, out: &mut Vec<u8>, g: ShardGuard<'_>, i: usize) {
+fn reply_read_value(db: &Db, out: &mut Vec<u8>, mut g: ShardGuard<'_>, i: usize, clock: Clock) {
+    let promote = g.wants_hot_promotion(i);
     let e = g.entry(i);
     if let Some(p) = e
         .packed()
-        .filter(|p| p.original_len as usize >= UNLOCK_PACKED_ABOVE)
+        .filter(|p| p.original_len as usize >= UNLOCK_PACKED_ABOVE && !promote)
     {
         let stored = e.stored().to_vec();
         drop(g);
-        if db
-            .codec
-            .with_packed_value(p, &stored, |v| reply::bulk(out, v))
-            .is_err()
-        {
+        reply_packed(db, out, p, &stored);
+    } else if promote {
+        let p = e.packed().expect("promotion needs a packed entry");
+        let start = out.len();
+        reply::bulk_header(out, p.original_len as usize);
+        let body = out.len();
+        if db.codec.append_packed(p, e.stored(), out).is_err() {
+            out.truncate(start);
             reply::error(out, CORRUPT);
+        } else {
+            g.promote_hot(i, &out[body..], clock);
+            out.extend_from_slice(b"\r\n");
         }
     } else {
         reply_value(db, out, e);
@@ -165,7 +185,7 @@ pub fn get(c: &mut Ctx, args: &Args) {
             g.stats.hits += 1;
             let p = g.policy();
             g.touch(i, p, c.clock);
-            reply_read_value(c.db, c.out, g, i);
+            reply_read_value(c.db, c.out, g, i, c.clock);
         }
         None => {
             g.stats.misses += 1;
@@ -358,7 +378,7 @@ pub fn mget(c: &mut Ctx, args: &Args) {
                 g.stats.hits += 1;
                 let p = g.policy();
                 g.touch(i, p, c.clock);
-                reply_read_value(c.db, c.out, g, i);
+                reply_read_value(c.db, c.out, g, i, c.clock);
             }
             None => {
                 g.stats.misses += 1;

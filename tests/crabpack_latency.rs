@@ -220,3 +220,126 @@ fn large_values_train_from_bounded_fragments_without_two_sample_rejection() {
     assert_eq!(field(&mut con, "compression_training_jobs"), 0);
     assert_eq!(field(&mut con, "compression_training_bytes"), 0);
 }
+
+#[test]
+fn adaptive_settings_validate_atomically_and_report_in_info() {
+    let srv = TestServer::start(&[]);
+    let mut con = srv.client();
+    let result: redis::RedisResult<()> = redis::cmd("CONFIG")
+        .arg("SET")
+        .arg("compression-min-ttl")
+        .arg(9)
+        .arg("compression-adaptive-dicts")
+        .arg("invalid")
+        .query(&mut con);
+    assert!(result.is_err());
+    assert_eq!(field(&mut con, "compression_min_ttl"), 2);
+    let _: () = redis::cmd("CONFIG")
+        .arg("SET")
+        .arg("compression-adaptive-dicts")
+        .arg("no")
+        .arg("compression-adaptive-maintenance")
+        .arg("no")
+        .arg("compression-min-ttl")
+        .arg(7)
+        .arg("compression-hot-maxmemory")
+        .arg("1mb")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(field(&mut con, "compression_min_ttl"), 7);
+    assert_eq!(field(&mut con, "compression_hot_maxmemory"), 1024 * 1024);
+    let settings: Vec<String> = redis::cmd("CONFIG")
+        .arg("GET")
+        .arg("compression-adaptive-dicts")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(settings, ["compression-adaptive-dicts", "no"]);
+}
+
+#[test]
+fn hot_lfu_promotion_preserves_binary_ttl_and_pipeline_replies() {
+    let srv = TestServer::start(&[
+        "--compression",
+        "--compression-min-idle",
+        "0",
+        "--maxmemory-policy",
+        "allkeys-lfu",
+        "--compression-hot-maxmemory",
+        "1mb",
+    ]);
+    let mut con = srv.client();
+    load_sessions(&mut con, 2000);
+    assert_eq!(
+        wait_for_packed(&mut srv.raw(), 2000, Duration::from_secs(20)),
+        2000
+    );
+    let _: () = redis::cmd("CONFIG")
+        .arg("SET")
+        .arg("compression-min-idle")
+        .arg(60)
+        .query(&mut con)
+        .unwrap();
+    let original = session_json(0);
+    for _ in 0..1000 {
+        assert_eq!(con.get::<_, Vec<u8>>("session:0").unwrap(), original);
+        if field(&mut con, "compression_hot_promotions") != 0 {
+            break;
+        }
+    }
+    assert_eq!(field(&mut con, "compression_hot_promotions"), 1);
+    assert!(field(&mut con, "compression_hot_resident_bytes") <= 1024 * 1024);
+    let ttl: i64 = redis::cmd("TTL").arg("session:0").query(&mut con).unwrap();
+    assert!((1..=30).contains(&ttl));
+    let responses: (Vec<u8>, Vec<u8>, Vec<u8>) = redis::pipe()
+        .cmd("GET")
+        .arg("session:1")
+        .cmd("GET")
+        .arg("session:0")
+        .cmd("GETDEL")
+        .arg("session:2")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(responses, (session_json(1), original, session_json(2)));
+    let _: () = con
+        .set("session:0", b"replacement\0\xff".as_slice())
+        .unwrap();
+    assert_eq!(field(&mut con, "compression_hot_resident_bytes"), 0);
+    assert_eq!(
+        con.get::<_, Vec<u8>>("session:0").unwrap(),
+        b"replacement\0\xff"
+    );
+}
+
+#[test]
+fn short_lived_values_are_skipped_after_a_dictionary_is_ready() {
+    let srv = TestServer::start(&[
+        "--compression",
+        "--compression-min-idle",
+        "0",
+        "--compression-min-ttl",
+        "2",
+    ]);
+    let mut con = srv.client();
+    load_sessions(&mut con, 2000);
+    assert_eq!(
+        wait_for_packed(&mut srv.raw(), 2000, Duration::from_secs(20)),
+        2000
+    );
+    let value = session_json(99999);
+    let _: () = redis::cmd("SET")
+        .arg("session:short")
+        .arg(&value)
+        .arg("PX")
+        .arg(1500)
+        .query(&mut con)
+        .unwrap();
+    let start = std::time::Instant::now();
+    while field(&mut con, "compression_short_ttl_skips") == 0
+        && start.elapsed() < Duration::from_secs(1)
+    {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    assert!(field(&mut con, "compression_short_ttl_skips") > 0);
+    assert_eq!(con.get::<_, Vec<u8>>("session:short").unwrap(), value);
+    assert_eq!(field(&mut con, "compressed_keys"), 2000);
+}

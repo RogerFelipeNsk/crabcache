@@ -241,6 +241,29 @@ fn config_params(c: &Ctx) -> Vec<(&'static str, String)> {
             "compression-time-budget-ms",
             c.db.codec.pack_budget_ms().to_string(),
         ),
+        (
+            "compression-adaptive-dicts",
+            if c.db.codec.adaptive_dicts() {
+                "yes"
+            } else {
+                "no"
+            }
+            .into(),
+        ),
+        (
+            "compression-adaptive-maintenance",
+            if c.db.codec.adaptive_maintenance() {
+                "yes"
+            } else {
+                "no"
+            }
+            .into(),
+        ),
+        ("compression-min-ttl", c.db.codec.min_ttl_secs().to_string()),
+        (
+            "compression-hot-maxmemory",
+            c.db.codec.hot_max_bytes().to_string(),
+        ),
         ("port", cfg.port.to_string()),
         ("bind", cfg.bind.clone()),
         ("databases", "1".to_string()),
@@ -283,6 +306,10 @@ pub fn config(c: &mut Ctx, args: &Args) {
                 CompressionMinSize(usize),
                 CompressionMaxBytes(u64),
                 CompressionBudgetMs(u64),
+                AdaptiveDicts(bool),
+                AdaptiveMaintenance(bool),
+                MinTtl(u64),
+                HotMemory(u64),
             }
             // Validate everything before applying anything, like Redis.
             let mut updates = Vec::new();
@@ -336,6 +363,26 @@ pub fn config(c: &mut Ctx, args: &Args) {
                             None => return reply::error(c.out, &bad()),
                         }
                     }
+                    b"compression-adaptive-dicts" | b"compression-adaptive-maintenance" => {
+                        let on = match v.to_ascii_lowercase().as_slice() {
+                            b"yes" => true,
+                            b"no" => false,
+                            _ => return reply::error(c.out, &bad()),
+                        };
+                        updates.push(if eq_ic(k, "compression-adaptive-dicts") {
+                            Update::AdaptiveDicts(on)
+                        } else {
+                            Update::AdaptiveMaintenance(on)
+                        });
+                    }
+                    b"compression-min-ttl" => match parse_i64(v).filter(|&n| n >= 0) {
+                        Some(n) => updates.push(Update::MinTtl(n as u64)),
+                        None => return reply::error(c.out, &bad()),
+                    },
+                    b"compression-hot-maxmemory" => match parse_memory(v) {
+                        Some(n) => updates.push(Update::HotMemory(n)),
+                        None => return reply::error(c.out, &bad()),
+                    },
                     b"maxmemory-samples" => match parse_i64(v).filter(|&n| (1..=64).contains(&n)) {
                         Some(n) => updates.push(Update::Samples(n as usize)),
                         None => return reply::error(c.out, &bad()),
@@ -361,6 +408,10 @@ pub fn config(c: &mut Ctx, args: &Args) {
                     Update::CompressionMinSize(n) => c.db.codec.set_min_size(n),
                     Update::CompressionMaxBytes(n) => c.db.codec.set_pack_max_bytes(n),
                     Update::CompressionBudgetMs(n) => c.db.codec.set_pack_budget_ms(n),
+                    Update::AdaptiveDicts(on) => c.db.codec.set_adaptive_dicts(on),
+                    Update::AdaptiveMaintenance(on) => c.db.codec.set_adaptive_maintenance(on),
+                    Update::MinTtl(n) => c.db.codec.set_min_ttl_secs(n),
+                    Update::HotMemory(n) => c.db.codec.set_hot_max_bytes(n),
                 }
             }
             reply::ok(c.out);
@@ -503,13 +554,32 @@ pub fn info(c: &mut Ctx, args: &Args) {
             codec.stats.candidates_discarded.load(Relaxed),
             codec.stats.oversized_skips.load(Relaxed)
         );
+        let _ = write!(
+            s,
+            "compression_adaptive_dicts:{}\r\ncompression_adaptive_maintenance:{}\r\ncompression_min_ttl:{}\r\ncompression_hot_maxmemory:{}\r\ncompression_hot_resident_bytes:{}\r\ncompression_hot_promotions:{}\r\ncompression_short_ttl_skips:{}\r\ncompression_maintenance_backoffs:{}\r\n",
+            if codec.adaptive_dicts() { "yes" } else { "no" },
+            if codec.adaptive_maintenance() {
+                "yes"
+            } else {
+                "no"
+            },
+            codec.min_ttl_secs(),
+            codec.hot_max_bytes(),
+            c.db.hot_resident_bytes(),
+            codec.stats.hot_promotions.load(Relaxed),
+            codec.stats.short_ttl_skips.load(Relaxed),
+            codec.stats.maintenance_backoffs.load(Relaxed)
+        );
         for d in &dicts {
             let _ = write!(
                 s,
-                "dict{}:prefix={},trained_ratio={:.2}\r\n",
+                "dict{}:prefix={},trained_ratio={:.2},raw_bytes={},level={},prepared_bytes={}\r\n",
                 d.id,
                 String::from_utf8_lossy(&d.prefix),
-                d.trained_ratio
+                d.trained_ratio,
+                d.raw_bytes,
+                d.level,
+                d.prepared_bytes
             );
         }
         s.push_str("\r\n");
