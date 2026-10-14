@@ -43,6 +43,10 @@ Ao desabilitar a compressão, relógios já alocados continuam sendo atualizados
 compactados seguem legíveis. FLUSHALL libera as entradas e o armazenamento dos relógios, mantendo
 os dicionários, como antes. `used_memory` continua sendo contabilização, não RSS físico.
 
+`compression_training_us` e `compression_pack_us` medem tempo decorrido do job, incluindo espera;
+não são tempo de CPU. `compression_oversized_skips` conta tentativas de varredura, não chaves únicas.
+Os campos de amostras/dicionários são estimativas de componentes, sem todos os custos do allocator.
+
 ## Configuração para o playground
 
 | CLI / CONFIG | Variável de ambiente | Padrão |
