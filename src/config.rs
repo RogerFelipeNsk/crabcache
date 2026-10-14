@@ -64,6 +64,14 @@ pub struct Config {
     #[arg(long, env = "CRABCACHE_COMPRESSION_MIN_SIZE", default_value_t = 64)]
     pub compression_min_size: usize,
 
+    /// Maximum input bytes copied/compressed per 200 ms tick. Larger entries stay plain.
+    #[arg(long, env = "CRABCACHE_COMPRESSION_MAX_BYTES_PER_TICK", default_value = "512kb", value_parser = parse_pack_bytes)]
+    pub compression_max_bytes_per_tick: u64,
+
+    /// Cooperative packing deadline per tick (checked between values; training is separate).
+    #[arg(long, env = "CRABCACHE_COMPRESSION_TIME_BUDGET_MS", default_value_t = 2, value_parser = clap::value_parser!(u64).range(1..=1000))]
+    pub compression_time_budget_ms: u64,
+
     /// Largest accepted bulk string (value or key).
     #[arg(long, env = "CRABCACHE_PROTO_MAX_BULK_LEN", default_value = "512mb", value_parser = parse_mem_arg)]
     pub proto_max_bulk_len: u64,
@@ -111,4 +119,13 @@ fn parse_mem_arg(s: &str) -> Result<u64, String> {
 
 fn parse_policy_arg(s: &str) -> Result<Policy, String> {
     Policy::parse(s.as_bytes()).ok_or_else(|| format!("unknown eviction policy '{s}'"))
+}
+
+fn parse_pack_bytes(s: &str) -> Result<u64, String> {
+    let bytes = parse_mem_arg(s)?;
+    if bytes == 0 {
+        Err("compression byte budget must be positive".into())
+    } else {
+        Ok(bytes)
+    }
 }

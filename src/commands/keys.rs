@@ -2,7 +2,7 @@
 
 use super::Ctx;
 use crate::protocol::{Args, reply};
-use crate::store::Shard;
+use crate::store::{Clock, Shard};
 use crate::util::{eq_ic, glob_match, parse_i64};
 
 pub fn del(c: &mut Ctx, args: &Args) {
@@ -293,11 +293,9 @@ fn rename_generic(c: &mut Ctx, args: &Args, nx: bool) {
     let (src, dst) = (args.get(1), args.get(2));
     let (hs, hd) = (c.db.hash(src), c.db.hash(dst));
     let (ss, sd) = (c.db.shard_index(hs), c.db.shard_index(hd));
-    let now = c.clock.ms;
-
     let result: Result<bool, &str> = if ss == sd {
         let mut g = c.db.lock(ss);
-        rename_same_shard(&mut g, (src, hs), (dst, hd), now, nx)
+        rename_same_shard(&mut g, (src, hs), (dst, hd), c.clock, nx)
     } else {
         let mut guards = c.db.lock_many(&[ss.min(sd), ss.max(sd)]);
         let (a, b) = guards.split_at_mut(1);
@@ -306,7 +304,7 @@ fn rename_generic(c: &mut Ctx, args: &Args, nx: bool) {
         } else {
             (&mut b[0], &mut a[0])
         };
-        rename_across(gs, gd, (src, hs), (dst, hd), now, nx)
+        rename_across(gs, gd, (src, hs), (dst, hd), c.clock, nx)
     };
     match result {
         Err(e) => reply::error(c.out, e),
@@ -319,25 +317,25 @@ fn rename_same_shard(
     g: &mut Shard,
     (src, hs): (&[u8], u64),
     (dst, hd): (&[u8], u64),
-    now: u64,
+    clock: Clock,
     nx: bool,
 ) -> Result<bool, &'static str> {
-    let Some(_) = g.lookup(hs, src, now) else {
+    let Some(_) = g.lookup(hs, src, clock.ms) else {
         return Err("ERR no such key");
     };
     if src == dst {
         return Ok(!nx);
     }
-    if let Some(j) = g.lookup(hd, dst, now) {
+    if let Some(j) = g.lookup(hd, dst, clock.ms) {
         if nx {
             return Ok(false);
         }
         g.remove_at(j, hd);
     }
     // Look the source up again: removing dst may have moved it.
-    let i = g.lookup(hs, src, now).expect("source present");
+    let i = g.lookup(hs, src, clock.ms).expect("source present");
     let e = g.remove_at(i, hs);
-    g.insert(hd, e.with_key(dst));
+    g.insert(hd, e.with_key(dst), clock.secs);
     Ok(true)
 }
 
@@ -346,20 +344,20 @@ fn rename_across(
     gd: &mut Shard,
     (src, hs): (&[u8], u64),
     (dst, hd): (&[u8], u64),
-    now: u64,
+    clock: Clock,
     nx: bool,
 ) -> Result<bool, &'static str> {
-    let Some(i) = gs.lookup(hs, src, now) else {
+    let Some(i) = gs.lookup(hs, src, clock.ms) else {
         return Err("ERR no such key");
     };
-    if let Some(j) = gd.lookup(hd, dst, now) {
+    if let Some(j) = gd.lookup(hd, dst, clock.ms) {
         if nx {
             return Ok(false);
         }
         gd.remove_at(j, hd);
     }
     let e = gs.remove_at(i, hs);
-    gd.insert(hd, e.with_key(dst));
+    gd.insert(hd, e.with_key(dst), clock.secs);
     Ok(true)
 }
 

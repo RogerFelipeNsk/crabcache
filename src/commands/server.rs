@@ -233,6 +233,14 @@ fn config_params(c: &Ctx) -> Vec<(&'static str, String)> {
             c.db.codec.min_idle_secs().to_string(),
         ),
         ("compression-min-size", c.db.codec.min_size().to_string()),
+        (
+            "compression-max-bytes-per-tick",
+            c.db.codec.pack_max_bytes().to_string(),
+        ),
+        (
+            "compression-time-budget-ms",
+            c.db.codec.pack_budget_ms().to_string(),
+        ),
         ("port", cfg.port.to_string()),
         ("bind", cfg.bind.clone()),
         ("databases", "1".to_string()),
@@ -273,6 +281,8 @@ pub fn config(c: &mut Ctx, args: &Args) {
                 Compression(bool),
                 CompressionMinIdle(u64),
                 CompressionMinSize(usize),
+                CompressionMaxBytes(u64),
+                CompressionBudgetMs(u64),
             }
             // Validate everything before applying anything, like Redis.
             let mut updates = Vec::new();
@@ -316,6 +326,16 @@ pub fn config(c: &mut Ctx, args: &Args) {
                         Some(n) => updates.push(Update::CompressionMinSize(n as usize)),
                         None => return reply::error(c.out, &bad()),
                     },
+                    b"compression-max-bytes-per-tick" => match parse_memory(v).filter(|&n| n > 0) {
+                        Some(n) => updates.push(Update::CompressionMaxBytes(n)),
+                        None => return reply::error(c.out, &bad()),
+                    },
+                    b"compression-time-budget-ms" => {
+                        match parse_i64(v).filter(|&n| (1..=1000).contains(&n)) {
+                            Some(n) => updates.push(Update::CompressionBudgetMs(n as u64)),
+                            None => return reply::error(c.out, &bad()),
+                        }
+                    }
                     b"maxmemory-samples" => match parse_i64(v).filter(|&n| (1..=64).contains(&n)) {
                         Some(n) => updates.push(Update::Samples(n as usize)),
                         None => return reply::error(c.out, &bad()),
@@ -339,6 +359,8 @@ pub fn config(c: &mut Ctx, args: &Args) {
                     Update::Compression(on) => c.db.codec.set_enabled(on),
                     Update::CompressionMinIdle(n) => c.db.codec.set_min_idle_secs(n),
                     Update::CompressionMinSize(n) => c.db.codec.set_min_size(n),
+                    Update::CompressionMaxBytes(n) => c.db.codec.set_pack_max_bytes(n),
+                    Update::CompressionBudgetMs(n) => c.db.codec.set_pack_budget_ms(n),
                 }
             }
             reply::ok(c.out);
@@ -462,6 +484,25 @@ pub fn info(c: &mut Ctx, args: &Args) {
             pack.stored_bytes,
             ratio,
         );
+        let (sampler_prefixes, sample_bytes) = codec.sampler_memory();
+        let prepared_bytes: usize = dicts.iter().map(|d| d.prepared_bytes).sum();
+        let _ = write!(
+            s,
+            "compression_max_bytes_per_tick:{}\r\ncompression_time_budget_ms:{}\r\ncompression_access_clock_bytes:{}\r\ncompression_sampler_prefixes:{}\r\ncompression_sample_bytes:{}\r\ncompression_prepared_dict_bytes:{}\r\ncompression_training_jobs:{}\r\ncompression_training_bytes:{}\r\ncompression_training_us:{}\r\ncompression_pack_us:{}\r\ncompression_pack_input_bytes:{}\r\ncompression_candidates_discarded:{}\r\ncompression_oversized_skips:{}\r\n",
+            codec.pack_max_bytes(),
+            codec.pack_budget_ms(),
+            c.db.access_clock_bytes(),
+            sampler_prefixes,
+            sample_bytes,
+            prepared_bytes,
+            codec.stats.training_jobs.load(Relaxed),
+            codec.stats.training_bytes.load(Relaxed),
+            codec.stats.training_micros.load(Relaxed),
+            codec.stats.pack_micros.load(Relaxed),
+            codec.stats.pack_input_bytes.load(Relaxed),
+            codec.stats.candidates_discarded.load(Relaxed),
+            codec.stats.oversized_skips.load(Relaxed)
+        );
         for d in &dicts {
             let _ = write!(
                 s,
@@ -496,7 +537,10 @@ pub fn memory(c: &mut Ctx, args: &Args) {
         let key = args.get(2);
         let (mut g, h) = c.db.lock_key(key);
         match g.lookup(h, key, c.clock.ms) {
-            Some(i) => reply::int(c.out, g.entry(i).mem_usage() as i64),
+            Some(i) => reply::int(
+                c.out,
+                (g.entry(i).mem_usage() + if g.tracks_access() { 4 } else { 0 }) as i64,
+            ),
             None => reply::null(c.out, c.session.resp3),
         }
     } else {

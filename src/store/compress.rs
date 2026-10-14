@@ -6,7 +6,7 @@
 //! compressed on its own. Measured on realistic JSON (sessions, products, API responses of ~300 B):
 //! plain zstd 1.2-1.5x, zstd with a 16 KB trained dictionary 3.2-3.6x.
 //!
-//! The flow, driven by a background task (`Db::pack_cycle`):
+//! The flow, driven by the background packing task:
 //! 1. Random entries are sampled and grouped by prefix.
 //! 2. Once a prefix has enough samples, a dictionary is trained off the I/O threads and kept only if it
 //!    compresses held-out samples by at least `MIN_GAIN`.
@@ -16,11 +16,13 @@
 //! value plain again, so hot keys stay uncompressed.
 
 use super::entry::{Entry, Packed};
+use ahash::RandomState;
 use parking_lot::{Mutex, RwLock};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering::Relaxed};
+use std::time::Instant;
 use zstd::zstd_safe::{CCtx, CDict, CParameter, DCtx, DDict, DParameter, FrameFormat};
 
 /// Maximum dictionary size. 16 KB was the knee of the curve on the measured datasets.
@@ -33,6 +35,10 @@ pub const SAMPLE_BYTES_PER_PREFIX: usize = 256 * 1024;
 pub const MIN_GAIN: f64 = 1.25;
 /// Upper bound on dictionaries (each costs ~16 KB plus prepared zstd tables).
 pub const MAX_DICTS: usize = 64;
+/// Bound memory even when clients generate many prefixes or very large values.
+pub const MAX_SAMPLE_SIZE: usize = 16 * 1024;
+pub const DEFAULT_PACK_BYTES: u64 = 512 * 1024;
+pub const DEFAULT_PACK_BUDGET_MS: u64 = 2;
 /// A prefix whose dictionary was rejected is not sampled again for this long.
 pub const REJECT_SECS: u32 = 600;
 /// Prefixes are cut at the first ':' within this many bytes.
@@ -58,6 +64,7 @@ pub struct Dict {
     pub prefix: Box<[u8]>,
     /// Compression ratio measured on held-out samples when the dictionary was accepted.
     pub trained_ratio: f64,
+    pub prepared_bytes: usize,
     cdict: CDict<'static>,
     ddict: DDict<'static>,
 }
@@ -77,6 +84,7 @@ pub enum TrainOutcome {
 
 #[derive(Default)]
 struct Sampler {
+    seen: HashSet<u64>,
     samples: Vec<Vec<u8>>,
     bytes: usize,
     /// Server-clock second until which the prefix is not sampled (after a rejected dictionary).
@@ -88,6 +96,13 @@ struct Sampler {
 pub struct CodecStats {
     pub dicts_rejected: AtomicU64,
     pub values_packed: AtomicU64,
+    pub training_jobs: AtomicU64,
+    pub training_bytes: AtomicU64,
+    pub training_micros: AtomicU64,
+    pub pack_micros: AtomicU64,
+    pub pack_input_bytes: AtomicU64,
+    pub candidates_discarded: AtomicU64,
+    pub oversized_skips: AtomicU64,
 }
 
 pub struct Codec {
@@ -99,6 +114,9 @@ pub struct Codec {
     enabled: AtomicBool,
     min_idle_secs: AtomicU64,
     min_size: AtomicUsize,
+    pack_max_bytes: AtomicU64,
+    pack_budget_ms: AtomicU64,
+    sample_hasher: RandomState,
     pub stats: CodecStats,
 }
 
@@ -139,7 +157,28 @@ fn compress_with<'a>(cctx: &mut CCtx<'a>, cdict: &'a CDict<'_>, value: &[u8]) ->
     cctx.ref_cdict(cdict).ok()?;
     let mut out = Vec::with_capacity(zstd::zstd_safe::compress_bound(value.len()));
     let n = cctx.compress2(&mut &mut out, value).ok()?;
-    (n + n / 8 < value.len()).then_some(out)
+    worthwhile(value.len(), n).then_some(out)
+}
+
+/// Savings must cover the packed header as well as the minimum gain.
+fn worthwhile(original: usize, compressed: usize) -> bool {
+    let packed = compressed.saturating_add(super::entry::PACKED_BYTES);
+    packed.saturating_add(original / 8) < original
+}
+
+struct Training<'a> {
+    stats: &'a CodecStats,
+    bytes: u64,
+    start: Instant,
+}
+impl Drop for Training<'_> {
+    fn drop(&mut self) {
+        self.stats.training_jobs.fetch_sub(1, Relaxed);
+        self.stats.training_bytes.fetch_sub(self.bytes, Relaxed);
+        self.stats
+            .training_micros
+            .fetch_add(self.start.elapsed().as_micros() as u64, Relaxed);
+    }
 }
 
 impl Codec {
@@ -152,6 +191,9 @@ impl Codec {
             enabled: AtomicBool::new(enabled),
             min_idle_secs: AtomicU64::new(min_idle_secs),
             min_size: AtomicUsize::new(min_size),
+            pack_max_bytes: AtomicU64::new(DEFAULT_PACK_BYTES),
+            pack_budget_ms: AtomicU64::new(DEFAULT_PACK_BUDGET_MS),
+            sample_hasher: RandomState::new(),
             stats: CodecStats::default(),
         }
     }
@@ -180,6 +222,33 @@ impl Codec {
         self.min_size.store(v, Relaxed);
     }
 
+    pub fn pack_max_bytes(&self) -> u64 {
+        self.pack_max_bytes.load(Relaxed)
+    }
+    pub fn set_pack_max_bytes(&self, bytes: u64) {
+        self.pack_max_bytes.store(bytes.max(1), Relaxed);
+    }
+    pub fn pack_budget_ms(&self) -> u64 {
+        self.pack_budget_ms.load(Relaxed)
+    }
+    pub fn set_pack_budget_ms(&self, ms: u64) {
+        self.pack_budget_ms.store(ms.clamp(1, 1000), Relaxed);
+    }
+    pub fn has_dicts(&self) -> bool {
+        self.count.load(Relaxed) != 0
+    }
+    /// Excludes allocator slack; training buffers are reported separately.
+    pub fn sampler_memory(&self) -> (usize, usize) {
+        let samplers = self.samplers.lock();
+        (
+            samplers.len(),
+            samplers
+                .values()
+                .map(|s| s.bytes + s.seen.capacity() * 8)
+                .sum(),
+        )
+    }
+
     pub fn dicts(&self) -> Vec<&'static Dict> {
         self.slots.iter().filter_map(|s| s.get().copied()).collect()
     }
@@ -197,6 +266,16 @@ impl Codec {
         let Some(p) = e.packed() else {
             return Ok(f(e.stored()));
         };
+        self.with_packed_value(p, e.stored(), f)
+    }
+
+    /// An owned copy of the compressed bytes can be decoded after releasing a shard.
+    pub fn with_packed_value<R>(
+        &self,
+        p: Packed,
+        stored: &[u8],
+        f: impl FnOnce(&[u8]) -> R,
+    ) -> Result<R, Corrupt> {
         let dict = self.dict(p.dict).ok_or(Corrupt)?;
         SCRATCH.with(|scratch| {
             let mut buf = scratch.borrow_mut();
@@ -206,7 +285,7 @@ impl Codec {
                 .with(|d| {
                     let mut d = d.borrow_mut();
                     d.ref_ddict(&dict.ddict)?;
-                    d.decompress(&mut &mut *buf, e.stored())
+                    d.decompress(&mut &mut *buf, stored)
                 })
                 .map_err(|_| Corrupt)?;
             if n != p.original_len as usize {
@@ -243,28 +322,65 @@ impl Codec {
         if self.count.load(Relaxed) >= MAX_DICTS || self.dict_for_key(key).is_some() {
             return false;
         }
-        match self.samplers.lock().get(prefix_of(key)) {
-            Some(s) => {
-                !s.training && s.rejected_until <= now_secs && s.samples.len() < SAMPLES_PER_PREFIX
+        let samplers = self.samplers.lock();
+        match samplers.get(prefix_of(key)) {
+            Some(s) => !s.training && s.rejected_until <= now_secs,
+            None => {
+                samplers.len() + self.count.load(Relaxed) < MAX_DICTS
+                    || samplers.values().any(|s| {
+                        !s.training && s.samples.is_empty() && s.rejected_until <= now_secs
+                    })
             }
-            None => true,
         }
     }
 
-    /// Records a sample value. Returns the prefix and its samples once it has enough to train; the
-    /// caller then runs `train` off the I/O threads.
+    pub(crate) fn sample_fingerprint(&self, key: &[u8]) -> u64 {
+        self.sample_hasher.hash_one(key)
+    }
+
     pub fn offer_sample(&self, key: &[u8], value: &[u8], now_secs: u32) -> Option<SampleBatch> {
-        let prefix = prefix_of(key);
-        let mut samplers = self.samplers.lock();
-        let s = samplers.entry(prefix.into()).or_default();
-        if s.training || s.rejected_until > now_secs {
+        self.offer_sample_owned(
+            prefix_of(key),
+            self.sample_fingerprint(key),
+            value[..value.len().min(MAX_SAMPLE_SIZE)].to_vec(),
+            now_secs,
+        )
+    }
+
+    /// Transfers the sample allocation rather than copying its bytes a second time.
+    pub fn offer_sample_owned(
+        &self,
+        prefix: &[u8],
+        key_hash: u64,
+        mut value: Vec<u8>,
+        now_secs: u32,
+    ) -> Option<SampleBatch> {
+        if self.count.load(Relaxed) >= MAX_DICTS || self.dict_for_key(prefix).is_some() {
             return None;
         }
-        s.samples.push(value.to_vec());
+        let mut samplers = self.samplers.lock();
+        if !samplers.contains_key(prefix) && samplers.len() + self.count.load(Relaxed) >= MAX_DICTS
+        {
+            let expired = samplers
+                .iter()
+                .find(|(_, s)| !s.training && s.samples.is_empty() && s.rejected_until <= now_secs)
+                .map(|(p, _)| p.clone());
+            let expired = expired?;
+            samplers.remove(&expired);
+        }
+        let s = samplers.entry(prefix.into()).or_default();
+        if s.training || s.rejected_until > now_secs || !s.seen.insert(key_hash) {
+            return None;
+        }
+        value.truncate(MAX_SAMPLE_SIZE);
+        // Copy callers clip before allocation; owned callers are bounded as well.
+        value.shrink_to_fit();
         s.bytes += value.len();
+        s.samples.push(value);
         if s.samples.len() >= SAMPLES_PER_PREFIX || s.bytes >= SAMPLE_BYTES_PER_PREFIX {
             s.training = true;
             s.bytes = 0;
+            s.seen = HashSet::new();
             return Some((prefix.into(), std::mem::take(&mut s.samples)));
         }
         None
@@ -274,8 +390,20 @@ impl Codec {
     /// the samples is held out to measure the gain; the dictionary is registered only if it reaches
     /// `MIN_GAIN`.
     pub fn train(&self, prefix: Box<[u8]>, samples: Vec<Vec<u8>>, now_secs: u32) -> TrainOutcome {
+        let bytes = samples.iter().map(|v| v.len() as u64).sum();
+        self.stats.training_jobs.fetch_add(1, Relaxed);
+        self.stats.training_bytes.fetch_add(bytes, Relaxed);
+        let _training = Training {
+            stats: &self.stats,
+            bytes,
+            start: Instant::now(),
+        };
         let outcome = self.try_train(&prefix, &samples);
         let mut samplers = self.samplers.lock();
+        if matches!(outcome, TrainOutcome::Accepted { .. }) {
+            samplers.remove(&prefix);
+            return outcome;
+        }
         let s = samplers.entry(prefix).or_default();
         s.training = false;
         if !matches!(outcome, TrainOutcome::Accepted { .. }) {
@@ -315,12 +443,16 @@ impl Codec {
         if id >= MAX_DICTS {
             return TrainOutcome::Failed;
         }
+        let ddict = DDict::create(&raw);
+        let prepared_bytes =
+            cdict.sizeof() + ddict.sizeof() + prefix.len() + std::mem::size_of::<Dict>();
         let dict: &'static Dict = Box::leak(Box::new(Dict {
             id: id as u32,
             prefix: prefix.into(),
             trained_ratio: ratio,
+            prepared_bytes,
             cdict,
-            ddict: DDict::create(&raw),
+            ddict,
         }));
         // Registration happens under the by_prefix write lock, so ids are assigned one at a time.
         let _ = self.slots[id].set(dict);
@@ -334,7 +466,7 @@ impl Codec {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     /// Deterministic JSON-like values with shared structure, like sessions in a real cache.
@@ -455,8 +587,11 @@ mod tests {
         let codec = Codec::new(true, 0, 64);
         let v = b"{\"a\":1}";
         let mut batches = 0;
-        for _ in 0..SAMPLES_PER_PREFIX + 10 {
-            if codec.offer_sample(b"k:1", v, 0).is_some() {
+        for i in 0..SAMPLES_PER_PREFIX + 10 {
+            if codec
+                .offer_sample(format!("k:{i}").as_bytes(), v, 0)
+                .is_some()
+            {
                 batches += 1;
             }
         }
@@ -478,5 +613,95 @@ mod tests {
             },
         );
         assert!(codec.with_value(&e, |_| ()).is_err());
+    }
+    #[test]
+    fn tiny_value_admission_counts_packed_header() {
+        assert!(
+            !worthwhile(40, 35),
+            "five saved bytes cannot pay for an eight byte header"
+        );
+        assert!(!worthwhile(40, 27));
+        assert!(worthwhile(40, 26));
+        assert!(!worthwhile(128, 104));
+        assert!(worthwhile(128, 103));
+        assert!(!worthwhile(128, usize::MAX));
+    }
+
+    #[test]
+    fn repeated_keys_cannot_leak_into_training_and_held_out_samples() {
+        let codec = Codec::new(true, 0, 64);
+        for _ in 0..SAMPLES_PER_PREFIX * 2 {
+            assert!(codec.offer_sample(b"same:1", &[b'x'; 300], 0).is_none());
+        }
+        let samplers = codec.samplers.lock();
+        assert_eq!(samplers[b"same:".as_slice()].samples.len(), 1);
+    }
+
+    #[test]
+    fn sampler_bounds_prefixes_and_large_values() {
+        let codec = Codec::new(true, 0, 64);
+        let value = vec![b'x'; 1024 * 1024];
+        for i in 0..MAX_DICTS * 2 {
+            assert!(
+                codec
+                    .offer_sample(format!("p{i}:k").as_bytes(), &value, 0)
+                    .is_none()
+            );
+        }
+        let samplers = codec.samplers.lock();
+        assert_eq!(samplers.len(), MAX_DICTS);
+        assert!(
+            samplers
+                .values()
+                .all(|s| s.bytes == MAX_SAMPLE_SIZE && s.samples[0].capacity() <= MAX_SAMPLE_SIZE)
+        );
+    }
+
+    #[test]
+    fn expired_rejection_can_release_sampler_slot() {
+        let codec = Codec::new(true, 0, 64);
+        {
+            let mut samplers = codec.samplers.lock();
+            for i in 0..MAX_DICTS {
+                samplers.insert(
+                    format!("p{i}:").into_bytes().into_boxed_slice(),
+                    Sampler {
+                        rejected_until: 100,
+                        ..Sampler::default()
+                    },
+                );
+            }
+        }
+        assert!(!codec.wants_samples(b"new:k", 99));
+        assert!(codec.wants_samples(b"new:k", 100));
+        codec.offer_sample(b"new:k", b"sample", 100);
+        assert_eq!(codec.samplers.lock().len(), MAX_DICTS);
+        assert!(codec.samplers.lock().contains_key(b"new:".as_slice()));
+    }
+
+    #[test]
+    fn owned_packed_bytes_survive_overwrite_and_disabling_compression() {
+        let codec = Codec::new(true, 0, 64);
+        assert!(matches!(
+            codec.train(b"session:".as_slice().into(), sample_values(1000, 42), 0),
+            TrainOutcome::Accepted { .. }
+        ));
+        let expected = sample_values(1, 73).remove(0);
+        let dict = codec.dict_for_key(b"session:k").unwrap();
+        let mut e = codec
+            .pack(dict, &Entry::new(b"session:k", &expected, 0, 0))
+            .unwrap();
+        let p = e.packed().unwrap();
+        let owned = e.stored().to_vec();
+        e.set_value(b"replacement");
+        drop(e);
+        codec.set_enabled(false);
+        assert_eq!(
+            codec.with_packed_value(p, &owned, |v| v.to_vec()).unwrap(),
+            expected
+        );
+        assert_eq!(codec.stats.training_jobs.load(Relaxed), 0);
+        assert_eq!(codec.stats.training_bytes.load(Relaxed), 0);
+        assert!(dict.prepared_bytes > DICT_SIZE);
     }
 }

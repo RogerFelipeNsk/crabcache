@@ -16,6 +16,30 @@ fn reply_value(db: &Db, out: &mut Vec<u8>, e: &Entry) {
     }
 }
 
+// Copying a short compressed representation is cheaper than holding the mutex
+// throughout large decompression/output. Small GETs keep the allocation-free path.
+const UNLOCK_PACKED_ABOVE: usize = 64 * 1024;
+
+fn reply_read_value(db: &Db, out: &mut Vec<u8>, g: ShardGuard<'_>, i: usize) {
+    let e = g.entry(i);
+    if let Some(p) = e
+        .packed()
+        .filter(|p| p.original_len as usize >= UNLOCK_PACKED_ABOVE)
+    {
+        let stored = e.stored().to_vec();
+        drop(g);
+        if db
+            .codec
+            .with_packed_value(p, &stored, |v| reply::bulk(out, v))
+            .is_err()
+        {
+            reply::error(out, CORRUPT);
+        }
+    } else {
+        reply_value(db, out, e);
+    }
+}
+
 fn oom(out: &mut Vec<u8>) {
     reply::error(
         out,
@@ -37,7 +61,7 @@ fn store(g: &mut ShardGuard, h: u64, mut e: Entry, keep_ttl: bool, clock: Clock)
         }
         None => {
             e.meta = g.policy().initial_meta(clock);
-            g.insert(h, e);
+            g.insert(h, e, clock.secs);
         }
     }
 }
@@ -141,7 +165,7 @@ pub fn get(c: &mut Ctx, args: &Args) {
             g.stats.hits += 1;
             let p = g.policy();
             g.touch(i, p, c.clock);
-            reply_value(c.db, c.out, g.entry(i));
+            reply_read_value(c.db, c.out, g, i);
         }
         None => {
             g.stats.misses += 1;
@@ -269,6 +293,7 @@ pub fn getdel(c: &mut Ctx, args: &Args) {
         Some(i) => {
             g.stats.hits += 1;
             let e = g.remove_at(i, h);
+            drop(g);
             reply_value(c.db, c.out, &e);
         }
         None => {
@@ -312,6 +337,7 @@ pub fn getex(c: &mut Ctx, args: &Args) {
         None => None,
     };
     g.stats.hits += 1;
+    g.record_access(i, c.clock.secs);
     reply_value(c.db, c.out, g.entry(i));
     match at {
         Some(Deadline::Past) => {
@@ -332,7 +358,7 @@ pub fn mget(c: &mut Ctx, args: &Args) {
                 g.stats.hits += 1;
                 let p = g.policy();
                 g.touch(i, p, c.clock);
-                reply_value(c.db, c.out, g.entry(i));
+                reply_read_value(c.db, c.out, g, i);
             }
             None => {
                 g.stats.misses += 1;
@@ -428,12 +454,16 @@ fn incr_by(c: &mut Ctx, key: &[u8], delta: i64) {
             let Some(new) = cur.checked_add(delta) else {
                 return reply::error(c.out, "ERR increment or decrement would overflow");
             };
-            g.set_value(i, buf.format(new).as_bytes());
+            g.set_value(i, buf.format(new).as_bytes(), c.clock.secs);
             reply::int(c.out, new);
         }
         None => {
             let meta = g.policy().initial_meta(c.clock);
-            g.insert(h, Entry::new(key, buf.format(delta).as_bytes(), 0, meta));
+            g.insert(
+                h,
+                Entry::new(key, buf.format(delta).as_bytes(), 0, meta),
+                c.clock.secs,
+            );
             reply::int(c.out, delta);
         }
     }
@@ -488,12 +518,12 @@ pub fn append(c: &mut Ctx, args: &Args) {
             let Ok(v) = joined else {
                 return reply::error(c.out, CORRUPT);
             };
-            g.set_value(i, &v);
+            g.set_value(i, &v, c.clock.secs);
             reply::int(c.out, v.len() as i64);
         }
         None => {
             let meta = g.policy().initial_meta(c.clock);
-            g.insert(h, Entry::new(key, add, 0, meta));
+            g.insert(h, Entry::new(key, add, 0, meta), c.clock.secs);
             reply::int(c.out, add.len() as i64);
         }
     }
@@ -536,6 +566,23 @@ pub fn getrange(c: &mut Ctx, args: &Args) {
         return reply::bulk(c.out, b"");
     }
     let range = start as usize..=end as usize;
+    g.record_access(i, c.clock.secs);
+    if let Some(p) = g
+        .entry(i)
+        .packed()
+        .filter(|p| p.original_len as usize >= UNLOCK_PACKED_ABOVE)
+    {
+        let stored = g.entry(i).stored().to_vec();
+        drop(g);
+        if c.db
+            .codec
+            .with_packed_value(p, &stored, |v| reply::bulk(c.out, &v[range]))
+            .is_err()
+        {
+            reply::error(c.out, CORRUPT);
+        }
+        return;
+    }
     if c.db
         .codec
         .with_value(g.entry(i), |v| reply::bulk(c.out, &v[range]))

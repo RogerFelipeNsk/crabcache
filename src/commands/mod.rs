@@ -30,6 +30,10 @@ impl Shared {
         db.codec.set_enabled(config.compression);
         db.codec.set_min_idle_secs(config.compression_min_idle);
         db.codec.set_min_size(config.compression_min_size);
+        db.codec
+            .set_pack_max_bytes(config.compression_max_bytes_per_tick);
+        db.codec
+            .set_pack_budget_ms(config.compression_time_budget_ms);
         Self {
             db,
             config,
