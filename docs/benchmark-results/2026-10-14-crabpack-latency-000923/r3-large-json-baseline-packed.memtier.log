@@ -1,0 +1,21 @@
+Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-baseline-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:       20481 ops,   20378 (avg:   20378) ops/sec, 2.53GB/sec (avg: 2.53GB/sec),  2.35 (avg:  2.35) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:       41070 ops,   20484 (avg:   20431) ops/sec, 2.54GB/sec (avg: 2.53GB/sec),  2.34 (avg:  2.35) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:       61051 ops,   19879 (avg:   20247) ops/sec, 2.46GB/sec (avg: 2.51GB/sec),  2.41 (avg:  2.37) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:       81489 ops,   19879 (avg:   20364) ops/sec, 2.46GB/sec (avg: 2.52GB/sec),  2.41 (avg:  2.35) msec latency
+
+Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-baseline-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets        20365.46     20365.46         0.00         2.35502         2.30300         3.50300         4.12700   2647256.81 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals      20365.46     20365.46         0.00         2.35502         2.30300         3.50300         4.12700   2647256.81 

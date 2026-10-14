@@ -1,0 +1,3 @@
+2026-10-14T03:09:51.382650Z  INFO crabcache::server: crabcache ready version="0.3.0" addr=127.0.0.1:58435 threads=4 shards=1 maxmemory=0 policy="allkeys-lfu" compression=false compression_min_idle=0 compression_min_size=64
+2026-10-14T03:09:54.604719Z  INFO crabcache::server: crabpack: dictionary trained prefix=session: id=0 ratio="4.13"
+2026-10-14T03:09:59.632276Z  INFO crabcache: shutting down

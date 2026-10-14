@@ -1,0 +1,21 @@
+Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      147510 ops,  146783 (avg:  146783) ops/sec, 42.50MB/sec (avg: 42.50MB/sec),  0.33 (avg:  0.33) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:      295926 ops,  148215 (avg:  147498) ops/sec, 42.90MB/sec (avg: 42.70MB/sec),  0.32 (avg:  0.32) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:      445904 ops,  149218 (avg:  148072) ops/sec, 43.20MB/sec (avg: 42.87MB/sec),  0.32 (avg:  0.32) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:      593719 ops,  149218 (avg:  148414) ops/sec, 43.20MB/sec (avg: 42.96MB/sec),  0.32 (avg:  0.32) msec latency
+
+Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       148410.98    148410.98         0.00         0.32300         0.31900         0.39900         0.45500     43995.05 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     148410.98    148410.98         0.00         0.32300         0.31900         0.39900         0.45500     43995.05 
