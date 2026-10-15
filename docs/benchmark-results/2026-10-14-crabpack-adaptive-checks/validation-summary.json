@@ -1,0 +1,16 @@
+{
+  "implementation_commit": "6df844c31a50f7b807ba9d7c3633b2b3860fda7f",
+  "finalized_at_utc": "2026-10-15T01:29:14.540130+00:00",
+  "release_tests_passed": 84,
+  "release_tests_failed": 0,
+  "cargo_fmt_check": "passed",
+  "cargo_clippy_all_targets_deny_warnings": "passed",
+  "msrv_rust_1_85_locked_all_targets": "passed",
+  "doc_tests": "passed (0 tests)",
+  "footprint_raw_records_verified": 6,
+  "latency_raw_records_verified": 24,
+  "fly_config_validate_strict": "passed",
+  "deployment_performed": false,
+  "linux_bundle_smoke": "passed; see linux-smoke.log",
+  "source_unchanged_since_implementation_commit": true
+}

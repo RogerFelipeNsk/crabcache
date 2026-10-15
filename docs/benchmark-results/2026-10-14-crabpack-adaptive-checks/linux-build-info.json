@@ -1,0 +1,32 @@
+{
+  "built_at_utc": "2026-10-14T11:11:48.494791+00:00",
+  "version": "0.3.0",
+  "branch": "perf/crabpack-adaptive",
+  "implementation_commit": "6df844c31a50f7b807ba9d7c3633b2b3860fda7f",
+  "platform": "linux/amd64",
+  "binary_sha256": "cca3b1c259fb6add6fd3dc99bbe50764f5d26d0a9aef742f8487085d333f361a",
+  "binary_bytes": 2607128,
+  "image": "crabcache:crabpack-adaptive",
+  "image_id": "sha256:812dffed8bea603821259a554aad07215b56affa0721c2895084d5ea2d9579b0",
+  "runtime_base": "gcr.io/distroless/cc-debian12:nonroot@sha256:9dac0a79194e45a7da0158a9c6da57b217585af0786db3845d1f0ec1a0dd182f",
+  "cloud_deployed": false,
+  "bundle_image": "crabcache:crabpack-adaptive-bundle",
+  "bundle_image_id": "sha256:ba95e4d0505e2a7dd29448738023a01c4d3a3681a08009f5ead3bdfb11b247c3",
+  "validation": {
+    "container_smoke": "passed",
+    "packed_binary_values_verified": 2000,
+    "large_value_bytes": 141317,
+    "large_commands": [
+      "GET",
+      "MGET",
+      "GETRANGE",
+      "GETDEL"
+    ],
+    "lfu_hot_promotion": "passed",
+    "auth_ttl_and_append": "passed",
+    "oom_killed": false,
+    "cpu_quota": 1,
+    "container_memory_bytes": 536870912,
+    "note": "Docker Desktop amd64 emulation on Apple Silicon; functional validation, not Fly performance"
+  }
+}

@@ -1,0 +1,29 @@
+Json file docs/benchmark-results/2026-10-14-crabpack-latency-adaptive/r1-large-json-baseline-transition.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:       33470 ops,   33306 (avg:   33306) ops/sec, 4.13GB/sec (avg: 4.13GB/sec),  1.44 (avg:  1.44) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:       58919 ops,   25375 (avg:   29345) ops/sec, 3.15GB/sec (avg: 3.64GB/sec),  1.89 (avg:  1.63) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:       83757 ops,   24709 (avg:   27798) ops/sec, 3.06GB/sec (avg: 3.45GB/sec),  1.94 (avg:  1.72) msec latency
+warning: high CPU on thread 0: 97.1% of a core (threshold 95.0%) - results may be unreliable
+
+warning: high CPU on thread 1: 95.3% of a core (threshold 95.0%) - results may be unreliable
+
+warning: high CPU on thread 2: 96.9% of a core (threshold 95.0%) - results may be unreliable
+
+warning: high CPU on thread 3: 97.2% of a core (threshold 95.0%) - results may be unreliable
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      107487 ops,   24709 (avg:   26866) ops/sec, 3.06GB/sec (avg: 3.33GB/sec),  1.94 (avg:  1.78) msec latency
+
+Saving JSON output file: docs/benchmark-results/2026-10-14-crabpack-latency-adaptive/r1-large-json-baseline-transition.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets        26866.30     26866.30         0.00         1.78440         1.87900         2.39900         2.87900   3492230.54 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals      26866.30     26866.30         0.00         1.78440         1.87900         2.39900         2.87900   3492230.54 

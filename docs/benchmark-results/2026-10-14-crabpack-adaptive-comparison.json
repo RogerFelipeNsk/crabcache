@@ -1,0 +1,94 @@
+{
+  "implementation_commit": "6df844c31a50f7b807ba9d7c3633b2b3860fda7f",
+  "purpose": "local comparison; known memory components are not RSS; no Fly performance claim",
+  "footprint": {
+    "baseline": {
+      "raw_payload_bytes": 2926490,
+      "stored_payload_bytes": 232461,
+      "entry_bytes": 569961,
+      "prepared_dict_bytes": 1404927,
+      "known_components_bytes": 1974888,
+      "training_wall_us": 46827,
+      "payload_ratio": 12.589165494427021
+    },
+    "candidate": {
+      "raw_payload_bytes": 2926490,
+      "stored_payload_bytes": 227828,
+      "entry_bytes": 565328,
+      "prepared_dict_bytes": 323607,
+      "known_components_bytes": 888935,
+      "training_wall_us": 93176,
+      "payload_ratio": 12.845172674122583
+    }
+  },
+  "latency": {
+    "small-json/transition": {
+      "baseline": {
+        "mean_ms": 0.3264830589186524,
+        "p99_median_ms": 0.463,
+        "cpu_us_per_get": 14.425321243431986,
+        "ops_per_second_median": 146627.1,
+        "rss_after_median_bytes": 25444352
+      },
+      "candidate": {
+        "mean_ms": 0.3252526534202881,
+        "p99_median_ms": 0.463,
+        "cpu_us_per_get": 14.393640288144704,
+        "ops_per_second_median": 147273.82,
+        "rss_after_median_bytes": 25640960
+      }
+    },
+    "small-json/packed": {
+      "baseline": {
+        "mean_ms": 0.32580138325959695,
+        "p99_median_ms": 0.471,
+        "cpu_us_per_get": 14.917505457174162,
+        "ops_per_second_median": 146553.57,
+        "rss_after_median_bytes": 17088512
+      },
+      "candidate": {
+        "mean_ms": 0.3251672194872219,
+        "p99_median_ms": 0.463,
+        "cpu_us_per_get": 14.882831679590984,
+        "ops_per_second_median": 147532.05,
+        "rss_after_median_bytes": 17317888
+      }
+    },
+    "large-json/transition": {
+      "baseline": {
+        "mean_ms": 1.671503662615174,
+        "p99_median_ms": 2.831,
+        "cpu_us_per_get": 49.04795250949434,
+        "ops_per_second_median": 29034.18,
+        "rss_after_median_bytes": 35569664
+      },
+      "candidate": {
+        "mean_ms": 1.456589278796365,
+        "p99_median_ms": 2.751,
+        "cpu_us_per_get": 47.24804209278948,
+        "ops_per_second_median": 32761.7,
+        "rss_after_median_bytes": 34635776
+      }
+    },
+    "large-json/packed": {
+      "baseline": {
+        "mean_ms": 1.4808067027889678,
+        "p99_median_ms": 2.847,
+        "cpu_us_per_get": 69.70488680678001,
+        "ops_per_second_median": 32449.9,
+        "rss_after_median_bytes": 26984448
+      },
+      "candidate": {
+        "mean_ms": 1.38176826368305,
+        "p99_median_ms": 2.639,
+        "cpu_us_per_get": 62.40421985117147,
+        "ops_per_second_median": 34587.02,
+        "rss_after_median_bytes": 28950528
+      }
+    }
+  },
+  "binary_sha256": {
+    "baseline": "8089ac13d941c05d57ac6d50eb122fe94487dd6940a78d871fbb61dbe05af007",
+    "candidate": "fc6fae613c77ae67552bfc56dbbdd9cf15f7bb2b1f10b773fe7756d5376738ff"
+  }
+}

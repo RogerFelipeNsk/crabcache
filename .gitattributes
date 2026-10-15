@@ -1,4 +1,5 @@
 # Captured tool logs keep their original terminal newlines as audit evidence.
 docs/benchmark-results/**/tests/*.log whitespace=-blank-at-eof
+docs/benchmark-results/*crabpack-adaptive-checks/*.log whitespace=-blank-at-eof
 # Raw benchmark terminal captures retain carriage returns and column padding.
 docs/benchmark-results/*crabpack-latency*/*.log -text -whitespace
