@@ -5,6 +5,36 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-14
+
+### Adicionado
+- Seleção adaptativa de tamanho e nível dos dicionários Zstd pelo payload estimado mais as
+  estruturas preparadas; usa amostras separadas e fica ligada quando CrabPack é habilitado.
+- Filtro de TTL restante para amostragem/compactação (2 s por padrão) e manutenção adaptativa
+  após comandos lentos amostrados, com prioridade à compactação perto de maxmemory.
+- Promoção opcional e limitada de valores quentes compactados em allkeys-lfu; desligada por padrão.
+- CONFIG, CLI, ambiente e métricas INFO para as políticas novas e os orçamentos de manutenção.
+- Evidências locais e instruções em [docs/CRABPACK_ADAPTIVE.md](docs/CRABPACK_ADAPTIVE.md).
+
+### Melhorado
+- Descompressão de valores completos diretamente no buffer RESP e liberação antecipada de locks
+  em leituras compactadas grandes.
+- Treinamento serial em background e compactação com limites cooperativos por tick (512 KiB/2 ms).
+- Contra a otimização anterior, o dataset local do playground usou 77% menos bytes de estruturas
+  de dicionários e 2% menos payload. Em JSONs grandes já compactados: GET médio -6,7%, p99 mediano
+  -7,3% e CPU/GET -10,5%. Não são resultados de produção/Fly nem de comparação com Redis.
+
+### Corrigido
+- Relógio de ociosidade sob LFU, preservando a elegibilidade correta para compactação.
+- Reserva concorrente de memória das promoções quentes e preservação de TTL/metadados ao
+  escrever, remover, mover índices ou limpar entradas.
+
+### Validação e limites
+- 84 testes Rust, diferencial contra Redis, 7 regressões de benchmark, CI Linux/macOS,
+  Rust 1.85, lint, auditoria e smoke Docker; artefatos brutos preservados.
+- O treinamento adaptativo levou aproximadamente o dobro do tempo local. Não foi demonstrada
+  redução geral de RSS; dicionários aceitos continuam residentes, sem retreinamento.
+
 ## [0.3.0] - 2026-10-10
 
 ### Adicionado

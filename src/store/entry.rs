@@ -24,7 +24,7 @@ const PACKED_FLAG: u32 = 1 << 30;
 const KEY_LEN_MASK: u32 = PACKED_FLAG - 1;
 const LEN_BYTES: usize = 4;
 const EXPIRE_BYTES: usize = 8;
-const PACKED_BYTES: usize = 8;
+pub const PACKED_BYTES: usize = 8;
 
 /// Marks a value stored compressed with dictionary `dict`; `original_len` is its uncompressed size.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

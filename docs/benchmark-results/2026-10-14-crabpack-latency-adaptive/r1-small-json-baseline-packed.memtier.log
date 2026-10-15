@@ -1,0 +1,21 @@
+Json file docs/benchmark-results/2026-10-14-crabpack-latency-adaptive/r1-small-json-baseline-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      142752 ops,  142432 (avg:  142432) ops/sec, 41.24MB/sec (avg: 41.24MB/sec),  0.34 (avg:  0.34) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:      291879 ops,  149105 (avg:  145765) ops/sec, 43.16MB/sec (avg: 42.20MB/sec),  0.32 (avg:  0.33) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:      440926 ops,  148638 (avg:  146724) ops/sec, 43.03MB/sec (avg: 42.48MB/sec),  0.32 (avg:  0.33) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:      586248 ops,  148638 (avg:  146551) ops/sec, 43.03MB/sec (avg: 42.43MB/sec),  0.32 (avg:  0.33) msec latency
+
+Saving JSON output file: docs/benchmark-results/2026-10-14-crabpack-latency-adaptive/r1-small-json-baseline-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       146553.57    146553.57         0.00         0.32697         0.31900         0.39900         0.47900     43444.83 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     146553.57    146553.57         0.00         0.32697         0.31900         0.39900         0.47900     43444.83 
