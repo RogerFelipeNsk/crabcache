@@ -1,0 +1,24 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      147005 ops,  146275 (avg:  146275) ops/sec, 42.35MB/sec (avg: 42.35MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      295777 ops,  148417 (avg:  147344) ops/sec, 42.96MB/sec (avg: 42.66MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      445928 ops,  149385 (avg:  148025) ops/sec, 43.25MB/sec (avg: 42.85MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      591231 ops,  149385 (avg:  147790) ops/sec, 43.25MB/sec (avg: 42.78MB/sec),  0.32 (avg:  0.32) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       147791.64    147791.64         0.00         0.32421         0.31900         0.40700         0.47900     43811.44 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     147791.64    147791.64         0.00         0.32421         0.31900         0.40700         0.47900     43811.44 

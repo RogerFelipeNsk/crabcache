@@ -1,0 +1,31 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:       34052 ops,   33883 (avg:   33883) ops/sec, 4.20GB/sec (avg: 4.20GB/sec),  1.41 (avg:  1.41) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:       67286 ops,   33169 (avg:   33527) ops/sec, 4.11GB/sec (avg: 4.16GB/sec),  1.44 (avg:  1.43) msec latency
+warning: high CPU on thread 0: 97.5% of a core (threshold 95.0%) - results may be unreliable
+
+warning: high CPU on thread 1: 97.5% of a core (threshold 95.0%) - results may be unreliable
+
+warning: high CPU on thread 2: 97.4% of a core (threshold 95.0%) - results may be unreliable
+
+warning: high CPU on thread 3: 97.5% of a core (threshold 95.0%) - results may be unreliable
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      100860 ops,   33400 (avg:   33484) ops/sec, 4.14GB/sec (avg: 4.15GB/sec),  1.44 (avg:  1.43) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      131346 ops,   33400 (avg:   32829) ops/sec, 4.14GB/sec (avg: 4.07GB/sec),  1.44 (avg:  1.46) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets        32829.15     32829.15         0.00         1.46049         1.35100         2.44700         3.02300   4267353.34 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals      32829.15     32829.15         0.00         1.46049         1.35100         2.44700         3.02300   4267353.34 

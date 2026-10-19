@@ -1,0 +1,24 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-candidate-transition.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      149645 ops,  148918 (avg:  148918) ops/sec, 43.11MB/sec (avg: 43.11MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      300171 ops,  150032 (avg:  149475) ops/sec, 43.43MB/sec (avg: 43.27MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      450579 ops,  149644 (avg:  149531) ops/sec, 43.32MB/sec (avg: 43.29MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      598399 ops,  149644 (avg:  149584) ops/sec, 43.32MB/sec (avg: 43.30MB/sec),  0.32 (avg:  0.32) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-candidate-transition.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       149584.23    149584.23         0.00         0.32032         0.31900         0.39100         0.43900     44342.78 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     149584.23    149584.23         0.00         0.32032         0.31900         0.39100         0.43900     44342.78 

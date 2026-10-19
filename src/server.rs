@@ -17,15 +17,15 @@
 use crate::commands::{self, Session, Shared, Stats};
 use crate::config::Config;
 use crate::protocol::{Args, Parsed, Parser, reply};
-use crate::store::PackCursor;
 use crate::store::compress::TrainOutcome;
+use crate::store::{PackBudget, PackCursor};
 use bytes::{Buf, BytesMut};
 use std::future::Future;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, watch};
@@ -248,7 +248,18 @@ async fn serve(mut stream: TcpStream, shared: &Shared, addr: SocketAddr) -> io::
                     {
                         let base: &[u8] = if inline { &parser.scratch } else { &buf[pos..] };
                         let args = Args::new(base, &parser.args);
+                        session.pressure_sample = session.pressure_sample.wrapping_add(1);
+                        let sampled = session.pressure_sample & 63 == 0
+                            && shared.db.codec.enabled()
+                            && shared.db.codec.adaptive_maintenance();
+                        let start = sampled.then(Instant::now);
                         commands::execute(shared, &mut session, &args, clock, &mut out);
+                        if let Some(start) = start {
+                            shared.db.codec.observe_request(
+                                start.elapsed().as_micros() as u64,
+                                shared.db.maintenance_clock_ms(),
+                            );
+                        }
                     }
                     pos += consumed;
                     executed += 1;
@@ -318,25 +329,46 @@ async fn evict_task(shared: Arc<Shared>) {
     }
 }
 
-/// CrabPack: samples values, trains dictionaries on a blocking thread, and compresses idle values.
-/// Bounded work per tick keeps the acceptor responsive.
+/// One background CPU job at a time. Missed ticks are skipped instead of replayed in a burst.
 async fn pack_task(shared: Arc<Shared>) {
-    const SAMPLES_PER_TICK: usize = 64;
-    const SCAN_PER_STEP: usize = 256;
-    const STEPS_PER_TICK: usize = 64;
     let mut cursor = PackCursor::default();
     let mut tick = tokio::time::interval(Duration::from_millis(200));
+    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut pressure_tick = false;
     loop {
         tick.tick().await;
         if !shared.db.codec.enabled() {
             continue;
         }
-        for (prefix, samples) in shared.db.pack_sample(SAMPLES_PER_TICK) {
-            let shared = Arc::clone(&shared);
-            tokio::task::spawn_blocking(move || {
+        let pressure = shared
+            .db
+            .codec
+            .under_pressure(shared.db.maintenance_clock_ms());
+        // Memory pressure overrides skipping/deferred training to avoid starvation near maxmemory.
+        let memory_pressure = shared.db.maxmemory() != 0
+            && shared.db.used_memory() >= shared.db.maxmemory().saturating_mul(3) / 4;
+        pressure_tick = !pressure_tick;
+        if pressure && !memory_pressure && pressure_tick {
+            shared
+                .db
+                .codec
+                .stats
+                .maintenance_backoffs
+                .fetch_add(1, Relaxed);
+            continue;
+        }
+        let mut job_cursor = std::mem::take(&mut cursor);
+        let job_shared = Arc::clone(&shared);
+        let job = tokio::task::spawn_blocking(move || {
+            // Sampling and training are also off the acceptor runtime, and train serially.
+            for (prefix, samples) in
+                job_shared
+                    .db
+                    .pack_sample(if pressure && !memory_pressure { 0 } else { 64 })
+            {
                 let label = String::from_utf8_lossy(&prefix).into_owned();
-                let secs = shared.db.clock().secs;
-                match shared.db.codec.train(prefix, samples, secs) {
+                let secs = job_shared.db.clock().secs;
+                match job_shared.db.codec.train(prefix, samples, secs) {
                     TrainOutcome::Accepted { id, ratio } => {
                         info!(prefix = %label, id, ratio = format!("{ratio:.2}"), "crabpack: dictionary trained")
                     }
@@ -347,11 +379,44 @@ async fn pack_task(shared: Arc<Shared>) {
                         warn!(prefix = %label, "crabpack: dictionary training failed")
                     }
                 }
-            });
-        }
-        for _ in 0..STEPS_PER_TICK {
-            shared.db.pack_step(&mut cursor, SCAN_PER_STEP);
-            tokio::task::yield_now().await;
+            }
+            let start = Instant::now();
+            let max_bytes = job_shared.db.codec.pack_max_bytes().min(usize::MAX as u64) as usize;
+            let mut budget = PackBudget {
+                bytes: max_bytes,
+                max_value_bytes: max_bytes,
+                until: start
+                    + Duration::from_millis(if pressure {
+                        (job_shared.db.codec.pack_budget_ms() / 2).max(1)
+                    } else {
+                        job_shared.db.codec.pack_budget_ms()
+                    }),
+            };
+            for _ in 0..64 {
+                if budget.bytes == 0 || Instant::now() >= budget.until {
+                    break;
+                }
+                let before = job_cursor;
+                let work = job_shared.db.pack_step(&mut job_cursor, 128, &budget);
+                if before == job_cursor && work.scanned == 0 {
+                    break;
+                }
+                budget.bytes = budget.bytes.saturating_sub(work.input_bytes);
+            }
+            job_shared
+                .db
+                .codec
+                .stats
+                .pack_micros
+                .fetch_add(start.elapsed().as_micros() as u64, Relaxed);
+            job_cursor
+        });
+        match job.await {
+            Ok(next) => cursor = next,
+            Err(e) => {
+                warn!(error = %e, "crabpack: background job failed");
+                cursor = PackCursor::default();
+            }
         }
     }
 }
@@ -368,6 +433,8 @@ pub fn log_startup(config: &Config, addr: SocketAddr) {
         compression = config.compression,
         compression_min_idle = config.compression_min_idle,
         compression_min_size = config.compression_min_size,
+        compression_max_bytes_per_tick = config.compression_max_bytes_per_tick,
+        compression_time_budget_ms = config.compression_time_budget_ms,
         "crabcache ready"
     );
     if !addr.ip().is_loopback() && config.requirepass.is_none() {

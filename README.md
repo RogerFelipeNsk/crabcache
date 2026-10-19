@@ -59,9 +59,10 @@ individualmente com um dicionário compartilhado:
 
 1. Agrupa as chaves pelo prefixo (`user:`, `session:`, `product:`…) e coleta amostras em background.
 2. Treina um dicionário zstd por prefixo e só o mantém se ele comprimir amostras separadas em pelo
-   menos 1,25× (redução de 20% no tamanho).
-3. Comprime os valores que ficaram ociosos (`--compression-min-idle`, 60 s por padrão). Acessos frequentes
-   podem adiar a compactação de valores ainda sem compressão; escritas que modificam o valor o gravam sem compressão de novo.
+   menos 1,25× (redução de 20% no tamanho) e estimar economia incluindo as estruturas
+   preparadas do dicionário. A seleção adaptativa compara tamanhos e níveis de compressão.
+3. Comprime os valores que ficaram ociosos (`--compression-min-idle`, 60 s por padrão). Chaves acessadas
+   com frequência continuam sem compressão, e qualquer escrita grava o valor sem compressão de novo.
 4. Descomprime de forma transparente: o `GET` devolve exatamente os bytes gravados, e nenhum cliente
    muda nada.
 
@@ -110,13 +111,13 @@ No servidor local, ative a compressão mantendo o padrão de 60 s sem acesso:
 target/release/crabcache --compression
 ```
 
-Na imagem da v0.3.0, use a variável de ambiente:
+Na imagem da v0.4.0, use a variável de ambiente:
 
 ```bash
 docker run -d --name crabcache-pack -p 127.0.0.1:6379:6379 \
   -e CRABCACHE_REQUIREPASS=troque-esta-senha \
   -e CRABCACHE_COMPRESSION=true \
-  rogerfelipensk/crabcache:v0.3.0
+  rogerfelipensk/crabcache:v0.4.0
 ```
 
 Em um servidor local já em execução, configure e acompanhe pelo protocolo Redis
@@ -143,6 +144,12 @@ que 64 B não são candidatos por padrão. Uma ou duas chaves pequenas não demo
 Para desligar a compactação de novos valores, execute `redis-cli CONFIG SET compression no`.
 Os valores já comprimidos continuam legíveis. `CONFIG SET` vale para o processo atual; para manter
 a opção ao reiniciar, configure a flag ou as variáveis de ambiente no serviço/container.
+
+A v0.4.0 também evita compactar valores com menos de 2 s de TTL restante e ajusta a
+manutenção após comandos lentos amostrados. A promoção de valores quentes em LFU é opcional e fica
+desligada. Controles, medições locais e limitações estão em
+[docs/CRABPACK_ADAPTIVE.md](docs/CRABPACK_ADAPTIVE.md); os gráficos acima preservam a campanha
+histórica da v0.3.0.
 
 ### Demonstração local
 

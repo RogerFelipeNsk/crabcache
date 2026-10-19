@@ -1,0 +1,5 @@
+2026-10-14T11:08:20.946978Z  INFO crabcache::server: crabcache ready version="0.3.0" addr=127.0.0.1:51184 threads=1 shards=64 maxmemory=0 policy="allkeys-lfu" compression=true compression_min_idle=0 compression_min_size=40 compression_max_bytes_per_tick=524288 compression_time_budget_ms=2
+2026-10-14T11:08:23.963047Z  INFO crabcache::server: crabpack: dictionary trained prefix=stmt: id=0 ratio="20.85"
+2026-10-14T11:08:26.160617Z  INFO crabcache::server: crabpack: dictionary trained prefix=menu: id=1 ratio="13.52"
+2026-10-14T11:08:28.370722Z  INFO crabcache::server: crabpack: dictionary trained prefix=sess: id=2 ratio="6.88"
+2026-10-14T11:08:29.084241Z  INFO crabcache: shutting down

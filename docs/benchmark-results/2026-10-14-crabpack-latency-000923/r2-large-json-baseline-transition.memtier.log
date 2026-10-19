@@ -1,0 +1,24 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-baseline-transition.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   0 secs]  4 threads 12 conns:       20571 ops,   20587 (avg:   20587) ops/sec, 2.55GB/sec (avg: 2.55GB/sec),  2.33 (avg:  2.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:       40957 ops,   20332 (avg:   20459) ops/sec, 2.52GB/sec (avg: 2.54GB/sec),  2.36 (avg:  2.34) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:       60645 ops,   19655 (avg:   20191) ops/sec, 2.44GB/sec (avg: 2.50GB/sec),  2.44 (avg:  2.37) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:       81463 ops,   19655 (avg:   20359) ops/sec, 2.44GB/sec (avg: 2.52GB/sec),  2.44 (avg:  2.36) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-baseline-transition.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets        20361.22     20361.22         0.00         2.35567         2.28700         3.55100         4.57500   2646705.45 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals      20361.22     20361.22         0.00         2.35567         2.28700         3.55100         4.57500   2646705.45 

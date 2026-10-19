@@ -1,0 +1,24 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-transition.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      143430 ops,  143152 (avg:  143152) ops/sec, 41.44MB/sec (avg: 41.44MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      290065 ops,  146180 (avg:  144667) ops/sec, 42.31MB/sec (avg: 41.88MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      418960 ops,  128301 (avg:  139204) ops/sec, 37.15MB/sec (avg: 40.30MB/sec),  0.37 (avg:  0.34) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      553601 ops,  128301 (avg:  138385) ops/sec, 37.15MB/sec (avg: 40.06MB/sec),  0.37 (avg:  0.35) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-transition.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       138393.57    138393.57         0.00         0.34621         0.32700         0.44700         0.69500     41025.54 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     138393.57    138393.57         0.00         0.34621         0.32700         0.44700         0.69500     41025.54 

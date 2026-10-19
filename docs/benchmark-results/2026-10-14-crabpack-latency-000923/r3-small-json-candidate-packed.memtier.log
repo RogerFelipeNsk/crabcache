@@ -1,0 +1,24 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-candidate-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      145231 ops,  145182 (avg:  145182) ops/sec, 42.03MB/sec (avg: 42.03MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      295469 ops,  149476 (avg:  147334) ops/sec, 43.27MB/sec (avg: 42.65MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      445508 ops,  149523 (avg:  148064) ops/sec, 43.29MB/sec (avg: 42.86MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      591734 ops,  149523 (avg:  147922) ops/sec, 43.29MB/sec (avg: 42.82MB/sec),  0.32 (avg:  0.32) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-candidate-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       147927.69    147927.69         0.00         0.32393         0.31900         0.39900         0.46300     43851.75 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     147927.69    147927.69         0.00         0.32393         0.31900         0.39900         0.46300     43851.75 

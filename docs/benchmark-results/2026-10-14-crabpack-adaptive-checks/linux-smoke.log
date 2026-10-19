@@ -1,0 +1,71 @@
+$ docker run --rm --platform linux/amd64 crabcache:crabpack-adaptive-bundle --version
+crabcache 0.3.0
+
+$ python3 <workspace>/crabcache-crabpack-adaptive/scripts/smoke-crabpack.py --port 53892
+CrabPack smoke passed: 2000 packed binary values, exact readback, TTL, disable and APPEND
+
+$ python3 /tmp/crabcache-fly-build-smoke.py 53892
+Linux container smoke passed: AUTH/PING, packed 141317-byte GET/MGET/GETRANGE/GETDEL, TTL, packing budgets
+
+Linux adaptive smoke passed: bounded LFU promotion, TTL, replacement, dictionary metadata.
+
+{
+  "redis_version": "7.4.0",
+  "crabcache_version": "0.3.0",
+  "redis_mode": "standalone",
+  "os": "linux x86_64",
+  "arch_bits": "64",
+  "process_id": "1",
+  "tcp_port": "6379",
+  "uptime_in_seconds": "5",
+  "uptime_in_days": "0",
+  "io_threads_active": "1",
+  "connected_clients": "1",
+  "maxclients": "10000",
+  "used_memory": "251164",
+  "used_memory_human": "245.28K",
+  "maxmemory": "268435456",
+  "maxmemory_human": "256.00M",
+  "maxmemory_policy": "allkeys-lfu",
+  "total_connections_received": "4",
+  "total_commands_processed": "4093",
+  "rejected_connections": "0",
+  "expired_keys": "0",
+  "evicted_keys": "0",
+  "keyspace_hits": "2016",
+  "keyspace_misses": "2",
+  "compression": "yes",
+  "compression_min_idle": "60",
+  "compression_min_size": "64",
+  "compression_dicts": "1",
+  "compression_dicts_rejected": "0",
+  "compressed_keys": "2000",
+  "compressed_original_bytes": "581677",
+  "compressed_stored_bytes": "92956",
+  "compression_ratio": "6.26",
+  "compression_max_bytes_per_tick": "524288",
+  "compression_time_budget_ms": "2",
+  "compression_access_clock_bytes": "8004",
+  "compression_sampler_prefixes": "0",
+  "compression_sample_bytes": "0",
+  "compression_prepared_dict_bytes": "107879",
+  "compression_training_jobs": "0",
+  "compression_training_bytes": "0",
+  "compression_training_us": "121847",
+  "compression_pack_us": "5809",
+  "compression_pack_input_bytes": "767584",
+  "compression_candidates_discarded": "0",
+  "compression_oversized_skips": "0",
+  "compression_adaptive_dicts": "yes",
+  "compression_adaptive_maintenance": "yes",
+  "compression_min_ttl": "2",
+  "compression_hot_maxmemory": "1048576",
+  "compression_hot_resident_bytes": "1312",
+  "compression_hot_promotions": "1",
+  "compression_short_ttl_skips": "0",
+  "compression_maintenance_backoffs": "0",
+  "dict0": "prefix=crabpack-smoke:,trained_ratio=4.62,raw_bytes=16384,level=1,prepared_bytes=107879",
+  "db0": "keys=2001,expires=2001,avg_ttl=0"
+}
+[2m2026-10-15T01:24:51.918898Z[0m [32m INFO[0m [2mcrabcache::server[0m[2m:[0m crabcache ready [3mversion[0m[2m=[0m"0.3.0" [3maddr[0m[2m=[0m0.0.0.0:6379 [3mthreads[0m[2m=[0m1 [3mshards[0m[2m=[0m64 [3mmaxmemory[0m[2m=[0m268435456 [3mpolicy[0m[2m=[0m"allkeys-lfu" [3mcompression[0m[2m=[0mtrue [3mcompression_min_idle[0m[2m=[0m0 [3mcompression_min_size[0m[2m=[0m64 [3mcompression_max_bytes_per_tick[0m[2m=[0m524288 [3mcompression_time_budget_ms[0m[2m=[0m2
+[2m2026-10-15T01:24:56.451167Z[0m [32m INFO[0m [2mcrabcache::server[0m[2m:[0m crabpack: dictionary trained [3mprefix[0m[2m=[0mcrabpack-smoke: [3mid[0m[2m=[0m0 [3mratio[0m[2m=[0m"4.62"

@@ -52,7 +52,20 @@ impl std::ops::AddAssign for ShardStats {
     }
 }
 
+/// An owned candidate allows compression outside the shard lock.
+pub struct PackCandidate {
+    pub index: usize,
+    pub key: Vec<u8>,
+    pub value: Vec<u8>,
+    pub access_secs: u32,
+    pub dict: u32,
+}
+
 pub struct Shard {
+    /// Allocated lazily when CrabPack is enabled; does not enlarge the 16-byte Entry.
+    access_secs: Option<Chunked<u32>>,
+    /// Optional LFU promotions; dense indices are repaired on swap removal.
+    hot_promoted: Vec<(usize, usize)>,
     entries: Chunked<Entry>,
     index: HashTable<u32>,
     /// `(deadline_ms, key_hash)`. May hold stale deadlines; they are skipped when popped.
@@ -68,6 +81,8 @@ pub struct Shard {
 impl Shard {
     pub fn new(hasher: RandomState, seed: u64) -> Self {
         Self {
+            access_secs: None,
+            hot_promoted: Vec::new(),
             entries: Chunked::default(),
             index: HashTable::new(),
             expiries: BinaryHeap::new(),
@@ -91,6 +106,103 @@ impl Shard {
     /// Estimated memory used by the entries of this shard.
     pub fn used(&self) -> usize {
         self.used
+            + self.access_clock_bytes()
+            + self.hot_promoted.capacity() * std::mem::size_of::<(usize, usize)>()
+    }
+
+    pub fn hot_resident_bytes(&self) -> usize {
+        self.hot_promoted
+            .iter()
+            .map(|(_, bytes)| bytes)
+            .sum::<usize>()
+            + self.hot_promoted.capacity() * std::mem::size_of::<(usize, usize)>()
+    }
+
+    fn forget_hot(&mut self, i: usize) {
+        if let Some(pos) = self.hot_promoted.iter().position(|&(index, _)| index == i) {
+            self.hot_promoted.swap_remove(pos);
+            if self.hot_promoted.is_empty() {
+                self.hot_promoted = Vec::new();
+            }
+        }
+    }
+
+    pub(crate) fn hot_promotion_growth(&self, i: usize, limit: usize) -> Option<usize> {
+        let e = self.entry(i);
+        let p = e.packed()?;
+        // Uses the existing LFU counter: no per-read heat map or extra clock per key.
+        if e.meta & 255 < 8 || self.hot_promoted.len() >= 64 {
+            return None;
+        }
+        let plain_bytes = e
+            .mem_usage()
+            .checked_add(p.original_len as usize)?
+            .checked_sub(e.stored().len())?
+            .checked_sub(super::entry::PACKED_BYTES)?;
+        let growth = plain_bytes.checked_sub(e.mem_usage())?;
+        let ttl_slack = self
+            .hot_promoted
+            .iter()
+            .filter(|&&(idx, _)| self.entries[idx].expire_at() == 0)
+            .count()
+            .saturating_add(usize::from(e.expire_at() == 0))
+            * std::mem::size_of::<u64>();
+        let metadata = if self.hot_promoted.capacity() == 0 {
+            64 * std::mem::size_of::<(usize, usize)>()
+        } else {
+            0
+        };
+        if limit == 0
+            || self
+                .hot_resident_bytes()
+                .saturating_add(plain_bytes)
+                .saturating_add(ttl_slack)
+                .saturating_add(metadata)
+                > limit
+        {
+            return None;
+        }
+        Some(growth + metadata)
+    }
+
+    pub(crate) fn promote_hot_at(&mut self, i: usize, value: &[u8], clock: Clock) {
+        self.set_value(i, value, clock.secs); // Preserves current TTL and LFU metadata.
+        if self.hot_promoted.capacity() == 0 {
+            self.hot_promoted = Vec::with_capacity(64);
+        }
+        self.hot_promoted.push((i, self.entry(i).mem_usage()));
+    }
+
+    pub fn tracks_access(&self) -> bool {
+        self.access_secs.is_some()
+    }
+
+    pub fn enable_access_tracking(&mut self, now_secs: u32) {
+        if self.access_secs.is_none() {
+            let mut clocks = Chunked::default();
+            for _ in 0..self.len() {
+                clocks.push(now_secs);
+            }
+            self.access_secs = Some(clocks);
+        }
+    }
+
+    pub fn access_clock_bytes(&self) -> usize {
+        self.access_secs
+            .as_ref()
+            .map_or(0, |c| c.len() * std::mem::size_of::<u32>())
+    }
+
+    pub fn last_access_secs(&self, i: usize) -> u32 {
+        self.access_secs
+            .as_ref()
+            .expect("CrabPack access tracking enabled")[i]
+    }
+
+    pub fn record_access(&mut self, i: usize, now_secs: u32) {
+        if let Some(clocks) = &mut self.access_secs {
+            clocks[i] = now_secs;
+        }
     }
 
     pub fn ttl_keys(&self) -> usize {
@@ -158,6 +270,7 @@ impl Shard {
 
     /// Records a read access for hit/miss stats and eviction metadata.
     pub fn touch(&mut self, i: usize, policy: Policy, clock: Clock) {
+        self.record_access(i, clock.secs);
         let meta = self.entries[i].meta;
         self.entries[i].meta = match policy {
             Policy::AllKeysLfu => {
@@ -170,11 +283,14 @@ impl Shard {
     }
 
     /// Inserts an entry whose key is known to be absent. Returns its index.
-    pub fn insert(&mut self, hash: u64, entry: Entry) -> usize {
+    pub fn insert(&mut self, hash: u64, entry: Entry, now_secs: u32) -> usize {
         let i = self.entries.len();
         let expire_at = entry.expire_at();
         self.track_add(&entry);
         self.entries.push(entry);
+        if let Some(clocks) = &mut self.access_secs {
+            clocks.push(now_secs);
+        }
         let (entries, hasher) = (&self.entries, &self.hasher);
         self.index.insert_unique(hash, i as u32, |&j| {
             hasher.hash_one(entries[j as usize].key())
@@ -188,6 +304,7 @@ impl Shard {
 
     /// Replaces entry `i` (same key) with a prebuilt entry, so the allocation can happen outside the lock.
     pub fn replace(&mut self, i: usize, hash: u64, entry: Entry) -> Entry {
+        self.forget_hot(i);
         let (old_at, new_at) = (self.entries[i].expire_at(), entry.expire_at());
         match (old_at != 0, new_at != 0) {
             (false, true) => self.ttl_keys += 1,
@@ -203,7 +320,9 @@ impl Shard {
         old
     }
 
-    pub fn set_value(&mut self, i: usize, value: &[u8]) {
+    pub fn set_value(&mut self, i: usize, value: &[u8], now_secs: u32) {
+        self.forget_hot(i);
+        self.record_access(i, now_secs);
         let before = Footprint::of(&self.entries[i]);
         self.entries[i].set_value(value);
         let after = Footprint::of(&self.entries[i]);
@@ -225,6 +344,9 @@ impl Shard {
         let after = Footprint::of(&self.entries[i]);
         self.account(before, false);
         self.account(after, true);
+        if let Some((_, bytes)) = self.hot_promoted.iter_mut().find(|(index, _)| *index == i) {
+            *bytes = after.mem;
+        }
         if at != 0 && at != old {
             self.push_expiry(at, hash);
         }
@@ -232,6 +354,12 @@ impl Shard {
 
     pub fn remove_at(&mut self, i: usize, hash: u64) -> Entry {
         let last = self.entries.len() - 1;
+        self.forget_hot(i);
+        for (index, _) in &mut self.hot_promoted {
+            if *index == last {
+                *index = i;
+            }
+        }
         match self.index.find_entry(hash, |&j| j as usize == i) {
             Ok(slot) => {
                 slot.remove();
@@ -245,6 +373,9 @@ impl Shard {
             }
         }
         let e = self.entries.swap_remove(i);
+        if let Some(clocks) = &mut self.access_secs {
+            clocks.swap_remove(i);
+        }
         self.track_sub(&e);
         if e.expire_at() != 0 {
             self.ttl_keys -= 1;
@@ -257,7 +388,11 @@ impl Shard {
     }
 
     pub fn clear(&mut self) {
+        self.hot_promoted = Vec::new();
         self.entries.clear();
+        if let Some(clocks) = &mut self.access_secs {
+            clocks.clear();
+        }
         self.index = HashTable::new();
         self.expiries = BinaryHeap::new();
         self.ttl_keys = 0;
@@ -270,23 +405,35 @@ impl Shard {
     /// current expiry and eviction metadata are kept.
     pub fn pack_at(
         &mut self,
-        i: usize,
-        key: &[u8],
-        value: &[u8],
+        candidate: &PackCandidate,
         compressed: &[u8],
-        dict: u32,
+        clock: Clock,
+        min_idle: u32,
     ) -> bool {
-        let packed = match self.entries.get(i) {
-            Some(e) if e.key() == key && e.plain() == Some(value) => {
-                let p = Packed {
-                    dict,
-                    original_len: value.len() as u32,
-                };
-                Entry::new_packed(key, compressed, e.expire_at(), e.meta, p)
-            }
-            _ => return false,
+        let i = candidate.index;
+        let Some(e) = self.entries.get(i) else {
+            return false;
         };
-        let hash = self.hash_of(key);
+        // Accesses and identical writes are relevant even when the contents match.
+        if self.last_access_secs(i) != candidate.access_secs
+            || clock.secs.saturating_sub(self.last_access_secs(i)) < min_idle
+            || e.is_expired(clock.ms)
+            || e.key() != candidate.key
+            || e.plain() != Some(candidate.value.as_slice())
+        {
+            return false;
+        }
+        let packed = Entry::new_packed(
+            &candidate.key,
+            compressed,
+            e.expire_at(),
+            e.meta,
+            Packed {
+                dict: candidate.dict,
+                original_len: candidate.value.len() as u32,
+            },
+        );
+        let hash = self.hash_of(&candidate.key);
         self.replace(i, hash, packed);
         true
     }
@@ -412,23 +559,6 @@ impl Footprint {
     }
 }
 
-/// Seconds since the entry was last accessed, from its eviction metadata (minute resolution under LFU).
-pub fn idle_secs(meta: u32, policy: Policy, clock: Clock) -> u32 {
-    match policy {
-        Policy::AllKeysLfu => {
-            let ldt = meta >> 8;
-            let now = lfu_minutes(clock);
-            let minutes = if now >= ldt {
-                now - ldt
-            } else {
-                65535 - ldt + now
-            };
-            minutes.saturating_mul(60)
-        }
-        _ => clock.secs.saturating_sub(meta),
-    }
-}
-
 fn lfu_minutes(clock: Clock) -> u32 {
     (clock.secs / 60) & 0xFFFF
 }
@@ -478,11 +608,11 @@ mod tests {
         let h = s.hash_of(k.as_bytes());
         match s.lookup(h, k.as_bytes(), 0) {
             Some(i) => {
-                s.set_value(i, v.as_bytes());
+                s.set_value(i, v.as_bytes(), 0);
                 s.set_expire(i, h, exp);
             }
             None => {
-                s.insert(h, Entry::new(k.as_bytes(), v.as_bytes(), exp, 0));
+                s.insert(h, Entry::new(k.as_bytes(), v.as_bytes(), exp, 0), 0);
             }
         }
     }
@@ -574,7 +704,7 @@ mod tests {
             let k = format!("k{i}");
             let h = s.hash_of(k.as_bytes());
             // Older keys get older clocks.
-            s.insert(h, Entry::new(k.as_bytes(), b"v", 0, i));
+            s.insert(h, Entry::new(k.as_bytes(), b"v", 0, i), i);
         }
         let c = clock(1_000_000);
         let mut evicted_ages = 0u64;
@@ -612,5 +742,92 @@ mod tests {
         );
         let meta = (lfu_minutes(c) << 8) | counter;
         assert_eq!(lfu_decayed(meta, clock(10 * 60_000)), counter - 10);
+    }
+    fn candidate(s: &Shard, index: usize) -> PackCandidate {
+        let e = s.entry(index);
+        PackCandidate {
+            index,
+            key: e.key().to_vec(),
+            value: e.plain().unwrap().to_vec(),
+            access_secs: s.last_access_secs(index),
+            dict: 0,
+        }
+    }
+
+    #[test]
+    fn lfu_compression_idle_clock_has_second_precision_across_minute_boundary() {
+        let mut s = shard();
+        s.enable_access_tracking(58);
+        let c = clock(58_000);
+        let i = s.insert(
+            s.hash_of(b"k"),
+            Entry::new(b"k", &[b'x'; 100], 0, Policy::AllKeysLfu.initial_meta(c)),
+            c.secs,
+        );
+        let old = candidate(&s, i);
+        for secs in [59, 60, 62] {
+            assert!(
+                !s.pack_at(&old, b"packed", clock(secs * 1000), 5),
+                "packed too early at {secs}"
+            );
+        }
+        let lfu_meta = s.entry(i).meta;
+        assert!(s.pack_at(&old, b"packed", clock(63_000), 5));
+        assert_eq!(
+            s.entry(i).meta,
+            lfu_meta,
+            "compression must preserve LFU counters"
+        );
+    }
+
+    #[test]
+    fn access_or_identical_write_after_snapshot_prevents_packing() {
+        for read in [true, false] {
+            let mut s = shard();
+            s.enable_access_tracking(0);
+            let i = s.insert(s.hash_of(b"k"), Entry::new(b"k", &[b'x'; 100], 0, 0), 0);
+            let old = candidate(&s, i);
+            if read {
+                s.touch(i, Policy::AllKeysLfu, clock(10_000));
+            } else {
+                s.set_value(i, &[b'x'; 100], 10);
+            }
+            assert!(!s.pack_at(&old, b"packed", clock(10_000), 5));
+            assert!(s.entry(i).plain().is_some());
+        }
+    }
+
+    #[test]
+    fn packing_revalidates_expiry_and_preserves_updated_ttl() {
+        let mut s = shard();
+        s.enable_access_tracking(0);
+        let h = s.hash_of(b"k");
+        let i = s.insert(h, Entry::new(b"k", &[b'x'; 100], 1001, 7), 0);
+        let old = candidate(&s, i);
+        assert!(!s.pack_at(&old, b"packed", clock(1001), 0));
+        s.set_expire(i, h, 20_000);
+        assert!(s.pack_at(&old, b"packed", clock(10_000), 5));
+        assert_eq!((s.entry(i).expire_at(), s.entry(i).meta), (20_000, 7));
+    }
+
+    #[test]
+    fn access_clocks_follow_swap_remove_and_clear_without_enlarging_entries() {
+        let mut s = shard();
+        s.enable_access_tracking(0);
+        for i in 0..600 {
+            let key = format!("k{i}");
+            s.insert(
+                s.hash_of(key.as_bytes()),
+                Entry::new(key.as_bytes(), b"v", 0, 0),
+                i,
+            );
+        }
+        s.remove_at(0, s.hash_of(b"k0"));
+        assert_eq!(s.last_access_secs(0), 599);
+        assert_eq!(s.access_clock_bytes(), 599 * 4);
+        assert_eq!(std::mem::size_of::<Entry>(), 16);
+        s.clear();
+        assert_eq!(s.access_clock_bytes(), 0);
+        assert_eq!(s.used(), 0);
     }
 }

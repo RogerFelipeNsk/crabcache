@@ -30,6 +30,16 @@ impl Shared {
         db.codec.set_enabled(config.compression);
         db.codec.set_min_idle_secs(config.compression_min_idle);
         db.codec.set_min_size(config.compression_min_size);
+        db.codec
+            .set_pack_max_bytes(config.compression_max_bytes_per_tick);
+        db.codec
+            .set_pack_budget_ms(config.compression_time_budget_ms);
+        db.codec
+            .set_adaptive_dicts(config.compression_adaptive_dicts);
+        db.codec
+            .set_adaptive_maintenance(config.compression_adaptive_maintenance);
+        db.codec.set_min_ttl_secs(config.compression_min_ttl);
+        db.codec.set_hot_max_bytes(config.compression_hot_maxmemory);
         Self {
             db,
             config,
@@ -58,6 +68,7 @@ pub struct Session {
     /// Set by QUIT; the connection closes after flushing replies.
     pub close: bool,
     rng: u64,
+    pub(crate) pressure_sample: u8,
 }
 
 impl Session {
@@ -71,6 +82,7 @@ impl Session {
             resp3: false,
             close: false,
             rng: 0x2545_F491_4F6C_DD1D ^ id,
+            pressure_sample: 0,
         }
     }
 

@@ -24,10 +24,14 @@ pub fn int(out: &mut Vec<u8>, n: i64) {
     out.extend_from_slice(b"\r\n");
 }
 
-pub fn bulk(out: &mut Vec<u8>, data: &[u8]) {
+pub fn bulk_header(out: &mut Vec<u8>, len: usize) {
     out.push(b'$');
-    out.extend_from_slice(itoa::Buffer::new().format(data.len()).as_bytes());
+    out.extend_from_slice(itoa::Buffer::new().format(len).as_bytes());
     out.extend_from_slice(b"\r\n");
+}
+
+pub fn bulk(out: &mut Vec<u8>, data: &[u8]) {
+    bulk_header(out, data.len());
     out.extend_from_slice(data);
     out.extend_from_slice(b"\r\n");
 }

@@ -1,0 +1,198 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 953B done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 3.6s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/rust:1-slim-bookworm
+#4 DONE 0.0s
+
+#5 [internal] load metadata for gcr.io/distroless/cc-debian12:nonroot
+#5 DONE 1.8s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 89B done
+#6 DONE 0.0s
+
+#7 [stage-1 1/2] FROM gcr.io/distroless/cc-debian12:nonroot@sha256:9dac0a79194e45a7da0158a9c6da57b217585af0786db3845d1f0ec1a0dd182f
+#7 DONE 0.0s
+
+#8 [build 1/5] FROM docker.io/library/rust:1-slim-bookworm
+#8 DONE 0.0s
+
+#9 [internal] load build context
+#9 transferring context: 254.19kB done
+#9 DONE 0.0s
+
+#10 [build 2/5] WORKDIR /src
+#10 CACHED
+
+#11 [build 3/5] COPY Cargo.toml Cargo.lock ./
+#11 CACHED
+
+#12 [build 4/5] COPY src ./src
+#12 DONE 0.0s
+
+#13 [build 5/5] RUN cargo build --release --locked  && cp target/release/crabcache /crabcache  && strip /crabcache
+#13 0.895     Updating crates.io index
+#13 7.080  Downloading crates ...
+#13 7.373   Downloaded ahash v0.8.12
+#13 7.394   Downloaded allocator-api2 v0.2.21
+#13 7.404   Downloaded anstyle-query v1.1.5
+#13 7.410   Downloaded is_terminal_polyfill v1.70.2
+#13 7.411   Downloaded equivalent v1.0.2
+#13 7.413   Downloaded itoa v1.0.18
+#13 7.416   Downloaded clap_lex v1.1.1
+#13 7.420   Downloaded heck v0.5.0
+#13 7.422   Downloaded matchers v0.2.0
+#13 7.426   Downloaded scopeguard v1.2.0
+#13 7.429   Downloaded mimalloc v0.1.52
+#13 7.430   Downloaded cty v0.2.2
+#13 7.433   Downloaded lazy_static v1.5.1
+#13 7.437   Downloaded thread_local v1.1.10
+#13 7.441   Downloaded tokio-macros v2.7.2
+#13 7.443   Downloaded cfg-if v1.0.5
+#13 7.447   Downloaded anstream v1.0.0
+#13 7.451   Downloaded colorchoice v1.0.5
+#13 7.452   Downloaded version_check v0.9.5
+#13 7.455   Downloaded utf8parse v0.2.2
+#13 7.457   Downloaded anstyle v1.0.14
+#13 7.459   Downloaded anstyle-parse v1.0.0
+#13 7.462   Downloaded foldhash v0.2.0
+#13 7.463   Downloaded jobserver v0.1.35
+#13 7.468   Downloaded nu-ansi-term v0.50.3
+#13 7.474   Downloaded shlex v2.0.1
+#13 7.476   Downloaded signal-hook-registry v1.4.8
+#13 7.478   Downloaded strsim v0.11.1
+#13 7.481   Downloaded errno v0.3.14
+#13 7.483   Downloaded tracing-log v0.2.0
+#13 7.486   Downloaded zstd-safe v8.0.0
+#13 7.490   Downloaded find-msvc-tools v0.1.14
+#13 7.493   Downloaded pin-project-lite v0.2.17
+#13 7.505   Downloaded pkg-config v0.3.34
+#13 7.507   Downloaded lock_api v0.4.14
+#13 7.509   Downloaded clap_derive v4.6.7
+#13 7.512   Downloaded parking_lot_core v0.9.12
+#13 7.516   Downloaded tracing-attributes v0.1.31
+#13 7.520   Downloaded once_cell v1.21.4
+#13 7.525   Downloaded unicode-ident v1.0.26
+#13 7.530   Downloaded parking_lot v0.12.5
+#13 7.535   Downloaded zstd v0.14.0
+#13 7.542   Downloaded smallvec v1.16.2
+#13 7.544   Downloaded sharded-slab v0.1.7
+#13 7.552   Downloaded quote v1.0.47
+#13 7.556   Downloaded log v0.4.34
+#13 7.560   Downloaded proc-macro2 v1.0.107
+#13 7.565   Downloaded socket2 v0.6.5
+#13 7.567   Downloaded clap v4.6.7
+#13 7.584   Downloaded getrandom v0.3.4
+#13 7.589   Downloaded tracing-core v0.1.36
+#13 7.595   Downloaded bytes v1.12.1
+#13 7.600   Downloaded memchr v2.8.3
+#13 7.609   Downloaded cc v1.6.0
+#13 7.615   Downloaded mio v1.2.4
+#13 7.622   Downloaded hashbrown v0.17.1
+#13 7.629   Downloaded clap_builder v4.6.7
+#13 7.639   Downloaded aho-corasick v1.1.5
+#13 7.646   Downloaded tracing-subscriber v0.3.23
+#13 7.658   Downloaded syn v2.0.119
+#13 7.675   Downloaded syn v3.0.6
+#13 7.690   Downloaded zerocopy v0.8.60
+#13 7.718   Downloaded regex-syntax v0.8.11
+#13 7.727   Downloaded tracing v0.1.44
+#13 7.751   Downloaded libmimalloc-sys v0.1.49
+#13 7.770   Downloaded regex-automata v0.4.18
+#13 7.788   Downloaded zstd-sys v2.1.0+zstd.1.5.7
+#13 7.811   Downloaded libc v0.2.190
+#13 7.861   Downloaded tokio v1.53.2
+#13 8.047    Compiling libc v0.2.190
+#13 8.048    Compiling proc-macro2 v1.0.107
+#13 8.049    Compiling find-msvc-tools v0.1.14
+#13 10.15    Compiling quote v1.0.47
+#13 11.38    Compiling unicode-ident v1.0.26
+#13 11.55    Compiling shlex v2.0.1
+#13 12.47    Compiling jobserver v0.1.35
+#13 14.23    Compiling cc v1.6.0
+#13 15.61    Compiling cfg-if v1.0.5
+#13 15.92    Compiling pkg-config v0.3.34
+#13 15.97    Compiling once_cell v1.21.4
+#13 17.67    Compiling syn v3.0.6
+#13 17.89    Compiling utf8parse v0.2.2
+#13 17.95    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#13 18.69    Compiling anstyle-parse v1.0.0
+#13 20.25    Compiling libmimalloc-sys v0.1.49
+#13 21.53    Compiling tracing-core v0.1.36
+#13 22.36    Compiling syn v2.0.119
+#13 24.17    Compiling is_terminal_polyfill v1.70.2
+#13 24.78    Compiling colorchoice v1.0.5
+#13 25.75    Compiling anstyle-query v1.1.5
+#13 26.45    Compiling zstd-safe v8.0.0
+#13 27.44    Compiling parking_lot_core v0.9.12
+#13 27.97    Compiling smallvec v1.16.2
+#13 28.54    Compiling version_check v0.9.5
+#13 29.49    Compiling getrandom v0.3.4
+#13 30.03    Compiling zerocopy v0.8.60
+#13 30.89    Compiling anstyle v1.0.14
+#13 31.73    Compiling pin-project-lite v0.2.17
+#13 32.45    Compiling regex-syntax v0.8.11
+#13 32.71    Compiling anstream v1.0.0
+#13 35.05    Compiling ahash v0.8.12
+#13 36.09    Compiling regex-automata v0.4.18
+#13 39.16    Compiling tracing-attributes v0.1.31
+#13 46.23    Compiling errno v0.3.14
+#13 47.72    Compiling clap_lex v1.1.1
+#13 49.19    Compiling scopeguard v1.2.0
+#13 49.64    Compiling cty v0.2.2
+#13 49.94    Compiling log v0.4.34
+#13 49.98    Compiling lazy_static v1.5.1
+#13 50.73    Compiling heck v0.5.0
+#13 51.70    Compiling strsim v0.11.1
+#13 52.25    Compiling clap_derive v4.6.7
+#13 54.59    Compiling clap_builder v4.6.7
+#13 55.55    Compiling tracing-log v0.2.0
+#13 57.37    Compiling sharded-slab v0.1.7
+#13 59.87    Compiling lock_api v0.4.14
+#13 61.85    Compiling signal-hook-registry v1.4.8
+#13 63.88    Compiling tracing v0.1.44
+#13 64.23    Compiling matchers v0.2.0
+#13 67.55    Compiling tokio-macros v2.7.2
+#13 69.57    Compiling thread_local v1.1.10
+#13 71.37    Compiling socket2 v0.6.5
+#13 72.03    Compiling mio v1.2.4
+#13 73.72    Compiling equivalent v1.0.2
+#13 74.14    Compiling allocator-api2 v0.2.21
+#13 74.25    Compiling nu-ansi-term v0.50.3
+#13 75.80    Compiling bytes v1.12.1
+#13 76.20    Compiling foldhash v0.2.0
+#13 77.60    Compiling tokio v1.53.2
+#13 78.16    Compiling hashbrown v0.17.1
+#13 80.48    Compiling tracing-subscriber v0.3.23
+#13 88.01    Compiling parking_lot v0.12.5
+#13 88.97    Compiling zstd v0.14.0
+#13 89.06    Compiling mimalloc v0.1.52
+#13 89.59    Compiling clap v4.6.7
+#13 89.91    Compiling itoa v1.0.18
+#13 90.23    Compiling memchr v2.8.3
+#13 91.69    Compiling crabcache v0.3.0 (/src)
+#13 118.0     Finished `release` profile [optimized + debuginfo] target(s) in 1m 57s
+#13 DONE 118.5s
+
+#7 [stage-1 1/2] FROM gcr.io/distroless/cc-debian12:nonroot@sha256:9dac0a79194e45a7da0158a9c6da57b217585af0786db3845d1f0ec1a0dd182f
+#7 CACHED
+
+#14 [stage-1 2/2] COPY --from=build /crabcache /usr/local/bin/crabcache
+#14 DONE 0.0s
+
+#15 exporting to image
+#15 exporting layers 0.0s done
+#15 writing image sha256:812dffed8bea603821259a554aad07215b56affa0721c2895084d5ea2d9579b0 done
+#15 naming to docker.io/library/crabcache:crabpack-adaptive done
+#15 DONE 0.0s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/535ipe5515qonqzvtzwma4cmg

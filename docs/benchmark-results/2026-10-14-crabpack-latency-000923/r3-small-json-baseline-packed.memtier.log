@@ -1,0 +1,24 @@
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-baseline-packed.memtier.json created...
+Writing results to stdout
+[RUN #1] Preparing benchmark client...
+[RUN #1] Launching threads now...
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      146144 ops,  145776 (avg:  145776) ops/sec, 42.20MB/sec (avg: 42.20MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      296574 ops,  149666 (avg:  147723) ops/sec, 43.32MB/sec (avg: 42.77MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      446984 ops,  149933 (avg:  148459) ops/sec, 43.41MB/sec (avg: 42.98MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      595889 ops,  149933 (avg:  148958) ops/sec, 43.41MB/sec (avg: 43.12MB/sec),  0.32 (avg:  0.32) msec latency
+
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-baseline-packed.memtier.json
+Json file closed.
+4         Threads
+12        Connections per thread
+4         Seconds
+
+
+ALL STATS
+============================================================================================================================
+Type         Ops/sec     Hits/sec   Misses/sec    Avg. Latency     p50 Latency     p95 Latency     p99 Latency       KB/sec 
+----------------------------------------------------------------------------------------------------------------------------
+Sets            0.00          ---          ---             ---             ---             ---             ---         0.00 
+Gets       148961.12    148961.12         0.00         0.32169         0.31900         0.39100         0.45500     44158.11 
+Waits           0.00          ---          ---             ---             ---             ---             ---          --- 
+Totals     148961.12    148961.12         0.00         0.32169         0.31900         0.39100         0.45500     44158.11 
