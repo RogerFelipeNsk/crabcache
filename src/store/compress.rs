@@ -266,12 +266,12 @@ impl DictRegistry {
 
     fn try_reclaim_slot(&self, id: u32) -> bool {
         let mut slots = self.slots.write();
-        if let Some(slot) = slots.get_mut(id as usize)
-            && let Some(dict) = slot.as_ref()
-            && dict.is_retired()
-            && dict.active_keys.load(SeqCst) == 0
+        if slots
+            .get(id as usize)
+            .and_then(Option::as_ref)
+            .is_some_and(|dict| dict.is_retired() && dict.active_keys.load(SeqCst) == 0)
         {
-            *slot = None;
+            slots[id as usize] = None;
             self.reclaimed.fetch_add(1, Relaxed);
             return true;
         }
