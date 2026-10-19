@@ -1,10 +1,13 @@
-Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-packed.memtier.json created...
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-packed.memtier.json created...
 Writing results to stdout
 [RUN #1] Preparing benchmark client...
 [RUN #1] Launching threads now...
-[RUN #1 25%,   1 secs]  4 threads 12 conns:      144340 ops,  143639 (avg:  143639) ops/sec, 41.59MB/sec (avg: 41.59MB/sec),  0.33 (avg:  0.33) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:      287732 ops,  143088 (avg:  143364) ops/sec, 41.42MB/sec (avg: 41.50MB/sec),  0.33 (avg:  0.33) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:      430670 ops,  142882 (avg:  143204) ops/sec, 41.37MB/sec (avg: 41.46MB/sec),  0.33 (avg:  0.33) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:      572876 ops,  142882 (avg:  143203) ops/sec, 41.37MB/sec (avg: 41.46MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      144340 ops,  143639 (avg:  143639) ops/sec, 41.59MB/sec (avg: 41.59MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      287732 ops,  143088 (avg:  143364) ops/sec, 41.42MB/sec (avg: 41.50MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      430670 ops,  142882 (avg:  143204) ops/sec, 41.37MB/sec (avg: 41.46MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      572876 ops,  142882 (avg:  143203) ops/sec, 41.37MB/sec (avg: 41.46MB/sec),  0.33 (avg:  0.33) msec latency
 
-Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-packed.memtier.json
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-packed.memtier.json
 Json file closed.
 4         Threads
 12        Connections per thread

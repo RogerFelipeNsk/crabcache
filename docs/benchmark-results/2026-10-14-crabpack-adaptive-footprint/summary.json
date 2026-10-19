@@ -6,7 +6,7 @@
     {
       "name": "r1-baseline",
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -91,7 +91,7 @@
     {
       "name": "r1-candidate",
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-adaptive/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-adaptive/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -184,7 +184,7 @@
     {
       "name": "r2-candidate",
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-adaptive/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-adaptive/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -277,7 +277,7 @@
     {
       "name": "r2-baseline",
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -362,7 +362,7 @@
     {
       "name": "r3-baseline",
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -447,7 +447,7 @@
     {
       "name": "r3-candidate",
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-adaptive/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-adaptive/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",

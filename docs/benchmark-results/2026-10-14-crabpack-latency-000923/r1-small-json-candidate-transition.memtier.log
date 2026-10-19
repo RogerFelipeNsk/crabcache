@@ -1,10 +1,13 @@
-Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-transition.memtier.json created...
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-transition.memtier.json created...
 Writing results to stdout
 [RUN #1] Preparing benchmark client...
 [RUN #1] Launching threads now...
-[RUN #1 25%,   1 secs]  4 threads 12 conns:      146887 ops,  146531 (avg:  146531) ops/sec, 42.42MB/sec (avg: 42.42MB/sec),  0.33 (avg:  0.33) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:      296945 ops,  149296 (avg:  147915) ops/sec, 43.22MB/sec (avg: 42.82MB/sec),  0.32 (avg:  0.32) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:      445802 ops,  148102 (avg:  147977) ops/sec, 42.88MB/sec (avg: 42.84MB/sec),  0.32 (avg:  0.32) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:      593108 ops,  148102 (avg:  148261) ops/sec, 42.88MB/sec (avg: 42.92MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 25%,   1 secs]  4 threads 12 conns:      146887 ops,  146531 (avg:  146531) ops/sec, 42.42MB/sec (avg: 42.42MB/sec),  0.33 (avg:  0.33) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:      296945 ops,  149296 (avg:  147915) ops/sec, 43.22MB/sec (avg: 42.82MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      445802 ops,  148102 (avg:  147977) ops/sec, 42.88MB/sec (avg: 42.84MB/sec),  0.32 (avg:  0.32) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      593108 ops,  148102 (avg:  148261) ops/sec, 42.88MB/sec (avg: 42.92MB/sec),  0.32 (avg:  0.32) msec latency
 
-Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-transition.memtier.json
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-transition.memtier.json
 Json file closed.
 4         Threads
 12        Connections per thread

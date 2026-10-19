@@ -140,6 +140,13 @@ impl Shard {
             .checked_sub(e.stored().len())?
             .checked_sub(super::entry::PACKED_BYTES)?;
         let growth = plain_bytes.checked_sub(e.mem_usage())?;
+        let ttl_slack = self
+            .hot_promoted
+            .iter()
+            .filter(|&&(idx, _)| self.entries[idx].expire_at() == 0)
+            .count()
+            .saturating_add(usize::from(e.expire_at() == 0))
+            * std::mem::size_of::<u64>();
         let metadata = if self.hot_promoted.capacity() == 0 {
             64 * std::mem::size_of::<(usize, usize)>()
         } else {
@@ -149,6 +156,7 @@ impl Shard {
             || self
                 .hot_resident_bytes()
                 .saturating_add(plain_bytes)
+                .saturating_add(ttl_slack)
                 .saturating_add(metadata)
                 > limit
         {
@@ -336,6 +344,9 @@ impl Shard {
         let after = Footprint::of(&self.entries[i]);
         self.account(before, false);
         self.account(after, true);
+        if let Some((_, bytes)) = self.hot_promoted.iter_mut().find(|(index, _)| *index == i) {
+            *bytes = after.mem;
+        }
         if at != 0 && at != old {
             self.push_expiry(at, hash);
         }

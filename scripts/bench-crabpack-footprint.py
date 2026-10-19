@@ -15,6 +15,15 @@ from benchmark import Client, Bench
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def display_path(path):
+    path = Path(path).resolve()
+    for base, prefix in ((ROOT.parent, '<workspace>'), (Path.home(), '<home>')):
+        if path.is_relative_to(base):
+            rel = path.relative_to(base).as_posix()
+            return prefix if rel == '.' else f'{prefix}/{rel}'
+    return path.as_posix()
+
+
 def run(binary, api, label, out):
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
@@ -49,7 +58,8 @@ def run(binary, api, label, out):
             info = parsed['info_final']
             entry_bytes = int(info['used_memory'])
             prepared = int(info['compression_prepared_dict_bytes'])
-            return {'name': label, 'server_command': cmd, 'client_command': invocation,
+            return {'name': label, 'server_command': [display_path(binary), *cmd[1:]],
+                    'client_command': [display_path(api), *invocation[1:]],
                     'file': label + '.json', 'baseline_info': baseline,
                     'dataset_sha256': parsed['dataset_sha256'],
                     'raw_payload_bytes': parsed['raw_payload_bytes_total'],

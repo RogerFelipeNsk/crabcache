@@ -1,10 +1,13 @@
-Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-transition.memtier.json created...
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-transition.memtier.json created...
 Writing results to stdout
 [RUN #1] Preparing benchmark client...
 [RUN #1] Launching threads now...
-[RUN #1 25%,   1 secs]  4 threads 12 conns:       19379 ops,   19357 (avg:   19357) ops/sec, 2.40GB/sec (avg: 2.40GB/sec),  2.47 (avg:  2.47) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:       38293 ops,   18854 (avg:   19105) ops/sec, 2.34GB/sec (avg: 2.37GB/sec),  2.54 (avg:  2.51) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:       57474 ops,   19173 (avg:   19128) ops/sec, 2.38GB/sec (avg: 2.37GB/sec),  2.50 (avg:  2.51) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:       78160 ops,   19173 (avg:   19532) ops/sec, 2.38GB/sec (avg: 2.42GB/sec),  2.50 (avg:  2.45) msec latency
+[RUN #1 25%,   1 secs]  4 threads 12 conns:       19379 ops,   19357 (avg:   19357) ops/sec, 2.40GB/sec (avg: 2.40GB/sec),  2.47 (avg:  2.47) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:       38293 ops,   18854 (avg:   19105) ops/sec, 2.34GB/sec (avg: 2.37GB/sec),  2.54 (avg:  2.51) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:       57474 ops,   19173 (avg:   19128) ops/sec, 2.38GB/sec (avg: 2.37GB/sec),  2.50 (avg:  2.51) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:       78160 ops,   19173 (avg:   19532) ops/sec, 2.38GB/sec (avg: 2.42GB/sec),  2.50 (avg:  2.45) msec latency
 
-Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-transition.memtier.json
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-transition.memtier.json
 Json file closed.
 4         Threads
 12        Connections per thread

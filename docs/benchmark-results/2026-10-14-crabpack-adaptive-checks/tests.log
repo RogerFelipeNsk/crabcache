@@ -1,4 +1,4 @@
-   Compiling crabcache v0.3.0 (/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-adaptive)
+   Compiling crabcache v0.3.0 (<workspace>/crabcache-crabpack-adaptive)
     Finished `release` profile [optimized + debuginfo] target(s) in 21.74s
      Running unittests src/lib.rs (target/release/deps/crabcache-df94310ebfd5668f)
 

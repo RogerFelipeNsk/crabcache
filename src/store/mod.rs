@@ -802,6 +802,50 @@ mod hot_tests {
     }
 
     #[test]
+    fn promoted_resident_accounting_follows_expire_and_persist() {
+        let db = Db::new(1, 0, Policy::AllKeysLfu, 5);
+        db.codec.set_enabled(true);
+        db.codec.set_hot_max_bytes(4096);
+        let clock = db.clock();
+        packed(&db, b"a", clock);
+        let (mut g, h) = db.lock_key(b"a");
+        let i = g.lookup(h, b"a", clock.ms).unwrap();
+        g.set_expire(i, h, 0);
+        assert!(g.promote_hot(i, &[b'x'; 512], clock));
+        let before = g.hot_resident_bytes();
+        let used = g.used();
+        g.set_expire(i, h, clock.ms + 60000);
+        assert_eq!(g.hot_resident_bytes(), before + 8);
+        assert_eq!(g.used(), used + 8);
+        g.set_expire(i, h, clock.ms + 120000);
+        assert_eq!(g.hot_resident_bytes(), before + 8);
+        g.set_expire(i, h, 0);
+        assert_eq!(g.hot_resident_bytes(), before);
+        assert_eq!(g.used(), used);
+        assert_eq!(g.entry(i).plain(), Some([b'x'; 512].as_slice()));
+        assert_eq!(g.entry(i).meta, 8);
+    }
+
+    #[test]
+    fn promotion_budget_reserves_space_for_a_future_ttl() {
+        let db = Db::new(1, 0, Policy::AllKeysLfu, 5);
+        db.codec.set_enabled(true);
+        let clock = db.clock();
+        packed(&db, b"a", clock);
+        let plain = Entry::new(b"a", &[b'x'; 512], 0, 8).mem_usage();
+        let metadata = 64 * std::mem::size_of::<(usize, usize)>();
+        db.codec.set_hot_max_bytes((plain + metadata) as u64);
+        let (mut g, h) = db.lock_key(b"a");
+        let i = g.lookup(h, b"a", clock.ms).unwrap();
+        g.set_expire(i, h, 0);
+        assert!(!g.promote_hot(i, &[b'x'; 512], clock));
+        db.codec.set_hot_max_bytes((plain + metadata + 8) as u64);
+        assert!(g.promote_hot(i, &[b'x'; 512], clock));
+        g.set_expire(i, h, clock.ms + 60000);
+        assert_eq!(g.hot_resident_bytes() as u64, db.codec.hot_max_bytes());
+    }
+
+    #[test]
     fn promotion_cannot_evict_or_exceed_maxmemory_or_resident_budget() {
         let db = Db::new(1, 0, Policy::AllKeysLfu, 5);
         db.codec.set_enabled(true);

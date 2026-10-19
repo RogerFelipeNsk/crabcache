@@ -1,4 +1,4 @@
-Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-transition.memtier.json created...
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-transition.memtier.json created...
 Writing results to stdout
 [RUN #1] Preparing benchmark client...
 [RUN #1] Launching threads now...
@@ -12,7 +12,7 @@ warning: high CPU on thread 3: 95.6% of a core (threshold 95.0%) - results may b
 warning: high CPU on thread 2: 95.6% of a core (threshold 95.0%) - results may be unreliable
 [RUN #1 100%,   4 secs]  0 threads 12 conns:      110161 ops,   26089 (avg:   27525) ops/sec, 3.23GB/sec (avg: 3.41GB/sec),  1.84 (avg:  1.74) msec latency
 
-Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-transition.memtier.json
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-transition.memtier.json
 Json file closed.
 4         Threads
 12        Connections per thread

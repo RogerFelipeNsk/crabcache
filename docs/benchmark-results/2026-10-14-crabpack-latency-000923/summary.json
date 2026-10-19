@@ -162,10 +162,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -342,10 +342,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-baseline-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -560,10 +560,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -779,10 +779,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-small-json-candidate-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -997,10 +997,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-candidate-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-candidate-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -1216,10 +1216,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-candidate-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-candidate-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -1395,10 +1395,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -1575,10 +1575,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-small-json-baseline-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -1754,10 +1754,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-baseline-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-baseline-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -1934,10 +1934,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-baseline-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-baseline-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -2152,10 +2152,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-candidate-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-candidate-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -2371,10 +2371,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-candidate-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-small-json-candidate-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -2551,10 +2551,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -2731,10 +2731,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-baseline-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -2950,10 +2950,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -3169,10 +3169,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r1-large-json-candidate-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -3388,10 +3388,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -3607,10 +3607,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -3787,10 +3787,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-baseline-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-baseline-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -3967,10 +3967,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-baseline-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-baseline-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -4147,10 +4147,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-baseline-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-baseline-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -4327,10 +4327,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-baseline-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-baseline-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache/target/release/crabcache",
+        "<workspace>/crabcache/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -4546,10 +4546,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-transition.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-transition.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",
@@ -4765,10 +4765,10 @@
         "--test-time=4",
         "--hide-histogram",
         "--print-percentiles=50,95,99",
-        "--json-out-file=/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-packed.memtier.json"
+        "--json-out-file=<workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-packed.memtier.json"
       ],
       "server_command": [
-        "/Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/target/release/crabcache",
+        "<workspace>/crabcache-crabpack-perf/target/release/crabcache",
         "--bind",
         "127.0.0.1",
         "--port",

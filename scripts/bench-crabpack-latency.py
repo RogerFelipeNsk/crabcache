@@ -16,6 +16,15 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def display_path(path):
+    path = Path(path).resolve()
+    for base, prefix in ((ROOT.parent, '<workspace>'), (Path.home(), '<home>')):
+        if path.is_relative_to(base):
+            rel = path.relative_to(base).as_posix()
+            return prefix if rel == '.' else f'{prefix}/{rel}'
+    return path.as_posix()
+
+
 def encode(*args):
     args = [a if isinstance(a, bytes) else str(a).encode() for a in args]
     return b'*%d\r\n' % len(args) + b''.join(b'$%d\r\n' % len(a) + a + b'\r\n' for a in args)
@@ -186,10 +195,13 @@ def run_one(binary, name, kind, repeat, items, seconds, out):
                    '--pipeline=1', '--ratio=0:1', '--key-prefix=session:', '--key-minimum=1',
                    f'--key-maximum={len(items)}', '--key-pattern=R:R', f'--test-time={seconds}',
                    '--hide-histogram', '--print-percentiles=50,95,99', f'--json-out-file={raw_path}']
+            recorded_cmd = [*cmd[:-1], f'--json-out-file={display_path(raw_path)}']
+            log_path = out / f'{label}-{phase}.memtier.log'
             cpu0, wall0 = before['cpu_seconds'], time.monotonic()
-            with (out / f'{label}-{phase}.memtier.log').open('w') as stream:
+            with log_path.open('w') as stream:
                 subprocess.run(cmd, stdout=stream, stderr=stream, check=True, timeout=seconds+30)
             wall = time.monotonic()-wall0
+            log_path.write_text(log_path.read_text().replace(str(raw_path), display_path(raw_path)))
             after_process = measure_process(process.pid)
             cpu = after_process['cpu_seconds']-cpu0
             raw = json.loads(raw_path.read_text())
@@ -204,8 +216,8 @@ def run_one(binary, name, kind, repeat, items, seconds, out):
                       'p99_ms': gets['Percentile Latencies']['p99.00'], 'max_ms': gets['Max Latency'],
                       'cpu_seconds': cpu, 'cpu_us_per_get': cpu/gets['Count']*1e6, 'wall_seconds': wall,
                       'before': before, 'after': after, 'baseline': baseline,
-                      'verified_count': len(items), 'total_keys': total_keys, 'training_keys': len(training), 'memtier_file': raw_path.name, 'command': cmd,
-                      'server_command': command, 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
+                      'verified_count': len(items), 'total_keys': total_keys, 'training_keys': len(training), 'memtier_file': raw_path.name, 'command': recorded_cmd,
+                      'server_command': [display_path(binary), *command[1:]], 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
             records.append(record)
             print(f'{label} {phase}: mean={record["mean_ms"]:.3f}ms p99={record["p99_ms"]:.3f}ms CPU/GET={record["cpu_us_per_get"]:.3f}us',flush=True)
         return records

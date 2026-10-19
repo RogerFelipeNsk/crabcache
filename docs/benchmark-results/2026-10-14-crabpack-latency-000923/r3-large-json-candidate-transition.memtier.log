@@ -1,4 +1,4 @@
-Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-transition.memtier.json created...
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-transition.memtier.json created...
 Writing results to stdout
 [RUN #1] Preparing benchmark client...
 [RUN #1] Launching threads now...
@@ -10,9 +10,11 @@ warning: high CPU on thread 1: 95.5% of a core (threshold 95.0%) - results may b
 warning: high CPU on thread 2: 95.5% of a core (threshold 95.0%) - results may be unreliable
 
 warning: high CPU on thread 3: 95.3% of a core (threshold 95.0%) - results may be unreliable
-[RUN #1 50%,   2 secs]  4 threads 12 conns:       62592 ops,   30515 (avg:   31189) ops/sec, 3.78GB/sec (avg: 3.87GB/sec),  1.57 (avg:  1.54) msec latency[RUN #1 75%,   3 secs]  4 threads 12 conns:       91760 ops,   29016 (avg:   30464) ops/sec, 3.60GB/sec (avg: 3.78GB/sec),  1.65 (avg:  1.57) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:      115723 ops,   29016 (avg:   28923) ops/sec, 3.60GB/sec (avg: 3.59GB/sec),  1.65 (avg:  1.66) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:       62592 ops,   30515 (avg:   31189) ops/sec, 3.78GB/sec (avg: 3.87GB/sec),  1.57 (avg:  1.54) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:       91760 ops,   29016 (avg:   30464) ops/sec, 3.60GB/sec (avg: 3.78GB/sec),  1.65 (avg:  1.57) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      115723 ops,   29016 (avg:   28923) ops/sec, 3.60GB/sec (avg: 3.59GB/sec),  1.65 (avg:  1.66) msec latency
 
-Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-transition.memtier.json
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r3-large-json-candidate-transition.memtier.json
 Json file closed.
 4         Threads
 12        Connections per thread

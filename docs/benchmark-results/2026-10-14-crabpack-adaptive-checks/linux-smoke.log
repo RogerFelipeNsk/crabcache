@@ -1,7 +1,7 @@
 $ docker run --rm --platform linux/amd64 crabcache:crabpack-adaptive-bundle --version
 crabcache 0.3.0
 
-$ python3 /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-adaptive/scripts/smoke-crabpack.py --port 53892
+$ python3 <workspace>/crabcache-crabpack-adaptive/scripts/smoke-crabpack.py --port 53892
 CrabPack smoke passed: 2000 packed binary values, exact readback, TTL, disable and APPEND
 
 $ python3 /tmp/crabcache-fly-build-smoke.py 53892

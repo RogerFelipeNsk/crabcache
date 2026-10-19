@@ -1,8 +1,9 @@
-Json file /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-transition.memtier.json created...
+Json file <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-transition.memtier.json created...
 Writing results to stdout
 [RUN #1] Preparing benchmark client...
 [RUN #1] Launching threads now...
-[RUN #1 25%,   1 secs]  4 threads 12 conns:       33547 ops,   33389 (avg:   33389) ops/sec, 4.14GB/sec (avg: 4.14GB/sec),  1.43 (avg:  1.43) msec latency[RUN #1 50%,   2 secs]  4 threads 12 conns:       69306 ops,   35576 (avg:   34483) ops/sec, 4.41GB/sec (avg: 4.27GB/sec),  1.35 (avg:  1.39) msec latency
+[RUN #1 25%,   1 secs]  4 threads 12 conns:       33547 ops,   33389 (avg:   33389) ops/sec, 4.14GB/sec (avg: 4.14GB/sec),  1.43 (avg:  1.43) msec latency
+[RUN #1 50%,   2 secs]  4 threads 12 conns:       69306 ops,   35576 (avg:   34483) ops/sec, 4.41GB/sec (avg: 4.27GB/sec),  1.35 (avg:  1.39) msec latency
 warning: high CPU on thread 0: 98.4% of a core (threshold 95.0%) - results may be unreliable
 
 warning: high CPU on thread 1: 98.7% of a core (threshold 95.0%) - results may be unreliable
@@ -10,9 +11,10 @@ warning: high CPU on thread 1: 98.7% of a core (threshold 95.0%) - results may b
 warning: high CPU on thread 2: 98.5% of a core (threshold 95.0%) - results may be unreliable
 
 warning: high CPU on thread 3: 98.6% of a core (threshold 95.0%) - results may be unreliable
-[RUN #1 75%,   3 secs]  4 threads 12 conns:      104322 ops,   34836 (avg:   34601) ops/sec, 4.32GB/sec (avg: 4.29GB/sec),  1.38 (avg:  1.38) msec latency[RUN #1 100%,   4 secs]  0 threads 12 conns:      140280 ops,   34836 (avg:   35063) ops/sec, 4.32GB/sec (avg: 4.35GB/sec),  1.38 (avg:  1.37) msec latency
+[RUN #1 75%,   3 secs]  4 threads 12 conns:      104322 ops,   34836 (avg:   34601) ops/sec, 4.32GB/sec (avg: 4.29GB/sec),  1.38 (avg:  1.38) msec latency
+[RUN #1 100%,   4 secs]  0 threads 12 conns:      140280 ops,   34836 (avg:   35063) ops/sec, 4.32GB/sec (avg: 4.35GB/sec),  1.38 (avg:  1.37) msec latency
 
-Saving JSON output file: /Users/rogerpereira/Projects/RogerFelipe/CrabCache/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-transition.memtier.json
+Saving JSON output file: <workspace>/crabcache-crabpack-perf/docs/benchmark-results/2026-10-14-crabpack-latency-000923/r2-large-json-candidate-transition.memtier.json
 Json file closed.
 4         Threads
 12        Connections per thread
