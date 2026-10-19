@@ -1,0 +1,305 @@
+{
+  "keys": 10000,
+  "value_bytes": 39128233,
+  "mean_value_bytes": 3912.8233,
+  "sha256": "48d47c5f06c82908a60b2335c60ae76a76453e2003ccaa3deda6a09eea49bcc1",
+  "dataset": "api_large",
+  "label": "API JSON \u00b7 40 itens",
+  "encrypted": false,
+  "plain_mean_bytes": 3912.8233,
+  "minimum_value_bytes": 3673,
+  "maximum_value_bytes": 3937,
+  "prefix": "api_large:",
+  "synthetic_key_file": null,
+  "example_plaintext": {
+    "request_id": "4cf6d80243b288cd48076fccfa120a8f",
+    "status": 200,
+    "data": {
+      "items": [
+        {
+          "id": 0,
+          "status": "ok",
+          "amount": 0.0,
+          "at": "2026-10-01T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 1,
+          "status": "pending",
+          "amount": 0.07,
+          "at": "2026-10-02T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 2,
+          "status": "failed",
+          "amount": 0.14,
+          "at": "2026-10-03T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 3,
+          "status": "ok",
+          "amount": 0.21,
+          "at": "2026-10-04T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 4,
+          "status": "pending",
+          "amount": 0.28,
+          "at": "2026-10-05T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 5,
+          "status": "failed",
+          "amount": 0.35,
+          "at": "2026-10-06T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 6,
+          "status": "ok",
+          "amount": 0.42,
+          "at": "2026-10-07T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 7,
+          "status": "pending",
+          "amount": 0.49,
+          "at": "2026-10-08T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 8,
+          "status": "failed",
+          "amount": 0.56,
+          "at": "2026-10-09T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 9,
+          "status": "ok",
+          "amount": 0.63,
+          "at": "2026-10-10T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 10,
+          "status": "pending",
+          "amount": 0.7,
+          "at": "2026-10-11T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 11,
+          "status": "failed",
+          "amount": 0.77,
+          "at": "2026-10-12T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 12,
+          "status": "ok",
+          "amount": 0.84,
+          "at": "2026-10-13T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 13,
+          "status": "pending",
+          "amount": 0.91,
+          "at": "2026-10-14T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 14,
+          "status": "failed",
+          "amount": 0.98,
+          "at": "2026-10-15T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 15,
+          "status": "ok",
+          "amount": 1.05,
+          "at": "2026-10-16T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 16,
+          "status": "pending",
+          "amount": 1.12,
+          "at": "2026-10-17T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 17,
+          "status": "failed",
+          "amount": 1.19,
+          "at": "2026-10-18T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 18,
+          "status": "ok",
+          "amount": 1.26,
+          "at": "2026-10-19T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 19,
+          "status": "pending",
+          "amount": 1.33,
+          "at": "2026-10-20T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 20,
+          "status": "failed",
+          "amount": 1.4,
+          "at": "2026-10-21T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 21,
+          "status": "ok",
+          "amount": 1.47,
+          "at": "2026-10-22T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 22,
+          "status": "pending",
+          "amount": 1.54,
+          "at": "2026-10-23T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 23,
+          "status": "failed",
+          "amount": 1.61,
+          "at": "2026-10-24T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 24,
+          "status": "ok",
+          "amount": 1.68,
+          "at": "2026-10-25T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 25,
+          "status": "pending",
+          "amount": 1.75,
+          "at": "2026-10-26T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 26,
+          "status": "failed",
+          "amount": 1.82,
+          "at": "2026-10-27T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 27,
+          "status": "ok",
+          "amount": 1.89,
+          "at": "2026-10-28T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 28,
+          "status": "pending",
+          "amount": 1.96,
+          "at": "2026-10-01T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 29,
+          "status": "failed",
+          "amount": 2.03,
+          "at": "2026-10-02T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 30,
+          "status": "ok",
+          "amount": 2.1,
+          "at": "2026-10-03T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 31,
+          "status": "pending",
+          "amount": 2.17,
+          "at": "2026-10-04T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 32,
+          "status": "failed",
+          "amount": 2.24,
+          "at": "2026-10-05T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 33,
+          "status": "ok",
+          "amount": 2.31,
+          "at": "2026-10-06T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 34,
+          "status": "pending",
+          "amount": 2.38,
+          "at": "2026-10-07T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 35,
+          "status": "failed",
+          "amount": 2.45,
+          "at": "2026-10-08T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 36,
+          "status": "ok",
+          "amount": 2.52,
+          "at": "2026-10-09T12:30:00Z",
+          "category": "casa"
+        },
+        {
+          "id": 37,
+          "status": "pending",
+          "amount": 2.59,
+          "at": "2026-10-10T12:30:00Z",
+          "category": "moda"
+        },
+        {
+          "id": 38,
+          "status": "failed",
+          "amount": 2.66,
+          "at": "2026-10-11T12:30:00Z",
+          "category": "eletronicos"
+        },
+        {
+          "id": 39,
+          "status": "ok",
+          "amount": 2.73,
+          "at": "2026-10-12T12:30:00Z",
+          "category": "casa"
+        }
+      ],
+      "page": 1,
+      "has_more": false
+    },
+    "took_ms": 1
+  }
+}

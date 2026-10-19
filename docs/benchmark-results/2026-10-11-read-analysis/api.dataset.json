@@ -1,0 +1,43 @@
+{
+  "keys": 10000,
+  "value_bytes": 3136965,
+  "mean_value_bytes": 313.6965,
+  "sha256": "b6899621947e492a05293b6f8b35831b1275cc064a8ef1261efa0fc57e981e4e",
+  "dataset": "api",
+  "label": "API JSON",
+  "encrypted": false,
+  "plain_mean_bytes": 313.6965,
+  "minimum_value_bytes": 192,
+  "maximum_value_bytes": 441,
+  "prefix": "api:",
+  "synthetic_key_file": null,
+  "example_plaintext": {
+    "request_id": "19b09d355520d6773dfec11db947ea1b",
+    "status": 200,
+    "data": {
+      "items": [
+        {
+          "id": 795296949,
+          "status": "failed",
+          "amount": 799.55,
+          "at": "2026-08-10T15:16:21Z"
+        },
+        {
+          "id": 731608893,
+          "status": "pending",
+          "amount": 277.96,
+          "at": "2026-08-22T02:09:34Z"
+        },
+        {
+          "id": 642077736,
+          "status": "failed",
+          "amount": 821.72,
+          "at": "2026-04-12T12:45:46Z"
+        }
+      ],
+      "page": 1,
+      "has_more": false
+    },
+    "took_ms": 550
+  }
+}

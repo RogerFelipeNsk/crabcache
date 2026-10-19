@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="456" viewBox="0 0 1024 456" role="img" aria-labelledby="title desc">
+<title id="title">CrabPack: latência individual e CPU por leitura</title>
+<desc id="desc">Quatro conjuntos JSON, CrabPack desligado e ligado. Médias de três rodadas. Latência em uma conexão; CPU com 48 conexões e pipeline 16.</desc>
+<style>text{font-family:system-ui,sans-serif;fill:#142b43} .axis{stroke:#dce4ed} .plain{fill:#2365b5} .pack{fill:#d96826}</style>
+<rect width="1024" height="456" rx="10" fill="#f7f9fc"/>
+<text x="24" y="32" font-size="21" font-weight="600">CrabPack: tempo de leitura e custo de CPU</text>
+<text x="24" y="55" font-size="13">2026-10-11 · 10.000 chaves/conjunto · 3 × 4 s · Apple M1 Pro / loopback / uma thread de I/O</text>
+<rect x="24" y="69" width="13" height="13" class="plain"/><text x="44" y="81" font-size="13">CrabPack desligado</text>
+<rect x="230" y="69" width="13" height="13" class="pack"/><text x="250" y="81" font-size="13">CrabPack ligado · 100% comprimido</text>
+<text x="24" y="116" font-size="15" font-weight="600">GET individual · média em µs</text>
+<line x1="160" x2="160" y1="134" y2="387" class="axis"/>
+<text x="150" y="155" text-anchor="end" font-size="13">Sessão</text>
+<text x="150" y="173" text-anchor="end" font-size="11">298 B por valor</text>
+<rect x="160" y="142" width="213.759" height="17" rx="2" class="plain"/>
+<text x="379.759" y="155" font-size="12">24,87</text>
+<rect x="160" y="163" width="218.726" height="17" rx="2" class="pack"/>
+<text x="384.726" y="176" font-size="12">25,45</text>
+<text x="150" y="219" text-anchor="end" font-size="13">Produto</text>
+<text x="150" y="237" text-anchor="end" font-size="11">281 B por valor</text>
+<rect x="160" y="206" width="214.404" height="17" rx="2" class="plain"/>
+<text x="380.404" y="219" font-size="12">24,95</text>
+<rect x="160" y="227" width="227.239" height="17" rx="2" class="pack"/>
+<text x="393.239" y="240" font-size="12">26,44</text>
+<text x="150" y="283" text-anchor="end" font-size="13">API</text>
+<text x="150" y="301" text-anchor="end" font-size="11">314 B por valor</text>
+<rect x="160" y="270" width="189.643" height="17" rx="2" class="plain"/>
+<text x="355.643" y="283" font-size="12">22,07</text>
+<rect x="160" y="291" width="214.868" height="17" rx="2" class="pack"/>
+<text x="380.868" y="304" font-size="12">25,00</text>
+<text x="150" y="347" text-anchor="end" font-size="13">API · 40 itens</text>
+<text x="150" y="365" text-anchor="end" font-size="11">3913 B por valor</text>
+<rect x="160" y="334" width="213.668" height="17" rx="2" class="plain"/>
+<text x="379.668" y="347" font-size="12">24,86</text>
+<rect x="160" y="355" width="240.000" height="17" rx="2" class="pack"/>
+<text x="406.000" y="368" font-size="12">27,93</text>
+<text x="536" y="116" font-size="15" font-weight="600">CPU por GET · 48 conexões / pipeline 16 · µs</text>
+<line x1="672" x2="672" y1="134" y2="387" class="axis"/>
+<text x="662" y="155" text-anchor="end" font-size="13">Sessão</text>
+<text x="662" y="173" text-anchor="end" font-size="11">298 B por valor</text>
+<rect x="672" y="142" width="43.727" height="17" rx="2" class="plain"/>
+<text x="721.727" y="155" font-size="12">0,674</text>
+<rect x="672" y="163" width="66.952" height="17" rx="2" class="pack"/>
+<text x="744.952" y="176" font-size="12">1,033</text>
+<text x="662" y="219" text-anchor="end" font-size="13">Produto</text>
+<text x="662" y="237" text-anchor="end" font-size="11">281 B por valor</text>
+<rect x="672" y="206" width="41.965" height="17" rx="2" class="plain"/>
+<text x="719.965" y="219" font-size="12">0,647</text>
+<rect x="672" y="227" width="66.382" height="17" rx="2" class="pack"/>
+<text x="744.382" y="240" font-size="12">1,024</text>
+<text x="662" y="283" text-anchor="end" font-size="13">API</text>
+<text x="662" y="301" text-anchor="end" font-size="11">314 B por valor</text>
+<rect x="672" y="270" width="43.386" height="17" rx="2" class="plain"/>
+<text x="721.386" y="283" font-size="12">0,669</text>
+<rect x="672" y="291" width="66.562" height="17" rx="2" class="pack"/>
+<text x="744.562" y="304" font-size="12">1,027</text>
+<text x="662" y="347" text-anchor="end" font-size="13">API · 40 itens</text>
+<text x="662" y="365" text-anchor="end" font-size="11">3913 B por valor</text>
+<rect x="672" y="334" width="132.907" height="17" rx="2" class="plain"/>
+<text x="810.907" y="347" font-size="12">2,050</text>
+<rect x="672" y="355" width="240.000" height="17" rx="2" class="pack"/>
+<text x="918.000" y="368" font-size="12">3,702</text>
+<text x="24" y="418" font-size="12">Latência inclui rede e resposta; CPU mede o processo servidor. Menor é melhor. Não é tempo isolado de zstd.</text>
+<text x="24" y="440" font-size="12">Dados sintéticos e rodadas curtas. Variação, p99, RAM e metodologia estão no relatório completo.</text>
+</svg>
