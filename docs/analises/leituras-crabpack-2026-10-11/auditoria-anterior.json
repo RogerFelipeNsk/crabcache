@@ -1,0 +1,30 @@
+[
+  {
+    "pipeline": 1,
+    "server": "crabcache",
+    "mean_ms": 0.3739484802811926,
+    "p99_ms": 0.511,
+    "cpu_us": 7.689510269762381
+  },
+  {
+    "pipeline": 1,
+    "server": "crabpack",
+    "mean_ms": 0.41011541276002106,
+    "p99_ms": 0.575,
+    "cpu_us": 8.390283703421588
+  },
+  {
+    "pipeline": 16,
+    "server": "crabcache",
+    "mean_ms": 0.669703373849446,
+    "p99_ms": 1.007,
+    "cpu_us": 0.860229988965537
+  },
+  {
+    "pipeline": 16,
+    "server": "crabpack",
+    "mean_ms": 1.0495098449202724,
+    "p99_ms": 1.439,
+    "cpu_us": 1.3312583477568207
+  }
+]

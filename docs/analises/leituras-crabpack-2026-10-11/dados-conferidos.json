@@ -1,0 +1,951 @@
+{
+  "metadata": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "mode": "compression",
+    "seconds": 4,
+    "repeats": 3,
+    "memory_metric": "physical_footprint",
+    "git_commit": "34438c2bce34cd5220139c5bd18e4bc5684f1bba",
+    "git_dirty": true,
+    "binary_sha256": "b8f79633735f30523e1afc32a0ce3b4a8c8cad4b23e37297ddd9b4318b3750a8",
+    "cpu_model": "Apple M1 Pro",
+    "memory_bytes": 17179869184,
+    "redis": "Redis server v=8.10.2 sha=00000000:1 malloc=libc bits=64 build=764b3e45065a66fb",
+    "crabcache": "crabcache 0.3.0",
+    "memtier": "memtier_benchmark v=2.5.1 sha=00000000:0 bits=64 libevent=2.1.13-stable openssl=OpenSSL 3.6.3 9 Jun 2026 prometheus=yes\nCopyright (C) 2011-2026 Redis Ltd.\nThis is free software.  You may redistribute copies of it under the terms of\nthe GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\nThere is NO WARRANTY, to the extent permitted by law.",
+    "analysis": "GET latency, server CPU and JSON object decoding; compression comparison",
+    "python": "3.10.5 (v3.10.5:f377153967, Jun  6 2022, 12:36:10) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "native": true,
+    "tls": false,
+    "keys_per_dataset": 10000,
+    "configs": [
+      {
+        "id": "single",
+        "threads": 1,
+        "clients": 1,
+        "pipeline": 1
+      },
+      {
+        "id": "pipeline16",
+        "threads": 4,
+        "clients": 12,
+        "pipeline": 16
+      }
+    ],
+    "notes": [
+      "Application source unchanged; fresh owned loopback servers.",
+      "CPU includes all server threads and enabled compression background work.",
+      "Short local repetitions on a shared machine; not production guarantees."
+    ],
+    "datasets": [
+      {
+        "keys": 10000,
+        "value_bytes": 2975091,
+        "mean_value_bytes": 297.5091,
+        "sha256": "cf70727ea7352edd57ae3c8623ae42c8dae77af130b058ca7993ebcd40c5b969",
+        "dataset": "session",
+        "label": "Sess\u00e3o JSON",
+        "encrypted": false,
+        "plain_mean_bytes": 297.5091,
+        "minimum_value_bytes": 243,
+        "maximum_value_bytes": 355,
+        "prefix": "session:",
+        "example_plaintext": {
+          "user_id": 669727,
+          "name": "Olivia Oliveira",
+          "email": "olivia.oliveira203@example.com",
+          "roles": [
+            "user",
+            "beta"
+          ],
+          "locale": "pt-BR",
+          "theme": "dark",
+          "created_at": "2026-01-22T09:11:21Z",
+          "last_seen": "2026-12-22T01:42:26Z",
+          "cart": [
+            {
+              "sku": "SKU-54015",
+              "qty": 3
+            }
+          ],
+          "csrf": "dc2ff38f5b19e7ea6ba1da8b62616ea5"
+        }
+      },
+      {
+        "keys": 10000,
+        "value_bytes": 2811063,
+        "mean_value_bytes": 281.1063,
+        "sha256": "4ae0e35ea278cb6a287ec0350940207d0da5ea4eaac76f2535fbb1eeb816a0c4",
+        "dataset": "product",
+        "label": "Produto JSON",
+        "encrypted": false,
+        "plain_mean_bytes": 281.1063,
+        "minimum_value_bytes": 249,
+        "maximum_value_bytes": 320,
+        "prefix": "product:",
+        "example_plaintext": {
+          "id": 3755041,
+          "title": "Panela ergon\u00f4mico slim",
+          "price": 2570.21,
+          "currency": "BRL",
+          "stock": 359,
+          "category": "cozinha",
+          "tags": [
+            "rel\u00f3gio",
+            "sem fio",
+            "cadeira",
+            "mouse"
+          ],
+          "rating": 2.2,
+          "reviews": 18306,
+          "updated_at": "2026-11-22T16:42:14Z",
+          "seller": {
+            "id": 4419,
+            "name": "Loja Oliveira",
+            "verified": true
+          }
+        }
+      },
+      {
+        "keys": 10000,
+        "value_bytes": 3136965,
+        "mean_value_bytes": 313.6965,
+        "sha256": "b6899621947e492a05293b6f8b35831b1275cc064a8ef1261efa0fc57e981e4e",
+        "dataset": "api",
+        "label": "API JSON",
+        "encrypted": false,
+        "plain_mean_bytes": 313.6965,
+        "minimum_value_bytes": 192,
+        "maximum_value_bytes": 441,
+        "prefix": "api:",
+        "example_plaintext": {
+          "request_id": "19b09d355520d6773dfec11db947ea1b",
+          "status": 200,
+          "data": {
+            "items": [
+              {
+                "id": 795296949,
+                "status": "failed",
+                "amount": 799.55,
+                "at": "2026-08-10T15:16:21Z"
+              },
+              {
+                "id": 731608893,
+                "status": "pending",
+                "amount": 277.96,
+                "at": "2026-08-22T02:09:34Z"
+              },
+              {
+                "id": 642077736,
+                "status": "failed",
+                "amount": 821.72,
+                "at": "2026-04-12T12:45:46Z"
+              }
+            ],
+            "page": 1,
+            "has_more": false
+          },
+          "took_ms": 550
+        }
+      },
+      {
+        "keys": 10000,
+        "value_bytes": 39128233,
+        "mean_value_bytes": 3912.8233,
+        "sha256": "48d47c5f06c82908a60b2335c60ae76a76453e2003ccaa3deda6a09eea49bcc1",
+        "dataset": "api_large",
+        "label": "API JSON \u00b7 40 itens",
+        "encrypted": false,
+        "plain_mean_bytes": 3912.8233,
+        "minimum_value_bytes": 3673,
+        "maximum_value_bytes": 3937,
+        "prefix": "api_large:",
+        "example_plaintext": {
+          "request_id": "4cf6d80243b288cd48076fccfa120a8f",
+          "status": 200,
+          "data": {
+            "items": [
+              {
+                "id": 0,
+                "status": "ok",
+                "amount": 0.0,
+                "at": "2026-10-01T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 1,
+                "status": "pending",
+                "amount": 0.07,
+                "at": "2026-10-02T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 2,
+                "status": "failed",
+                "amount": 0.14,
+                "at": "2026-10-03T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 3,
+                "status": "ok",
+                "amount": 0.21,
+                "at": "2026-10-04T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 4,
+                "status": "pending",
+                "amount": 0.28,
+                "at": "2026-10-05T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 5,
+                "status": "failed",
+                "amount": 0.35,
+                "at": "2026-10-06T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 6,
+                "status": "ok",
+                "amount": 0.42,
+                "at": "2026-10-07T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 7,
+                "status": "pending",
+                "amount": 0.49,
+                "at": "2026-10-08T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 8,
+                "status": "failed",
+                "amount": 0.56,
+                "at": "2026-10-09T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 9,
+                "status": "ok",
+                "amount": 0.63,
+                "at": "2026-10-10T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 10,
+                "status": "pending",
+                "amount": 0.7,
+                "at": "2026-10-11T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 11,
+                "status": "failed",
+                "amount": 0.77,
+                "at": "2026-10-12T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 12,
+                "status": "ok",
+                "amount": 0.84,
+                "at": "2026-10-13T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 13,
+                "status": "pending",
+                "amount": 0.91,
+                "at": "2026-10-14T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 14,
+                "status": "failed",
+                "amount": 0.98,
+                "at": "2026-10-15T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 15,
+                "status": "ok",
+                "amount": 1.05,
+                "at": "2026-10-16T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 16,
+                "status": "pending",
+                "amount": 1.12,
+                "at": "2026-10-17T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 17,
+                "status": "failed",
+                "amount": 1.19,
+                "at": "2026-10-18T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 18,
+                "status": "ok",
+                "amount": 1.26,
+                "at": "2026-10-19T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 19,
+                "status": "pending",
+                "amount": 1.33,
+                "at": "2026-10-20T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 20,
+                "status": "failed",
+                "amount": 1.4,
+                "at": "2026-10-21T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 21,
+                "status": "ok",
+                "amount": 1.47,
+                "at": "2026-10-22T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 22,
+                "status": "pending",
+                "amount": 1.54,
+                "at": "2026-10-23T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 23,
+                "status": "failed",
+                "amount": 1.61,
+                "at": "2026-10-24T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 24,
+                "status": "ok",
+                "amount": 1.68,
+                "at": "2026-10-25T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 25,
+                "status": "pending",
+                "amount": 1.75,
+                "at": "2026-10-26T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 26,
+                "status": "failed",
+                "amount": 1.82,
+                "at": "2026-10-27T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 27,
+                "status": "ok",
+                "amount": 1.89,
+                "at": "2026-10-28T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 28,
+                "status": "pending",
+                "amount": 1.96,
+                "at": "2026-10-01T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 29,
+                "status": "failed",
+                "amount": 2.03,
+                "at": "2026-10-02T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 30,
+                "status": "ok",
+                "amount": 2.1,
+                "at": "2026-10-03T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 31,
+                "status": "pending",
+                "amount": 2.17,
+                "at": "2026-10-04T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 32,
+                "status": "failed",
+                "amount": 2.24,
+                "at": "2026-10-05T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 33,
+                "status": "ok",
+                "amount": 2.31,
+                "at": "2026-10-06T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 34,
+                "status": "pending",
+                "amount": 2.38,
+                "at": "2026-10-07T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 35,
+                "status": "failed",
+                "amount": 2.45,
+                "at": "2026-10-08T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 36,
+                "status": "ok",
+                "amount": 2.52,
+                "at": "2026-10-09T12:30:00Z",
+                "category": "casa"
+              },
+              {
+                "id": 37,
+                "status": "pending",
+                "amount": 2.59,
+                "at": "2026-10-10T12:30:00Z",
+                "category": "moda"
+              },
+              {
+                "id": 38,
+                "status": "failed",
+                "amount": 2.66,
+                "at": "2026-10-11T12:30:00Z",
+                "category": "eletronicos"
+              },
+              {
+                "id": 39,
+                "status": "ok",
+                "amount": 2.73,
+                "at": "2026-10-12T12:30:00Z",
+                "category": "casa"
+              }
+            ],
+            "page": 1,
+            "has_more": false
+          },
+          "took_ms": 1
+        }
+      }
+    ],
+    "scope_note": "The user clarified that the intended comparison is compression. All 96 completed records for the four plaintext JSON datasets are retained, with no selection by performance. Other datasets are outside scope.",
+    "measurement_date": "2026-10-11"
+  },
+  "results": [
+    {
+      "dataset": "session",
+      "label": "Sess\u00e3o JSON",
+      "server": "crabcache",
+      "value_bytes": 297.5091,
+      "single_mean_ms": 0.02487187217365089,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.063,
+      "single_cpu_us": 8.662162908108888,
+      "single_ops_s": 39185.03,
+      "single_mean_ms_range": [
+        0.024416162424363654,
+        0.025314979001399906
+      ],
+      "single_p99_ms_range": [
+        0.055,
+        0.063
+      ],
+      "single_cpu_us_range": [
+        8.485281545469626,
+        8.943848187898585
+      ],
+      "pipeline16_mean_ms": 0.5241483383844149,
+      "pipeline16_p50_ms": 0.519,
+      "pipeline16_p99_ms": 0.719,
+      "pipeline16_cpu_us": 0.6744555614662504,
+      "pipeline16_ops_s": 1470743.08,
+      "pipeline16_mean_ms_range": [
+        0.5195125897434328,
+        0.5336148426604465
+      ],
+      "pipeline16_p99_ms_range": [
+        0.711,
+        0.919
+      ],
+      "pipeline16_cpu_us_range": [
+        0.6697047010210447,
+        0.6825632326753319
+      ],
+      "physical_bytes_per_key": 399.7696,
+      "physical_bytes_per_key_range": [
+        399.7696,
+        399.7696
+      ],
+      "compressed_keys": 0,
+      "app_get_mean_us": 36.2974476,
+      "app_get_mean_us_range": [
+        28.855768,
+        46.9417264
+      ],
+      "app_processing_mean_us": 8.863676,
+      "app_processing_mean_us_range": [
+        5.130944,
+        15.8123696
+      ],
+      "app_ready_object_mean_us": 45.161123599999996,
+      "app_ready_object_mean_us_range": [
+        33.986712,
+        62.754096
+      ]
+    },
+    {
+      "dataset": "session",
+      "label": "Sess\u00e3o JSON",
+      "server": "crabpack",
+      "value_bytes": 297.5091,
+      "single_mean_ms": 0.02544985583770452,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.063,
+      "single_cpu_us": 9.162121791086253,
+      "single_ops_s": 38285.35,
+      "single_mean_ms_range": [
+        0.02433994941377291,
+        0.026611130394538933
+      ],
+      "single_p99_ms_range": [
+        0.047,
+        0.071
+      ],
+      "single_cpu_us_range": [
+        8.659464982120385,
+        9.664400296737925
+      ],
+      "pipeline16_mean_ms": 0.8061861059158489,
+      "pipeline16_p50_ms": 0.799,
+      "pipeline16_p99_ms": 1.015,
+      "pipeline16_cpu_us": 1.03266711243025,
+      "pipeline16_ops_s": 941386.96,
+      "pipeline16_mean_ms_range": [
+        0.7867040123492464,
+        0.8193184101068698
+      ],
+      "pipeline16_p99_ms_range": [
+        0.911,
+        1.207
+      ],
+      "pipeline16_cpu_us_range": [
+        1.0119806696281226,
+        1.0459330458399552
+      ],
+      "physical_bytes_per_key": 1772.7488,
+      "physical_bytes_per_key_range": [
+        1458.176,
+        1982.464
+      ],
+      "compressed_keys": 10000,
+      "app_get_mean_us": 29.950640933333332,
+      "app_get_mean_us_range": [
+        28.8732132,
+        30.747445199999998
+      ],
+      "app_processing_mean_us": 5.332133866666667,
+      "app_processing_mean_us_range": [
+        4.8341984,
+        5.5901076000000005
+      ],
+      "app_ready_object_mean_us": 35.2827748,
+      "app_ready_object_mean_us_range": [
+        33.7074116,
+        36.3375528
+      ]
+    },
+    {
+      "dataset": "product",
+      "label": "Produto JSON",
+      "server": "crabcache",
+      "value_bytes": 281.1063,
+      "single_mean_ms": 0.0249469451699351,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.063,
+      "single_cpu_us": 8.57817312583946,
+      "single_ops_s": 38992.59,
+      "single_mean_ms_range": [
+        0.02366774293208624,
+        0.026279344932368838
+      ],
+      "single_p99_ms_range": [
+        0.047,
+        0.071
+      ],
+      "single_cpu_us_range": [
+        8.178001780987055,
+        9.07575227902224
+      ],
+      "pipeline16_mean_ms": 0.4973546661510174,
+      "pipeline16_p50_ms": 0.503,
+      "pipeline16_p99_ms": 0.607,
+      "pipeline16_cpu_us": 0.6472743699478486,
+      "pipeline16_ops_s": 1539855.33,
+      "pipeline16_mean_ms_range": [
+        0.49125319339471724,
+        0.5049744226610844
+      ],
+      "pipeline16_p99_ms_range": [
+        0.599,
+        0.631
+      ],
+      "pipeline16_cpu_us_range": [
+        0.639884756433816,
+        0.6560622548545714
+      ],
+      "physical_bytes_per_key": 370.2784,
+      "physical_bytes_per_key_range": [
+        370.2784,
+        370.2784
+      ],
+      "compressed_keys": 0,
+      "app_get_mean_us": 29.265167466666668,
+      "app_get_mean_us_range": [
+        26.5332516,
+        32.9542396
+      ],
+      "app_processing_mean_us": 6.0433872,
+      "app_processing_mean_us_range": [
+        5.6803068,
+        6.6632736
+      ],
+      "app_ready_object_mean_us": 35.30855466666667,
+      "app_ready_object_mean_us_range": [
+        32.213558400000004,
+        39.617513200000005
+      ]
+    },
+    {
+      "dataset": "product",
+      "label": "Produto JSON",
+      "server": "crabpack",
+      "value_bytes": 281.1063,
+      "single_mean_ms": 0.026440389064000758,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.071,
+      "single_cpu_us": 9.492115456591046,
+      "single_ops_s": 36868.74,
+      "single_mean_ms_range": [
+        0.025645057724312352,
+        0.027226393914674366
+      ],
+      "single_p99_ms_range": [
+        0.063,
+        0.079
+      ],
+      "single_cpu_us_range": [
+        9.238510830679719,
+        9.628620056008733
+      ],
+      "pipeline16_mean_ms": 0.7964355845081351,
+      "pipeline16_p50_ms": 0.775,
+      "pipeline16_p99_ms": 0.991,
+      "pipeline16_cpu_us": 1.0238786534738615,
+      "pipeline16_ops_s": 986126.46,
+      "pipeline16_mean_ms_range": [
+        0.7607435973253754,
+        0.8592186236419069
+      ],
+      "pipeline16_p99_ms_range": [
+        0.943,
+        1.455
+      ],
+      "pipeline16_cpu_us_range": [
+        0.9814908224396135,
+        1.096768963514059
+      ],
+      "physical_bytes_per_key": 1458.176,
+      "physical_bytes_per_key_range": [
+        1458.176,
+        1772.7488
+      ],
+      "compressed_keys": 10000,
+      "app_get_mean_us": 26.795644,
+      "app_get_mean_us_range": [
+        21.5923704,
+        30.1288492
+      ],
+      "app_processing_mean_us": 5.7847332,
+      "app_processing_mean_us_range": [
+        5.4834027999999995,
+        6.0966808
+      ],
+      "app_ready_object_mean_us": 32.5803772,
+      "app_ready_object_mean_us_range": [
+        27.0757732,
+        36.22553
+      ]
+    },
+    {
+      "dataset": "api",
+      "label": "API JSON",
+      "server": "crabcache",
+      "value_bytes": 313.6965,
+      "single_mean_ms": 0.02206586939299053,
+      "single_p50_ms": 0.023,
+      "single_p99_ms": 0.047,
+      "single_cpu_us": 8.412872071528277,
+      "single_ops_s": 41786.99,
+      "single_mean_ms_range": [
+        0.01920466046259041,
+        0.024333994041163345
+      ],
+      "single_p99_ms_range": [
+        0.047,
+        0.055
+      ],
+      "single_cpu_us_range": [
+        8.076529604967963,
+        8.68899804991237
+      ],
+      "pipeline16_mean_ms": 0.5188846043670746,
+      "pipeline16_p50_ms": 0.519,
+      "pipeline16_p99_ms": 0.671,
+      "pipeline16_cpu_us": 0.6691894108101184,
+      "pipeline16_ops_s": 1467916.29,
+      "pipeline16_mean_ms_range": [
+        0.5126841487418973,
+        0.5233773834468779
+      ],
+      "pipeline16_p99_ms_range": [
+        0.655,
+        0.711
+      ],
+      "pipeline16_cpu_us_range": [
+        0.6623226128174349,
+        0.6744373027506257
+      ],
+      "physical_bytes_per_key": 394.8544,
+      "physical_bytes_per_key_range": [
+        394.8544,
+        394.8544
+      ],
+      "compressed_keys": 0,
+      "app_get_mean_us": 28.065164666666664,
+      "app_get_mean_us_range": [
+        21.8763936,
+        32.783234799999995
+      ],
+      "app_processing_mean_us": 5.582718933333333,
+      "app_processing_mean_us_range": [
+        4.9790988,
+        6.3673671999999994
+      ],
+      "app_ready_object_mean_us": 33.6478836,
+      "app_ready_object_mean_us_range": [
+        26.8554924,
+        39.150602
+      ]
+    },
+    {
+      "dataset": "api",
+      "label": "API JSON",
+      "server": "crabpack",
+      "value_bytes": 313.6965,
+      "single_mean_ms": 0.025000852980313213,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.055,
+      "single_cpu_us": 9.020266812241973,
+      "single_ops_s": 38633.29,
+      "single_mean_ms_range": [
+        0.0239175005355121,
+        0.025891639185770855
+      ],
+      "single_p99_ms_range": [
+        0.039,
+        0.063
+      ],
+      "single_cpu_us_range": [
+        8.56819364117629,
+        9.336882673129644
+      ],
+      "pipeline16_mean_ms": 0.7982221593757632,
+      "pipeline16_p50_ms": 0.799,
+      "pipeline16_p99_ms": 0.967,
+      "pipeline16_cpu_us": 1.026659444728373,
+      "pipeline16_ops_s": 969731.19,
+      "pipeline16_mean_ms_range": [
+        0.7829218367308862,
+        0.8232582276990984
+      ],
+      "pipeline16_p99_ms_range": [
+        0.911,
+        1.055
+      ],
+      "pipeline16_cpu_us_range": [
+        1.00698525737802,
+        1.0588730741745964
+      ],
+      "physical_bytes_per_key": 1772.7488,
+      "physical_bytes_per_key_range": [
+        1458.176,
+        1772.7488
+      ],
+      "compressed_keys": 10000,
+      "app_get_mean_us": 29.9516608,
+      "app_get_mean_us_range": [
+        28.311956,
+        30.8837032
+      ],
+      "app_processing_mean_us": 5.305783866666666,
+      "app_processing_mean_us_range": [
+        5.0002996,
+        5.4646076
+      ],
+      "app_ready_object_mean_us": 35.257444666666665,
+      "app_ready_object_mean_us_range": [
+        33.3122556,
+        36.3361476
+      ]
+    },
+    {
+      "dataset": "api_large",
+      "label": "API JSON \u00b7 40 itens",
+      "server": "crabcache",
+      "value_bytes": 3912.8233,
+      "single_mean_ms": 0.024861333949391395,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.055,
+      "single_cpu_us": 8.81697776892312,
+      "single_ops_s": 39514.83,
+      "single_mean_ms_range": [
+        0.02464864183525556,
+        0.02521181795906787
+      ],
+      "single_p99_ms_range": [
+        0.055,
+        0.055
+      ],
+      "single_cpu_us_range": [
+        8.794073174280815,
+        8.833808338599228
+      ],
+      "pipeline16_mean_ms": 1.590772664087303,
+      "pipeline16_p50_ms": 1.583,
+      "pipeline16_p99_ms": 2.159,
+      "pipeline16_cpu_us": 2.0499741205878714,
+      "pipeline16_ops_s": 482679.01,
+      "pipeline16_mean_ms_range": [
+        1.5899401650316263,
+        1.5922259156887046
+      ],
+      "pipeline16_p99_ms_range": [
+        2.159,
+        2.223
+      ],
+      "pipeline16_cpu_us_range": [
+        2.0402403755285077,
+        2.0587762468042294
+      ],
+      "physical_bytes_per_key": 4184.4736,
+      "physical_bytes_per_key_range": [
+        4184.4736,
+        4184.4736
+      ],
+      "compressed_keys": 0,
+      "app_get_mean_us": 28.677174266666665,
+      "app_get_mean_us_range": [
+        28.3564488,
+        29.287698
+      ],
+      "app_processing_mean_us": 25.58279346666667,
+      "app_processing_mean_us_range": [
+        24.461261999999998,
+        27.206052800000002
+      ],
+      "app_ready_object_mean_us": 54.25996773333333,
+      "app_ready_object_mean_us_range": [
+        52.8177108,
+        55.5934288
+      ]
+    },
+    {
+      "dataset": "api_large",
+      "label": "API JSON \u00b7 40 itens",
+      "server": "crabpack",
+      "value_bytes": 3912.8233,
+      "single_mean_ms": 0.027925137370788385,
+      "single_p50_ms": 0.031,
+      "single_p99_ms": 0.063,
+      "single_cpu_us": 11.867886685417929,
+      "single_ops_s": 35362.88,
+      "single_mean_ms_range": [
+        0.02770065489689083,
+        0.02837248649703911
+      ],
+      "single_p99_ms_range": [
+        0.063,
+        0.063
+      ],
+      "single_cpu_us_range": [
+        11.735346722939777,
+        12.002631902417159
+      ],
+      "pipeline16_mean_ms": 2.865685082974328,
+      "pipeline16_p50_ms": 2.799,
+      "pipeline16_p99_ms": 3.279,
+      "pipeline16_cpu_us": 3.701780805426624,
+      "pipeline16_ops_s": 269135.46,
+      "pipeline16_mean_ms_range": [
+        2.8391309814827825,
+        2.907980026496237
+      ],
+      "pipeline16_p99_ms_range": [
+        3.247,
+        3.343
+      ],
+      "pipeline16_cpu_us_range": [
+        3.6705288890039456,
+        3.750003551139726
+      ],
+      "physical_bytes_per_key": 1982.464,
+      "physical_bytes_per_key_range": [
+        1982.464,
+        2192.1792
+      ],
+      "compressed_keys": 10000,
+      "app_get_mean_us": 31.368636666666667,
+      "app_get_mean_us_range": [
+        31.229854,
+        31.511851200000002
+      ],
+      "app_processing_mean_us": 24.580474,
+      "app_processing_mean_us_range": [
+        24.4620704,
+        24.656708
+      ],
+      "app_ready_object_mean_us": 55.94911066666667,
+      "app_ready_object_mean_us_range": [
+        55.691924400000005,
+        56.168559200000004
+      ]
+    }
+  ]
+}

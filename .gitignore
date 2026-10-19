@@ -1,3 +1,32 @@
 /target
 /target*
 __pycache__/
+
+# Local environment and private keys
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local Python environments and macOS metadata
+.venv/
+venv/
+.DS_Store
+
+# Graphify local state; keep the portable graph, report and visualization
+/graphify-out/cache/
+/graphify-out/manifest.json
+/graphify-out/cost.json
+/graphify-out/GRAPH_HEALTH.json
+/graphify-out/.graphify*
+!/graphify-out/.graphify_labels.json
+/graphify-out/.needs_update
+/graphify-out/memory/
+/graphify-out/reflections/
