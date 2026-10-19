@@ -305,7 +305,7 @@ pub fn config(c: &mut Ctx, args: &Args) {
                 reply::bulk(c.out, v.as_bytes());
             }
         }
-        b"SET" if args.len() >= 4 && args.len() % 2 == 0 => {
+        b"SET" if args.len() >= 4 && args.len().is_multiple_of(2) => {
             enum Update {
                 MaxMemory(u64),
                 Policy(Policy),

@@ -807,7 +807,7 @@ um volume não muda isso.
 
 ## 12. Executar a partir do código Rust (opcional)
 
-Este caminho requer Git, Rust **1.85 ou superior**, Cargo e as ferramentas nativas
+Este caminho requer Git, Rust **1.99 ou superior**, Cargo e as ferramentas nativas
 de compilação da sua plataforma. Confira:
 
 ```bash

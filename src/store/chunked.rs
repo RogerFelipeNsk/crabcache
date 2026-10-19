@@ -102,7 +102,7 @@ mod tests {
             rng ^= rng << 13;
             rng ^= rng >> 7;
             rng ^= rng << 17;
-            if v.is_empty() || rng % 3 != 0 {
+            if v.is_empty() || !rng.is_multiple_of(3) {
                 c.push(step);
                 v.push(step);
             } else {
