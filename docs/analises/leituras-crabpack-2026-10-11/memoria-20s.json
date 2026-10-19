@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "mode": "compression",
+    "seconds": 4,
+    "repeats": 1,
+    "memory_metric": "physical_footprint",
+    "git_commit": "34438c2bce34cd5220139c5bd18e4bc5684f1bba",
+    "git_dirty": true,
+    "binary_sha256": "b8f79633735f30523e1afc32a0ce3b4a8c8cad4b23e37297ddd9b4318b3750a8",
+    "cpu_model": "Apple M1 Pro",
+    "memory_bytes": 17179869184,
+    "redis": "Redis server v=8.10.2 sha=00000000:1 malloc=libc bits=64 build=764b3e45065a66fb",
+    "crabcache": "crabcache 0.3.0",
+    "memtier": "memtier_benchmark v=2.5.1 sha=00000000:0 bits=64 libevent=2.1.13-stable openssl=OpenSSL 3.6.3 9 Jun 2026 prometheus=yes\nCopyright (C) 2011-2026 Redis Ltd.\nThis is free software.  You may redistribute copies of it under the terms of\nthe GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\nThere is NO WARRANTY, to the extent permitted by law."
+  },
+  "results": [
+    {
+      "mode": "memory-timeline",
+      "server": "crabcache",
+      "elapsed_seconds": 0.5413314580218866,
+      "sample_after_seconds": 0.5,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 6193152,
+      "incremental_bytes_per_key": 399.7696,
+      "used_memory_bytes_per_key": 349.3981,
+      "compressed_keys": 0
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabpack",
+      "elapsed_seconds": 0.5688963329885155,
+      "sample_after_seconds": 0.5,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 22020096,
+      "incremental_bytes_per_key": 1982.464,
+      "used_memory_bytes_per_key": 141.6049,
+      "compressed_keys": 10000
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabcache",
+      "elapsed_seconds": 2.0362040830077603,
+      "sample_after_seconds": 2,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 6242304,
+      "incremental_bytes_per_key": 404.6848,
+      "used_memory_bytes_per_key": 349.3981,
+      "compressed_keys": 0
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabpack",
+      "elapsed_seconds": 2.0569807909196243,
+      "sample_after_seconds": 2,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 22020096,
+      "incremental_bytes_per_key": 1982.464,
+      "used_memory_bytes_per_key": 141.6049,
+      "compressed_keys": 10000
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabcache",
+      "elapsed_seconds": 5.030799374915659,
+      "sample_after_seconds": 5,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 6242304,
+      "incremental_bytes_per_key": 404.6848,
+      "used_memory_bytes_per_key": 349.3981,
+      "compressed_keys": 0
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabpack",
+      "elapsed_seconds": 5.050483666011132,
+      "sample_after_seconds": 5,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 22020096,
+      "incremental_bytes_per_key": 1982.464,
+      "used_memory_bytes_per_key": 141.6049,
+      "compressed_keys": 10000
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabcache",
+      "elapsed_seconds": 12.027635207981803,
+      "sample_after_seconds": 12,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 6242304,
+      "incremental_bytes_per_key": 404.6848,
+      "used_memory_bytes_per_key": 349.3981,
+      "compressed_keys": 0
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabpack",
+      "elapsed_seconds": 12.047926708008163,
+      "sample_after_seconds": 12,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 22020096,
+      "incremental_bytes_per_key": 1982.464,
+      "used_memory_bytes_per_key": 141.6049,
+      "compressed_keys": 10000
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabcache",
+      "elapsed_seconds": 20.04288095794618,
+      "sample_after_seconds": 20,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 6242304,
+      "incremental_bytes_per_key": 404.6848,
+      "used_memory_bytes_per_key": 349.3981,
+      "compressed_keys": 0
+    },
+    {
+      "mode": "memory-timeline",
+      "server": "crabpack",
+      "elapsed_seconds": 20.066269250004552,
+      "sample_after_seconds": 20,
+      "baseline_bytes": 2195456,
+      "physical_bytes": 22020096,
+      "incremental_bytes_per_key": 1982.464,
+      "used_memory_bytes_per_key": 141.6049,
+      "compressed_keys": 10000
+    }
+  ]
+}

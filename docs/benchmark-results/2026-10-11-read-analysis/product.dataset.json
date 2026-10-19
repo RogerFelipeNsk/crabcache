@@ -1,0 +1,36 @@
+{
+  "keys": 10000,
+  "value_bytes": 2811063,
+  "mean_value_bytes": 281.1063,
+  "sha256": "4ae0e35ea278cb6a287ec0350940207d0da5ea4eaac76f2535fbb1eeb816a0c4",
+  "dataset": "product",
+  "label": "Produto JSON",
+  "encrypted": false,
+  "plain_mean_bytes": 281.1063,
+  "minimum_value_bytes": 249,
+  "maximum_value_bytes": 320,
+  "prefix": "product:",
+  "synthetic_key_file": null,
+  "example_plaintext": {
+    "id": 3755041,
+    "title": "Panela ergon\u00f4mico slim",
+    "price": 2570.21,
+    "currency": "BRL",
+    "stock": 359,
+    "category": "cozinha",
+    "tags": [
+      "rel\u00f3gio",
+      "sem fio",
+      "cadeira",
+      "mouse"
+    ],
+    "rating": 2.2,
+    "reviews": 18306,
+    "updated_at": "2026-11-22T16:42:14Z",
+    "seller": {
+      "id": 4419,
+      "name": "Loja Oliveira",
+      "verified": true
+    }
+  }
+}

@@ -14,17 +14,24 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="Licença MIT"></a>
 </p>
 
-O CrabCache fala RESP2 e RESP3, então `redis-cli`, `redis-benchmark`, `memtier_benchmark` e as
-bibliotecas cliente do Redis funcionam sem nenhuma adaptação.
+O CrabCache fala RESP2 e RESP3 e pode ser usado com `redis-cli`, `redis-benchmark`,
+`memtier_benchmark` e bibliotecas cliente do Redis, usando os [comandos suportados](#comandos-suportados).
 
 > **Status:** v0.3. Projeto educacional. Só strings e sem persistência; ainda não é para produção.
 > A versão 0.1 está na tag [`legacy-v1`](https://github.com/RogerFelipeNsk/crabcache/tree/legacy-v1);
 > veja a errata no [CHANGELOG](CHANGELOG.md) e o guia de [migração](#migrando-da-01).
 
-**Novidade na v0.3.0 — CrabPack:** economize memória em valores semelhantes, como sessões e
-respostas de API, com compressão transparente. Na auditoria de JSON sintético, a economia mediana
-foi de 55–63% em relação ao Redis. A compressão vem desligada e pode ser ativada por flag,
-variável de ambiente ou `CONFIG SET`; veja [como usar](#ativando-o-crabpack).
+<!-- crabpack-memory-summary:start -->
+**Novidade na v0.3.0 — CrabPack:** compressão opcional de valores semelhantes, como sessões e
+respostas de API. Na auditoria de 09/10/2026, com **300 mil chaves por conjunto**, a economia mediana
+de RAM incremental foi de **55–63% em relação ao Redis**, nos JSONs sintéticos medidos.
+Esse ganho depende do volume e dos dados: bases pequenas podem consumir mais RAM após o treino,
+e descomprimir custa CPU. Veja [CPU, latência e memória](#cpu-latência-e-memória-do-crabpack).
+A opção vem desligada; ative por flag, variável de ambiente ou `CONFIG SET`; veja [como usar](#ativando-o-crabpack).
+<!-- crabpack-memory-summary:end -->
+
+**Tutorial completo:** siga o [guia manual de CrabCache e CrabPack](docs/TUTORIAL.md),
+do primeiro `PING` à compressão de 5.000 JSONs, com validação dos valores, TTL e memória.
 
 ## Desempenho
 
@@ -60,6 +67,41 @@ individualmente com um dicionário compartilhado:
    muda nada.
 
 <p align="center"><img src="docs/img/bench-crabpack.svg" alt="Memória incremental por chave com JSON sintético de sessões, produtos e API; mediana de três rodadas, após comprimir 100% das chaves." width="720"></p>
+
+O `GET` descomprime para responder e mantém o valor comprimido no armazenamento. Alterar só o TTL
+também preserva a representação; o comportamento das escritas acima se refere ao conteúdo do valor.
+
+<!-- crabpack-read-summary:start -->
+### CPU, latência e memória do CrabPack
+
+Ensaio complementar de **11/10/2026**: **10.000 chaves por conjunto**, três rodadas
+de 4 s, CrabCache 0.3.0 nativo no Apple M1 Pro/macOS, uma thread de I/O e loopback.
+Zero misses; os valores foram conferidos byte a byte. Estes dados não são a mesma carga da
+auditoria de 300 mil chaves acima. Médias ponderadas pelo número de GETs; **1.000 µs = 1 ms**.
+
+| Objeto JSON | Valor médio | GET individual sem / com CrabPack (µs) | CPU sob carga sem / com CrabPack (µs CPU/GET) |
+|---|---|---|---|
+| Sessão JSON | 298 B | 24,87 / 25,45 | 0,674 / 1,033 |
+| Produto JSON | 281 B | 24,95 / 26,44 | 0,647 / 1,024 |
+| API JSON | 314 B | 22,07 / 25,00 | 0,669 / 1,027 |
+| API JSON · 40 itens | 3913 B | 24,86 / 27,93 | 2,050 / 3,702 |
+
+Com **48 conexões e pipeline 16**, a diferença de custo de CPU por GET foi de **+53% a +81%** com CrabPack.
+GET inclui comunicação local e resposta; CPU/GET mede o processo servidor, incluindo threads auxiliares.
+O cliente recebe o valor original: a compressão do armazenamento não reduz o tráfego do GET.
+
+<p align="center"><img src="docs/analises/leituras-crabpack-2026-10-11/resumo-readme.svg" alt="Médias de latência individual e CPU por GET, CrabPack desligado e ligado, para quatro conjuntos JSON." width="960"></p>
+
+**Base de 10.000 chaves:** a RAM observada após o treino ficou maior com CrabPack em Sessão JSON, Produto JSON, API JSON.
+A amostra pós-treino ficou menor com CrabPack em API JSON · 40 itens.
+Uma verificação adicional de sessões acompanhou o efeito por 20 s, e a RAM continuou maior nesse intervalo.
+Comprimir os dados contabilizados não garante diminuir a RAM física do processo.
+Essas amostras não determinam o pico nem o consumo em prazos maiores; os custos não foram isolados.
+
+O [relatório completo](docs/analises/leituras-crabpack-2026-10-11/RELATORIO.md) mostra p99, faixas de variação,
+RAM, exemplos de objetos e tempo de converter JSON no cliente. As [medições e saídas brutas](docs/benchmark-results/2026-10-11-read-analysis)
+acompanham a documentação. O resumo e este gráfico são gerados desses dados, e o CI rejeita divergências.
+<!-- crabpack-read-summary:end -->
 
 ### Ativando o CrabPack
 
@@ -171,7 +213,9 @@ redis-cli get saudacao
 
 ## Usando com seu cliente Redis
 
-Qualquer cliente Redis funciona; os abaixo foram testados contra o CrabCache 0.2.1.
+Use os clientes Redis com os comandos suportados nesta versão. Os exemplos abaixo foram testados
+contra o CrabCache 0.2.1; o [tutorial da 0.3.0](docs/TUTORIAL.md#10-usar-em-uma-aplicação-nodejs-opcional)
+também valida o Node.js com `redis` 4.7.1. Confira as estruturas e comandos usados pelo seu framework.
 
 **Node.js** (`redis` 4.x):
 
@@ -212,7 +256,7 @@ Toda opção pode vir da linha de comando ou de variável de ambiente (`crabcach
 | `--threads` | `CRABCACHE_THREADS` | nº de CPUs | Threads de I/O |
 | `--io-conns-per-thread` | `CRABCACHE_IO_CONNS_PER_THREAD` | `32` | Conexões por thread antes de ativar outra; `0` = usar todas sempre |
 | `--shards` | `CRABCACHE_SHARDS` | 64 × threads | |
-| `--maxmemory` | `CRABCACHE_MAXMEMORY` | `0` (sem limite) | ex.: `512mb`, `4gb` |
+| `--maxmemory` | `CRABCACHE_MAXMEMORY` | `0` (sem limite) | Limite dos dados contabilizados; não da RAM total. Ex.: `512mb`, `4gb` |
 | `--maxmemory-policy` | `CRABCACHE_MAXMEMORY_POLICY` | `noeviction` | `allkeys-lru`, `allkeys-lfu`, `allkeys-random` |
 | `--maxmemory-samples` | `CRABCACHE_MAXMEMORY_SAMPLES` | `5` | |
 | `--requirepass` | `CRABCACHE_REQUIREPASS` | — | |
@@ -285,6 +329,22 @@ leitura com compressão desligada e uma escrita sobre valor previamente comprimi
 
 Para reproduzir os benchmarks: `scripts/bench.sh`, `scripts/bench-1cpu.sh`,
 `scripts/bench-memory.sh` e `scripts/bench-compression.sh` (instruções em [docs/BENCHMARKS.md](docs/BENCHMARKS.md)).
+
+### Manter os resultados da documentação consistentes
+
+Os resultados têm data, conjunto, versão e ambiente definidos. O CI valida as medições publicadas
+e a geração dos documentos; ele não executa benchmarks de desempenho para inventar números novos.
+Depois de registrar uma nova medição auditável, regenere o resumo e confira a documentação:
+
+```bash
+python3 scripts/report-read-analysis.py
+python3 scripts/report-read-analysis.py --check
+```
+
+O comando `--check` não altera arquivos: confere os 96 registros do ensaio complementar, as cargas,
+os hashes dos dados, as fórmulas de CPU/latência, o CSV/JSON e o resumo/gráfico do README.
+O [guia das medições publicadas](docs/benchmark-results/2026-10-11-read-analysis/README.md)
+explica a atualização dos gráficos completos e como registrar rodadas futuras.
 
 ## Migrando da 0.1
 

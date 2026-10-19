@@ -1,0 +1,34 @@
+{
+  "keys": 10000,
+  "value_bytes": 2975091,
+  "mean_value_bytes": 297.5091,
+  "sha256": "cf70727ea7352edd57ae3c8623ae42c8dae77af130b058ca7993ebcd40c5b969",
+  "dataset": "session",
+  "label": "Sess\u00e3o JSON",
+  "encrypted": false,
+  "plain_mean_bytes": 297.5091,
+  "minimum_value_bytes": 243,
+  "maximum_value_bytes": 355,
+  "prefix": "session:",
+  "synthetic_key_file": null,
+  "example_plaintext": {
+    "user_id": 669727,
+    "name": "Olivia Oliveira",
+    "email": "olivia.oliveira203@example.com",
+    "roles": [
+      "user",
+      "beta"
+    ],
+    "locale": "pt-BR",
+    "theme": "dark",
+    "created_at": "2026-01-22T09:11:21Z",
+    "last_seen": "2026-12-22T01:42:26Z",
+    "cart": [
+      {
+        "sku": "SKU-54015",
+        "qty": 3
+      }
+    ],
+    "csrf": "dc2ff38f5b19e7ea6ba1da8b62616ea5"
+  }
+}
