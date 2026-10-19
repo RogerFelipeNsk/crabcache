@@ -202,7 +202,7 @@ A imagem é distroless (sem shell), roda como usuário não-root e tem ~36 MB. D
 servidor escuta em `0.0.0.0`, por isso defina sempre `CRABCACHE_REQUIREPASS` se a porta puder ser
 acessada de fora.
 
-**A partir do código** (Rust 1.85+):
+**A partir do código** (Rust 1.99+):
 
 ```bash
 cargo build --release

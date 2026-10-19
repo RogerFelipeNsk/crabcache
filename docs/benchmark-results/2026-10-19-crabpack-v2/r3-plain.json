@@ -1,0 +1,49 @@
+{
+  "name": "r3-plain",
+  "mode": "plain",
+  "repeat": 3,
+  "server_command": [
+    "<workspace>/crabcache/target/release/crabcache",
+    "--bind",
+    "127.0.0.1",
+    "--port",
+    "61598",
+    "--threads",
+    "2",
+    "--shards",
+    "16",
+    "--maxmemory-policy",
+    "allkeys-lfu"
+  ],
+  "dataset_sha256": "f312a71fe8a27b6a55c1d5acc8dd12b98069bcbe45f43e4b6ed3029a81826cd0",
+  "keys_total": 1800,
+  "used_memory_bytes": 1664996,
+  "prepared_dict_bytes": 0,
+  "total_footprint_bytes": 1664996,
+  "net_memory_saved_bytes": 0,
+  "compressed_keys": 0,
+  "compressed_zstd_keys": 0,
+  "compressed_lz4_keys": 0,
+  "cost_benefit_skips": 0,
+  "compression_ratio": 1.0,
+  "small_get": {
+    "ops": 6000,
+    "ops_per_sec": 183159.7,
+    "p50_us": 3.2,
+    "p95_us": 7.73,
+    "p99_us": 8.63
+  },
+  "large_get": {
+    "ops": 4000,
+    "ops_per_sec": 188206.5,
+    "p50_us": 4.28,
+    "p95_us": 5.61,
+    "p99_us": 6.29
+  },
+  "observed_p95_us": 0,
+  "observed_p99_us": 0,
+  "decompress_calls": 0,
+  "decompress_us": 0,
+  "decompress_us_per_call": 0.0,
+  "verified_count": 1800
+}

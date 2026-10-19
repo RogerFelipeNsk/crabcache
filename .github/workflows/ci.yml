@@ -38,11 +38,11 @@ jobs:
         run: python3 scripts/report-read-analysis.py --check
 
   msrv:
-    name: build on Rust 1.85 (rust-version)
+    name: build on Rust 1.99 (rust-version)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: dtolnay/rust-toolchain@1.99
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --all-targets
 

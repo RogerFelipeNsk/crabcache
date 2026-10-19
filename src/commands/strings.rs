@@ -415,7 +415,7 @@ fn with_pairs_locked(
 }
 
 pub fn mset(c: &mut Ctx, args: &Args) {
-    if args.len() % 2 == 0 {
+    if args.len().is_multiple_of(2) {
         return reply::wrong_arity(c.out, "mset");
     }
     let incoming: usize =
@@ -433,7 +433,7 @@ pub fn mset(c: &mut Ctx, args: &Args) {
 }
 
 pub fn msetnx(c: &mut Ctx, args: &Args) {
-    if args.len() % 2 == 0 {
+    if args.len().is_multiple_of(2) {
         return reply::wrong_arity(c.out, "msetnx");
     }
     let incoming: usize =

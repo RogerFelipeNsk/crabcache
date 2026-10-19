@@ -2,6 +2,7 @@
 
 use crate::protocol::Limits;
 use crate::store::Policy;
+use crate::store::compress::CompressionAlgo;
 use crate::util::parse_memory;
 use clap::Parser;
 
@@ -56,6 +57,10 @@ pub struct Config {
     #[arg(long, env = "CRABCACHE_COMPRESSION")]
     pub compression: bool,
 
+    /// auto | zstd | lz4
+    #[arg(long, env = "CRABCACHE_COMPRESSION_ALGORITHM", default_value = "auto", value_parser = parse_algo_arg)]
+    pub compression_algorithm: CompressionAlgo,
+
     /// Seconds without access before a value may be compressed.
     #[arg(long, env = "CRABCACHE_COMPRESSION_MIN_IDLE", default_value_t = 60)]
     pub compression_min_idle: u64,
@@ -87,6 +92,10 @@ pub struct Config {
     /// Optional resident budget for promoting hot LFU packed values to plain (0 disables).
     #[arg(long, env = "CRABCACHE_COMPRESSION_HOT_MAXMEMORY", default_value = "0", value_parser = parse_mem_arg)]
     pub compression_hot_maxmemory: u64,
+
+    /// Target command latency in microseconds before adaptive compression backs off and prefers LZ4/plain.
+    #[arg(long, env = "CRABCACHE_COMPRESSION_LATENCY_TARGET_US", default_value_t = 500, value_parser = clap::value_parser!(u64).range(1..=1_000_000))]
+    pub compression_latency_target_us: u64,
 
     /// Largest accepted bulk string (value or key).
     #[arg(long, env = "CRABCACHE_PROTO_MAX_BULK_LEN", default_value = "512mb", value_parser = parse_mem_arg)]
@@ -135,6 +144,11 @@ fn parse_mem_arg(s: &str) -> Result<u64, String> {
 
 fn parse_policy_arg(s: &str) -> Result<Policy, String> {
     Policy::parse(s.as_bytes()).ok_or_else(|| format!("unknown eviction policy '{s}'"))
+}
+
+fn parse_algo_arg(s: &str) -> Result<CompressionAlgo, String> {
+    CompressionAlgo::parse(s.as_bytes())
+        .ok_or_else(|| format!("unknown compression algorithm '{s}'"))
 }
 
 fn parse_pack_bytes(s: &str) -> Result<u64, String> {

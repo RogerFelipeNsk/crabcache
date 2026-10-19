@@ -28,6 +28,7 @@ impl Shared {
             config.maxmemory_samples,
         );
         db.codec.set_enabled(config.compression);
+        db.codec.set_algorithm(config.compression_algorithm);
         db.codec.set_min_idle_secs(config.compression_min_idle);
         db.codec.set_min_size(config.compression_min_size);
         db.codec
@@ -40,6 +41,8 @@ impl Shared {
             .set_adaptive_maintenance(config.compression_adaptive_maintenance);
         db.codec.set_min_ttl_secs(config.compression_min_ttl);
         db.codec.set_hot_max_bytes(config.compression_hot_maxmemory);
+        db.codec
+            .set_latency_target_us(config.compression_latency_target_us);
         Self {
             db,
             config,

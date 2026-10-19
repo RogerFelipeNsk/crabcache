@@ -679,3 +679,49 @@ fn packed_binary_values_keep_expiry_and_survive_flush_and_reload() {
         assert_eq!(redis::cmd("DBSIZE").query::<u64>(&mut con).unwrap(), 0);
     }
 }
+
+#[test]
+fn crabpack_adaptive_lz4_config_and_info_metrics() {
+    use common::{session_json, wait_for_packed};
+    let srv = TestServer::start(&["--compression", "--compression-min-idle", "0"]);
+    let mut con = srv.client();
+
+    let cfg: Vec<String> = redis::cmd("CONFIG")
+        .arg("GET")
+        .arg("compression-algorithm")
+        .query(&mut con)
+        .unwrap();
+    assert_eq!(cfg, vec!["compression-algorithm", "auto"]);
+
+    let _: () = redis::cmd("CONFIG")
+        .arg("SET")
+        .arg("compression-algorithm")
+        .arg("lz4")
+        .arg("compression-latency-target-us")
+        .arg("350")
+        .query(&mut con)
+        .unwrap();
+
+    const N: u64 = 100;
+    let mut pipe = redis::pipe();
+    for i in 0..N {
+        let mut big = session_json(i);
+        big.extend_from_slice(&session_json(i + 1000));
+        pipe.set(format!("lz4:{i}"), big).ignore();
+    }
+    let _: () = pipe.query(&mut con).unwrap();
+    assert_eq!(
+        wait_for_packed(&mut srv.raw(), N, Duration::from_secs(10)),
+        N
+    );
+    assert_eq!(info_field(&mut con, "compressed_lz4_keys"), N);
+    assert_eq!(info_field(&mut con, "compressed_zstd_keys"), 0);
+    assert_eq!(info_field(&mut con, "compression_latency_target_us"), 350);
+
+    for i in 0..N {
+        let mut expected = session_json(i);
+        expected.extend_from_slice(&session_json(i + 1000));
+        assert_eq!(con.get::<_, Vec<u8>>(format!("lz4:{i}")).unwrap(), expected);
+    }
+    assert!(info_field(&mut con, "compression_decompress_calls") >= N);
+}
