@@ -1,14 +1,19 @@
 # Graph Report - crabcache  (2026-10-19)
 
 ## Corpus Check
-- 161 files · ~280,504 words
+- 144 files · ~280,618 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 43 file(s) not represented in the graph (top: .stdout 24, .log 8, (none) 5)
 
 ## Summary
-- 830 nodes · 1835 edges · 38 communities (29 shown, 9 thin omitted)
+- 830 nodes · 1840 edges · 38 communities (29 shown, 9 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 68 edges (avg confidence: 0.86)
-- Token cost: unavailable for host-session agents · separate LLM API calls: 0
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `baf39153`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Execução de comandos Redis
@@ -64,13 +69,13 @@
 ## Surprising Connections (you probably didn't know these)
 - `random_command()` --calls--> `v()`  [INFERRED]
   tests/differential.rs → src/protocol/parser.rs
+- `Sixteen byte entry layout` --references--> `Entry`  [EXTRACTED]
+  docs/ARCHITECTURE.md → src/store/entry.rs
 - `Mutex protected sharded store` --references--> `Db`  [EXTRACTED]
   docs/ARCHITECTURE.md → src/store/mod.rs
 - `audit()` --indirect_call--> `rows()`  [INFERRED]
   docs/analises/leituras-crabpack-2026-10-11/graficos.py → scripts/gen-charts.py
 - `values_from()` --calls--> `read_resp()`  [INFERRED]
-  docs/analises/leituras-crabpack-2026-10-11/medir.py → scripts/benchmark.py
-- `values_from()` --calls--> `require()`  [INFERRED]
   docs/analises/leituras-crabpack-2026-10-11/medir.py → scripts/benchmark.py
 
 ## Import Cycles
@@ -89,16 +94,16 @@ Cohesion: 0.07
 Nodes (87): count_existing(), dbsize(), del(), exists(), expire(), expire_generic(), expire_of(), expireat() (+79 more)
 
 ### Community 1 - "Banco e políticas de memória"
-Cohesion: 0.06
-Nodes (16): Db, eviction_keeps_memory_near_limit(), memory_accounting_tracks_writes_and_flush(), noeviction_rejects_writes_over_limit(), OutOfMemory, PackCursor, Padded, Policy (+8 more)
+Cohesion: 0.07
+Nodes (14): Db, eviction_keeps_memory_near_limit(), memory_accounting_tracks_writes_and_flush(), noeviction_rejects_writes_over_limit(), OutOfMemory, PackCursor, Padded, Policy (+6 more)
 
 ### Community 2 - "Compressão e dicionários CrabPack"
 Cohesion: 0.06
 Nodes (27): Codec, CodecStats, compress_with(), compressor(), configure_compressor(), Corrupt, decompressor(), Dict (+19 more)
 
 ### Community 3 - "Shards e índices de armazenamento"
-Cohesion: 0.09
-Nodes (22): Chunked, Clock, clock(), expiry_heap_is_compacted(), Footprint, get(), idle_secs(), insert_overwrite_remove_keep_index_consistent() (+14 more)
+Cohesion: 0.08
+Nodes (24): Chunked, Clock, clock(), expiry_heap_is_compacted(), Footprint, get(), idle_secs(), insert_overwrite_remove_keep_index_consistent() (+16 more)
 
 ### Community 4 - "Servidor e conexões TCP"
 Cohesion: 0.06
@@ -109,12 +114,12 @@ Cohesion: 0.07
 Nodes (27): parse_mem_arg(), parse_policy_arg(), configure_allocator(), GLOBAL, main(), MI_OPTION_PURGE_DELAY, shutdown_signal(), args_of() (+19 more)
 
 ### Community 6 - "Layout compacto de entradas"
-Cohesion: 0.09
-Nodes (15): Sampled shard eviction and global evictor, Lazy and min heap active expiration, Mutex protected sharded store, accessors_and_mutation(), Entry, ENTRY_OVERHEAD, EXPIRE_BYTES, KEY_LEN_MASK (+7 more)
+Cohesion: 0.11
+Nodes (12): accessors_and_mutation(), Entry, ENTRY_OVERHEAD, EXPIRE_BYTES, KEY_LEN_MASK, LEN_BYTES, memory_usage_counts_optional_fields_only_when_present(), Packed (+4 more)
 
 ### Community 7 - "Arquitetura e evidências publicadas"
 Cohesion: 0.06
-Nodes (25): CI compatibility and artifact validation, Mandatory Redis differential tests, Authenticated Docker and CrabPack smoke test, Rust 1.85 minimum supported version, Test gated multiarchitecture Docker publishing, Version tag release pipeline, CrabCache 0.3.0 CrabPack release, CrabPack six metric read comparison chart (+17 more)
+Nodes (28): CI compatibility and artifact validation, Mandatory Redis differential tests, Authenticated Docker and CrabPack smoke test, Rust 1.85 minimum supported version, Test gated multiarchitecture Docker publishing, Version tag release pipeline, CrabCache 0.3.0 CrabPack release, CrabPack six metric read comparison chart (+20 more)
 
 ### Community 8 - "Testes diferenciais com Redis"
 Cohesion: 0.12
@@ -201,36 +206,24 @@ Cohesion: 0.67
 Nodes (3): Throughput With Pipeline 16, Single I/O Thread Throughput Benchmark, Throughput Without Pipelining
 
 ## Knowledge Gaps
-- **51 isolated node(s):** `crabcache`, `Ex`, `Px`, `ExAt`, `PxAt` (+46 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 259 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **50 isolated node(s):** `crabcache`, `Ex`, `Px`, `ExAt`, `PxAt` (+45 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 258 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Db` connect `Banco e políticas de memória` to `Execução de comandos Redis`, `Compressão e dicionários CrabPack`, `Shards e índices de armazenamento`, `Servidor e conexões TCP`, `Layout compacto de entradas`?**
-  _High betweenness centrality (0.094) - this node is a cross-community bridge._
+- **Why does `Db` connect `Banco e políticas de memória` to `Execução de comandos Redis`, `Compressão e dicionários CrabPack`, `Shards e índices de armazenamento`, `Servidor e conexões TCP`, `Arquitetura e evidências publicadas`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
 - **What connects `crabcache`, `Ex`, `Px` to the rest of the system?**
-  _51 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _50 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Execução de comandos Redis` be split into smaller, more focused modules?**
   _Cohesion score 0.06666666666666667 - nodes in this community are weakly interconnected._
 - **Why does `Args` connect `Execução de comandos Redis` to `Servidor e conexões TCP`, `Parser RESP e configuração`?**
-  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
 - **Should `Banco e políticas de memória` be split into smaller, more focused modules?**
-  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
-- **Why does `Entry` connect `Layout compacto de entradas` to `Execução de comandos Redis`, `Compressão e dicionários CrabPack`, `Shards e índices de armazenamento`?**
-  _High betweenness centrality (0.087) - this node is a cross-community bridge._
+  _Cohesion score 0.06605222734254992 - nodes in this community are weakly interconnected._
+- **Why does `Entry` connect `Layout compacto de entradas` to `Execução de comandos Redis`, `Compressão e dicionários CrabPack`, `Shards e índices de armazenamento`, `Arquitetura e evidências publicadas`?**
+  _High betweenness centrality (0.085) - this node is a cross-community bridge._
 - **Should `Compressão e dicionários CrabPack` be split into smaller, more focused modules?**
   _Cohesion score 0.055299539170506916 - nodes in this community are weakly interconnected._
-
-## Extraction accounting
-
-No separately billed LLM API was used. Semantic extraction ran in host-session agents. This tool does not expose their token usage; input/output zeros above are placeholders, not a measured zero cost. Host-session token usage is unavailable.
-
-## Graph health
-
-223 dangling-endpoint edges; 1 self-loop edges; 22 collapsed directed edges; 22 collapsed undirected edges See GRAPH_HEALTH.json for details.
-
-## Working tree
-
-`graphify-out/` was written into the working tree and currently appears in `git status`. The generated outputs can be committed according to the team workflow.

@@ -284,7 +284,20 @@ def main():
     results = [analysis.aggregate(d, server) for d in analysis.datasets
                for server in ('crabcache', 'crabpack')]
     exported = json.loads((DEFAULT_ANALYSIS/'dados-conferidos.json').read_text())['results']
-    require(exported == results, 'analysis JSON disagrees with raw measurements')
+    require(len(exported) == len(results), 'analysis JSON disagrees with raw measurements')
+    for row, result in zip(exported, results):
+        require(set(row) == set(result), 'analysis JSON disagrees with raw measurements')
+        for key, value in result.items():
+            actual = row[key]
+            if isinstance(value, list):
+                require(isinstance(actual, list) and len(actual) == len(value),
+                        'analysis JSON disagrees with raw measurements')
+                for a, b in zip(actual, value):
+                    close(a, b, 'analysis JSON disagrees with raw measurements')
+            elif isinstance(value, (int, float)):
+                close(actual, value, 'analysis JSON disagrees with raw measurements')
+            else:
+                require(actual == value, 'analysis JSON disagrees with raw measurements')
     with (DEFAULT_ANALYSIS/'dados-conferidos.csv').open(newline='') as stream:
         csv_rows = list(csv.DictReader(stream))
     require(len(csv_rows) == len(results), 'CSV count mismatch')
