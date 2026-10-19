@@ -111,13 +111,13 @@ No servidor local, ative a compressão mantendo o padrão de 60 s sem acesso:
 target/release/crabcache --compression
 ```
 
-Na imagem da v0.4.0, use a variável de ambiente:
+Na imagem da v0.5.0, use a variável de ambiente:
 
 ```bash
 docker run -d --name crabcache-pack -p 127.0.0.1:6379:6379 \
   -e CRABCACHE_REQUIREPASS=troque-esta-senha \
   -e CRABCACHE_COMPRESSION=true \
-  rogerfelipensk/crabcache:v0.4.0
+  rogerfelipensk/crabcache:v0.5.0
 ```
 
 Em um servidor local já em execução, configure e acompanhe pelo protocolo Redis
@@ -125,6 +125,7 @@ Em um servidor local já em execução, configure e acompanhe pelo protocolo Red
 
 ```bash
 redis-cli CONFIG SET compression yes
+redis-cli CONFIG SET compression-algorithm auto
 redis-cli CONFIG SET compression-min-idle 60
 redis-cli CONFIG SET compression-min-size 64
 redis-cli CONFIG GET 'compression*'
@@ -145,9 +146,10 @@ Para desligar a compactação de novos valores, execute `redis-cli CONFIG SET co
 Os valores já comprimidos continuam legíveis. `CONFIG SET` vale para o processo atual; para manter
 a opção ao reiniciar, configure a flag ou as variáveis de ambiente no serviço/container.
 
-A v0.4.0 também evita compactar valores com menos de 2 s de TTL restante e ajusta a
-manutenção após comandos lentos amostrados. A promoção de valores quentes em LFU é opcional e fica
-desligada. Controles, medições locais e limitações estão em
+A v0.5.0 adiciona seleção adaptativa entre Zstd, LZ4 e Plain (`compression-algorithm`),
+dicionários dinâmicos com retreinamento automático em mudanças de estrutura e controle por
+custo-benefício líquido e latência P95/P99 (`compression-latency-target-us`). Controles, medições
+locais e limitações estão em [docs/CRABPACK_V2.md](docs/CRABPACK_V2.md) e
 [docs/CRABPACK_ADAPTIVE.md](docs/CRABPACK_ADAPTIVE.md); os gráficos acima preservam a campanha
 histórica da v0.3.0.
 

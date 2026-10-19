@@ -5,6 +5,17 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-19
+
+### Adicionado
+- **Compressão adaptativa (`--compression-algorithm auto|zstd|lz4`)**: seleciona Zstd com dicionário por prefixo, LZ4 sem dicionário (`LZ4_DICT_ID`) ou armazenamento sem compressão (`Plain`) conforme o tamanho do valor, frequência de acesso (LFU), pressão de latência/memória e economia líquida obtida.
+- **Dicionários dinâmicos com retreinamento e versionamento**: detecta *schema drift* em prefixos ativos (`compression_dict_drifts`), retreina uma nova versão do dicionário (`version=2, 3, ...`) em background (`compression_dicts_retrained`), mantém versões aposentadas em memória enquanto houver valores que dependam delas (`compression_dicts_retired`, `active_keys`) e libera automaticamente o slot quando `active_keys` chega a zero (`compression_dicts_reclaimed`).
+- **Controle por custo-benefício e telemetria P95/P99**: contabiliza a economia líquida real de memória (`compression_net_memory_saved_bytes`, descontando cabeçalhos `PACKED_BYTES`, `prepared_dict_bytes`, buffers do sampler e metadados dos shards), monitora latência P95/P99 (`--compression-latency-target-us`, `compression_observed_p95_us`, `compression_observed_p99_us`) e tempo de CPU de descompressão (`compression_decompress_calls`, `compression_decompress_us`), além de aposentar dicionários cujo saldo líquido permanece negativo.
+- Suíte de testes de integração (`tests/crabpack_v2.rs`), benchmark reprodutível (`scripts/bench-crabpack-v2.py`) e relatório em [docs/CRABPACK_V2.md](docs/CRABPACK_V2.md).
+
+### Mudou
+- MSRV (`rust-version`) atualizado para **Rust 1.99**.
+
 ## [0.4.0] - 2026-10-14
 
 ### Adicionado
