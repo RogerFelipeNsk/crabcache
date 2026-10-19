@@ -114,11 +114,14 @@ impl Db {
     pub fn new(shards: usize, maxmemory: u64, policy: Policy, samples: usize) -> Self {
         let n = shards.clamp(1, 1 << 16).next_power_of_two();
         let hasher = RandomState::new();
+        let codec = Codec::new(false, 60, 64);
+        let registry = codec.registry();
         let shards = (0..n)
             .map(|i| {
-                Padded(Mutex::new(Shard::new(
+                Padded(Mutex::new(Shard::with_registry(
                     hasher.clone(),
                     0x9E37_79B9_7F4A_7C15 ^ (i as u64 + 1),
+                    registry.clone(),
                 )))
             })
             .collect();
@@ -132,7 +135,7 @@ impl Db {
             samples: AtomicUsize::new(samples),
             start: Instant::now(),
             evict_notify: Notify::new(),
-            codec: Codec::new(false, 60, 64),
+            codec,
             sample_rng: AtomicU64::new(0x2545_F491_4F6C_DD1D),
         }
     }
@@ -245,8 +248,8 @@ impl Db {
         total
     }
 
-    /// Samples up to `n` random values for dictionary training. Returns the prefixes that now have
-    /// enough samples; the caller trains them with `codec.train` on a blocking thread.
+    /// Samples up to `n` random values for dictionary training or drift detection. Returns the prefixes
+    /// that now have enough samples; the caller trains them with `codec.train` on a blocking thread.
     pub fn pack_sample(&self, n: usize) -> Vec<compress::SampleBatch> {
         let mut ready = Vec::new();
         if !self.codec.enabled() {
@@ -260,23 +263,29 @@ impl Db {
             let shard = (r.rotate_left(17) as usize) % self.shard_count();
             let sample = {
                 let mut g = self.lock(shard);
-                g.random_index().and_then(|i| {
+                (0..4).find_map(|_| {
+                    let i = g.random_index()?;
                     let e = g.entry(i);
                     let value = e.plain()?;
-                    (value.len() >= min_size
-                        && !e.is_expired(clock.ms)
-                        && self.codec.ttl_eligible(e, clock.ms)
-                        && self.codec.wants_samples(e.key(), secs))
-                    .then(|| {
-                        (
-                            compress::prefix_of(e.key()).to_vec(),
-                            self.codec.sample_fingerprint(e.key()),
-                            value[..value.len().min(compress::MAX_SAMPLE_SIZE)].to_vec(),
-                        )
-                    })
+                    if value.len() < min_size
+                        || e.is_expired(clock.ms)
+                        || !self.codec.ttl_eligible(e, clock.ms)
+                    {
+                        return None;
+                    }
+                    let wants = self.codec.wants_samples(e.key(), secs);
+                    Some((
+                        compress::prefix_of(e.key()).to_vec(),
+                        self.codec.sample_fingerprint(e.key()),
+                        value[..value.len().min(compress::MAX_SAMPLE_SIZE)].to_vec(),
+                        !wants,
+                    ))
                 })
             };
-            let batch = sample.and_then(|(prefix, key_hash, value)| {
+            let batch = sample.and_then(|(prefix, key_hash, value, needs_probe)| {
+                if needs_probe && !self.codec.probe_drift_prefix(&prefix, &value) {
+                    return None;
+                }
                 self.codec
                     .offer_sample_owned(&prefix, key_hash, value, secs)
             });
@@ -289,7 +298,7 @@ impl Db {
     }
 
     /// Byte-bounded snapshots and compression outside the lock. The deadline is cooperative:
-    /// a single zstd call may finish after it, but its input is bounded by max_value_bytes.
+    /// a single compression call may finish after it, but its input is bounded by max_value_bytes.
     pub fn pack_step(&self, cursor: &mut PackCursor, scan: usize, budget: &PackBudget) -> PackWork {
         self.pack_step_at(cursor, scan, budget, self.clock())
     }
@@ -302,18 +311,23 @@ impl Db {
         clock: Clock,
     ) -> PackWork {
         let mut work = PackWork::default();
-        if !self.codec.enabled() || !self.codec.has_dicts() || Instant::now() >= budget.until {
+        if !self.codec.enabled() || !self.codec.can_pack() || Instant::now() >= budget.until {
             return work;
         }
         let min_idle = self.codec.min_idle_secs().min(u32::MAX as u64) as u32;
         let min_size = self.codec.min_size();
+        let policy = self.policy();
+        let policy_is_lfu = policy == Policy::AllKeysLfu;
+        let maxmemory = self.maxmemory();
+        let memory_pressure =
+            maxmemory > 0 && self.used_memory().saturating_mul(10) >= maxmemory.saturating_mul(9);
         let shard = cursor.shard % self.shard_count();
         let mut candidates = Vec::new();
         {
             let g = self.lock(shard);
             // Dense entries may have moved since the previous pass.
             cursor.pos = cursor.pos.min(g.len());
-            if g.pack_stats().keys as usize == g.len() {
+            if g.pack_stats().keys as usize == g.len() && !g.has_retired_dicts(&self.codec) {
                 cursor.shard = (shard + 1) % self.shard_count();
                 cursor.pos = 0;
                 return work;
@@ -322,6 +336,8 @@ impl Db {
             while cursor.pos < end && Instant::now() < budget.until {
                 let i = cursor.pos;
                 let e = g.entry(i);
+                let access_secs = g.last_access_secs(i);
+                let idle_ok = clock.secs >= access_secs && clock.secs - access_secs >= min_idle;
                 if let Some(value) = e.plain().filter(|v| v.len() >= min_size) {
                     if !self.codec.ttl_eligible(e, clock.ms) {
                         self.codec.stats.short_ttl_skips.fetch_add(1, Relaxed);
@@ -329,12 +345,10 @@ impl Db {
                         work.scanned += 1;
                         continue;
                     }
-                    let access_secs = g.last_access_secs(i);
-                    let dict = (!e.is_expired(clock.ms)
-                        && clock.secs.saturating_sub(access_secs) >= min_idle)
-                        .then(|| self.codec.dict_for_key(e.key()))
-                        .flatten();
-                    if let Some(dict) = dict {
+                    if !e.is_expired(clock.ms)
+                        && idle_ok
+                        && self.codec.can_pack_entry(e.key(), value.len(), clock.secs)
+                    {
                         let bytes = e.key().len().saturating_add(value.len());
                         if bytes > budget.max_value_bytes {
                             self.codec.stats.oversized_skips.fetch_add(1, Relaxed);
@@ -346,7 +360,36 @@ impl Db {
                                 key: e.key().to_vec(),
                                 value: value.to_vec(),
                                 access_secs,
-                                dict: dict.id,
+                                dict: 0,
+                                lfu: g.current_lfu(i, policy, clock),
+                                source_packed: None,
+                            });
+                            work.input_bytes += bytes;
+                        }
+                    }
+                } else if let Some(p) = e
+                    .packed()
+                    .filter(|p| !p.is_lz4() && self.codec.is_dict_retired(p.dict))
+                {
+                    let should_unpack = self.codec.should_unpack_retired(p.dict);
+                    if !e.is_expired(clock.ms)
+                        && (idle_ok || should_unpack)
+                        && self.codec.ttl_eligible(e, clock.ms)
+                    {
+                        let bytes = e.key().len().saturating_add(p.original_len as usize);
+                        if bytes > budget.max_value_bytes {
+                            self.codec.stats.oversized_skips.fetch_add(1, Relaxed);
+                        } else if bytes > budget.bytes.saturating_sub(work.input_bytes) {
+                            break;
+                        } else {
+                            candidates.push(PackCandidate {
+                                index: i,
+                                key: e.key().to_vec(),
+                                value: e.stored().to_vec(),
+                                access_secs,
+                                dict: p.dict,
+                                lfu: g.current_lfu(i, policy, clock),
+                                source_packed: Some(p),
                             });
                             work.input_bytes += bytes;
                         }
@@ -364,16 +407,72 @@ impl Db {
                 cursor.pos = 0;
             }
         }
-        for candidate in candidates {
+        for mut candidate in candidates {
             if Instant::now() >= budget.until {
                 break;
             }
-            let Some(dict) = self.codec.dict(candidate.dict) else {
+            if let Some(src_packed) = candidate.source_packed {
+                let Ok(plain) =
+                    self.codec
+                        .with_packed_value(src_packed, &candidate.value, |bytes| bytes.to_vec())
+                else {
+                    continue;
+                };
+                if let Some((new_dict, compressed)) = self.codec.compress_adaptive(
+                    &candidate.key,
+                    &plain,
+                    candidate.lfu,
+                    policy_is_lfu,
+                    memory_pressure,
+                    clock.secs,
+                    clock.ms,
+                ) {
+                    candidate.dict = new_dict;
+                    let mut g = self.lock(shard);
+                    let clock = self.clock();
+                    if g.entries()
+                        .get(candidate.index)
+                        .is_some_and(|e| self.codec.ttl_eligible(e, clock.ms))
+                        && g.pack_at(&candidate, &compressed, clock, min_idle)
+                    {
+                        work.packed += 1;
+                        if new_dict == entry::LZ4_DICT_ID {
+                            self.codec.stats.lz4_packed.fetch_add(1, Relaxed);
+                        } else {
+                            self.codec.stats.zstd_packed.fetch_add(1, Relaxed);
+                        }
+                    } else {
+                        self.codec.stats.candidates_discarded.fetch_add(1, Relaxed);
+                    }
+                } else {
+                    let mut g = self.lock(shard);
+                    let clock = self.clock();
+                    if !memory_pressure && self.codec.should_unpack_retired(src_packed.dict) {
+                        let _ = g.unpack_retired_at(&candidate, &plain, clock);
+                    } else {
+                        // Keep the entry compressed on its retired dictionary while that dictionary
+                        // remains net-profitable, and defer re-evaluation.
+                        g.defer_pack_at(&candidate, clock.secs.saturating_add(2));
+                    }
+                }
+                continue;
+            }
+
+            let Some((new_dict, compressed)) = self.codec.compress_adaptive(
+                &candidate.key,
+                &candidate.value,
+                candidate.lfu,
+                policy_is_lfu,
+                memory_pressure,
+                clock.secs,
+                clock.ms,
+            ) else {
+                let mut g = self.lock(shard);
+                let clock = self.clock();
+                g.defer_pack_at(&candidate, clock.secs.saturating_add(1));
                 continue;
             };
-            let Some(compressed) = self.codec.compress(dict, &candidate.value) else {
-                continue;
-            };
+            candidate.dict = new_dict;
             let mut g = self.lock(shard);
             let clock = self.clock();
             if g.entries()
@@ -382,6 +481,11 @@ impl Db {
                 && g.pack_at(&candidate, &compressed, clock, min_idle)
             {
                 work.packed += 1;
+                if new_dict == entry::LZ4_DICT_ID {
+                    self.codec.stats.lz4_packed.fetch_add(1, Relaxed);
+                } else {
+                    self.codec.stats.zstd_packed.fetch_add(1, Relaxed);
+                }
             } else {
                 self.codec.stats.candidates_discarded.fetch_add(1, Relaxed);
             }
@@ -401,6 +505,30 @@ impl Db {
         (0..self.shard_count())
             .map(|i| self.lock(i).access_clock_bytes())
             .sum()
+    }
+
+    pub fn pack_metadata_bytes(&self) -> usize {
+        (0..self.shard_count())
+            .map(|i| self.lock(i).pack_metadata_bytes())
+            .sum()
+    }
+
+    /// Real net memory savings from CrabPack across the database, after subtracting per-entry
+    /// `PACKED_BYTES` headers, resident dictionary tables (active + retired), sampler buffers,
+    /// and per-shard CrabPack metadata (`access_secs`, `hot_promoted`, `dict_usage`).
+    pub fn net_compression_savings_bytes(&self) -> i64 {
+        let pack = self.pack_summary();
+        let gross_saved = pack.original_bytes as i64 - pack.stored_bytes as i64;
+        let header_overhead = (pack.keys as i64) * (entry::PACKED_BYTES as i64);
+        let dict_overhead: i64 = self
+            .codec
+            .dicts()
+            .iter()
+            .map(|d| d.prepared_bytes as i64)
+            .sum();
+        let sampler_overhead = self.codec.sampler_memory().1 as i64;
+        let shard_meta_overhead = self.pack_metadata_bytes() as i64;
+        gross_saved - header_overhead - dict_overhead - sampler_overhead - shard_meta_overhead
     }
 
     pub fn hot_resident_bytes(&self) -> usize {
@@ -739,6 +867,151 @@ mod tests {
         assert_eq!((work.input_bytes, work.packed), (0, 0));
         assert_eq!(db.codec.stats.oversized_skips.load(Relaxed), 50);
         assert_eq!(db.pack_summary().keys, 0);
+    }
+
+    #[test]
+    fn adaptive_pack_step_selects_zstd_lz4_and_plain() {
+        let db = trained_db();
+        let large_json = br#"{"service":"checkout","region":"sa-east-1","items":[{"sku":"A1","qty":2,"price":1990},{"sku":"B2","qty":1,"price":4990}]}"#.repeat(50);
+        set(&db, b"blob:large", &large_json).unwrap();
+        let mut rng = 0xDEAD_BEEF_CAFE_BABEu64;
+        let incompressible: Vec<u8> = (0..512)
+            .map(|_| {
+                rng ^= rng >> 12;
+                rng ^= rng << 25;
+                rng ^= rng >> 27;
+                (rng.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 56) as u8
+            })
+            .collect();
+        set(&db, b"session:random", &incompressible).unwrap();
+
+        let mut cursor = PackCursor::default();
+        let budget = PackBudget {
+            bytes: 256 * 1024,
+            max_value_bytes: 64 * 1024,
+            until: Instant::now() + std::time::Duration::from_secs(10),
+        };
+        for _ in 0..20 {
+            db.pack_step(&mut cursor, 256, &budget);
+        }
+        let summary = db.pack_summary();
+        assert_eq!(summary.zstd_keys, 50);
+        assert_eq!(summary.lz4_keys, 1);
+        assert_eq!(summary.keys, 51);
+        assert!(db.codec.stats.cost_benefit_skips.load(Relaxed) >= 1);
+
+        let (g, h) = db.lock_key(b"blob:large");
+        let idx = g
+            .entries()
+            .iter()
+            .position(|e| e.key() == b"blob:large")
+            .unwrap();
+        let _ = h;
+        assert!(g.entry(idx).packed().unwrap().is_lz4());
+        assert_eq!(
+            db.codec.with_value(g.entry(idx), |v| v.to_vec()).unwrap(),
+            large_json
+        );
+    }
+
+    #[test]
+    fn dynamic_dict_retraining_migrates_entries_and_reclaims_retired_version() {
+        let db = trained_db();
+        let mut cursor = PackCursor::default();
+        let budget = PackBudget {
+            bytes: 256 * 1024,
+            max_value_bytes: 64 * 1024,
+            until: Instant::now() + std::time::Duration::from_secs(10),
+        };
+        db.pack_step(&mut cursor, 256, &budget);
+        assert_eq!(db.pack_summary().zstd_keys, 50);
+        assert_eq!(db.codec.active_dicts().len(), 1);
+        assert_eq!(db.codec.retired_dicts().len(), 0);
+
+        // Schema shifts on `session:`; insert new values and run `pack_sample` to detect drift & collect samples.
+        let v2_samples = compress::tests::drifted_sample_values(1100, 77);
+        for (i, v) in v2_samples.iter().enumerate() {
+            set(&db, format!("session:v2_{i}").as_bytes(), v).unwrap();
+        }
+        let mut batches = Vec::new();
+        for _ in 0..500 {
+            batches.extend(db.pack_sample(64));
+            if !batches.is_empty() {
+                break;
+            }
+        }
+        assert_eq!(batches.len(), 1);
+        let (prefix, samples) = batches.pop().unwrap();
+        assert!(matches!(
+            db.codec.train(prefix, samples, 10),
+            compress::TrainOutcome::Accepted { .. }
+        ));
+        assert_eq!(db.codec.active_dicts().len(), 1);
+        assert_eq!(db.codec.active_dicts()[0].version, 2);
+        assert_eq!(db.codec.retired_dicts().len(), 1);
+        assert_eq!(db.codec.retired_dicts()[0].active_key_count(), 50);
+
+        // Background packer migrates the 50 old v1 entries and packs the new v2 entries, reclaiming v1 automatically.
+        for _ in 0..100 {
+            db.pack_step(&mut cursor, 256, &budget);
+            if db.codec.retired_dicts().is_empty() {
+                break;
+            }
+        }
+        assert_eq!(db.codec.retired_dicts().len(), 0);
+        assert!(db.codec.dicts_reclaimed() >= 1);
+        for (i, expected) in compress::tests::sample_values(50, 123).iter().enumerate() {
+            let (g, _) = db.lock_key(format!("session:{i}").as_bytes());
+            let key = format!("session:{i}");
+            let index = g
+                .entries()
+                .iter()
+                .position(|e| e.key() == key.as_bytes())
+                .unwrap();
+            assert_eq!(
+                db.codec.with_value(g.entry(index), |v| v.to_vec()).unwrap(),
+                *expected
+            );
+        }
+    }
+
+    #[test]
+    fn net_compression_savings_accounts_for_dicts_headers_and_metadata() {
+        let db = Db::new(1, 0, Policy::AllKeysLfu, 5);
+        db.codec.set_enabled(true);
+        db.codec.set_min_idle_secs(0);
+        assert!(matches!(
+            db.codec.train(
+                b"session:".as_slice().into(),
+                compress::tests::sample_values(1000, 9),
+                0
+            ),
+            compress::TrainOutcome::Accepted { .. }
+        ));
+        let samples = compress::tests::sample_values(1000, 321);
+        set(&db, b"session:0", &samples[0]).unwrap();
+        let mut cursor = PackCursor::default();
+        let budget = PackBudget {
+            bytes: 512 * 1024,
+            max_value_bytes: 64 * 1024,
+            until: Instant::now() + std::time::Duration::from_secs(10),
+        };
+        db.pack_step(&mut cursor, 256, &budget);
+        assert!(
+            db.net_compression_savings_bytes() < 0,
+            "1 packed entry cannot amortize a prepared dictionary"
+        );
+        for (i, v) in samples.iter().enumerate().skip(1) {
+            set(&db, format!("session:{i}").as_bytes(), v).unwrap();
+        }
+        for _ in 0..20 {
+            db.pack_step(&mut cursor, 256, &budget);
+        }
+        assert!(
+            db.net_compression_savings_bytes() > 0,
+            "1000 packed entries must yield positive net memory savings: {}",
+            db.net_compression_savings_bytes()
+        );
     }
 }
 

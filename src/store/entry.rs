@@ -25,12 +25,27 @@ const KEY_LEN_MASK: u32 = PACKED_FLAG - 1;
 const LEN_BYTES: usize = 4;
 const EXPIRE_BYTES: usize = 8;
 pub const PACKED_BYTES: usize = 8;
+/// Sentinel `Packed.dict` marking dictionary-free LZ4 block compression.
+pub const LZ4_DICT_ID: u32 = u32::MAX;
 
-/// Marks a value stored compressed with dictionary `dict`; `original_len` is its uncompressed size.
+/// Marks a value stored compressed with dictionary `dict` (or `LZ4_DICT_ID`); `original_len` is its uncompressed size.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Packed {
     pub dict: u32,
     pub original_len: u32,
+}
+
+impl Packed {
+    pub const fn lz4(original_len: u32) -> Self {
+        Self {
+            dict: LZ4_DICT_ID,
+            original_len,
+        }
+    }
+
+    pub const fn is_lz4(self) -> bool {
+        self.dict == LZ4_DICT_ID
+    }
 }
 
 pub struct Entry {

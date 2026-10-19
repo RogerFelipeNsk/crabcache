@@ -3,6 +3,7 @@
 use super::Ctx;
 use crate::protocol::{Args, reply};
 use crate::store::Policy;
+use crate::store::compress::CompressionAlgo;
 use crate::util::{eq_ic, glob_match, parse_i64, parse_memory};
 use std::fmt::Write as _;
 use std::sync::atomic::Ordering::Relaxed;
@@ -229,6 +230,10 @@ fn config_params(c: &Ctx) -> Vec<(&'static str, String)> {
             if c.db.codec.enabled() { "yes" } else { "no" }.to_string(),
         ),
         (
+            "compression-algorithm",
+            c.db.codec.algorithm().name().to_string(),
+        ),
+        (
             "compression-min-idle",
             c.db.codec.min_idle_secs().to_string(),
         ),
@@ -263,6 +268,10 @@ fn config_params(c: &Ctx) -> Vec<(&'static str, String)> {
         (
             "compression-hot-maxmemory",
             c.db.codec.hot_max_bytes().to_string(),
+        ),
+        (
+            "compression-latency-target-us",
+            c.db.codec.latency_target_us().to_string(),
         ),
         ("port", cfg.port.to_string()),
         ("bind", cfg.bind.clone()),
@@ -302,6 +311,7 @@ pub fn config(c: &mut Ctx, args: &Args) {
                 Policy(Policy),
                 Samples(usize),
                 Compression(bool),
+                CompressionAlgorithm(CompressionAlgo),
                 CompressionMinIdle(u64),
                 CompressionMinSize(usize),
                 CompressionMaxBytes(u64),
@@ -310,6 +320,7 @@ pub fn config(c: &mut Ctx, args: &Args) {
                 AdaptiveMaintenance(bool),
                 MinTtl(u64),
                 HotMemory(u64),
+                LatencyTargetUs(u64),
             }
             // Validate everything before applying anything, like Redis.
             let mut updates = Vec::new();
@@ -342,6 +353,15 @@ pub fn config(c: &mut Ctx, args: &Args) {
                             return reply::error(
                                 c.out,
                                 "ERR CONFIG SET failed (possibly related to argument 'compression') - argument must be 'yes' or 'no'",
+                            );
+                        }
+                    },
+                    b"compression-algorithm" => match CompressionAlgo::parse(v) {
+                        Some(algo) => updates.push(Update::CompressionAlgorithm(algo)),
+                        None => {
+                            return reply::error(
+                                c.out,
+                                "ERR CONFIG SET failed (possibly related to argument 'compression-algorithm') - argument(s) must be one of the following: auto, zstd, lz4",
                             );
                         }
                     },
@@ -383,6 +403,12 @@ pub fn config(c: &mut Ctx, args: &Args) {
                         Some(n) => updates.push(Update::HotMemory(n)),
                         None => return reply::error(c.out, &bad()),
                     },
+                    b"compression-latency-target-us" => {
+                        match parse_i64(v).filter(|&n| (1..=1_000_000).contains(&n)) {
+                            Some(n) => updates.push(Update::LatencyTargetUs(n as u64)),
+                            None => return reply::error(c.out, &bad()),
+                        }
+                    }
                     b"maxmemory-samples" => match parse_i64(v).filter(|&n| (1..=64).contains(&n)) {
                         Some(n) => updates.push(Update::Samples(n as usize)),
                         None => return reply::error(c.out, &bad()),
@@ -404,6 +430,7 @@ pub fn config(c: &mut Ctx, args: &Args) {
                     Update::Policy(p) => c.db.set_policy(p),
                     Update::Samples(n) => c.db.set_samples(n),
                     Update::Compression(on) => c.db.codec.set_enabled(on),
+                    Update::CompressionAlgorithm(algo) => c.db.codec.set_algorithm(algo),
                     Update::CompressionMinIdle(n) => c.db.codec.set_min_idle_secs(n),
                     Update::CompressionMinSize(n) => c.db.codec.set_min_size(n),
                     Update::CompressionMaxBytes(n) => c.db.codec.set_pack_max_bytes(n),
@@ -412,6 +439,7 @@ pub fn config(c: &mut Ctx, args: &Args) {
                     Update::AdaptiveMaintenance(on) => c.db.codec.set_adaptive_maintenance(on),
                     Update::MinTtl(n) => c.db.codec.set_min_ttl_secs(n),
                     Update::HotMemory(n) => c.db.codec.set_hot_max_bytes(n),
+                    Update::LatencyTargetUs(n) => c.db.codec.set_latency_target_us(n),
                 }
             }
             reply::ok(c.out);
@@ -517,6 +545,9 @@ pub fn info(c: &mut Ctx, args: &Args) {
         let codec = &c.db.codec;
         let pack = c.db.pack_summary();
         let dicts = codec.dicts();
+        let active_dicts = codec.active_dicts().len();
+        let retired_dicts = codec.retired_dicts().len();
+        let (p95_us, p99_us) = codec.latency_percentiles_us();
         let ratio = if pack.stored_bytes > 0 {
             pack.original_bytes as f64 / pack.stored_bytes as f64
         } else {
@@ -524,22 +555,29 @@ pub fn info(c: &mut Ctx, args: &Args) {
         };
         let _ = write!(
             s,
-            "# Compression\r\ncompression:{}\r\ncompression_min_idle:{}\r\ncompression_min_size:{}\r\ncompression_dicts:{}\r\ncompression_dicts_rejected:{}\r\ncompressed_keys:{}\r\ncompressed_original_bytes:{}\r\ncompressed_stored_bytes:{}\r\ncompression_ratio:{:.2}\r\n",
+            "# Compression\r\ncompression:{}\r\ncompression_algorithm:{}\r\ncompression_min_idle:{}\r\ncompression_min_size:{}\r\ncompression_dicts:{}\r\ncompression_dicts_active:{active_dicts}\r\ncompression_dicts_retired:{retired_dicts}\r\ncompression_dicts_retrained:{}\r\ncompression_dicts_reclaimed:{}\r\ncompression_dict_drifts:{}\r\ncompression_dicts_rejected:{}\r\ncompressed_keys:{}\r\ncompressed_zstd_keys:{}\r\ncompressed_lz4_keys:{}\r\ncompressed_original_bytes:{}\r\ncompressed_stored_bytes:{}\r\ncompression_net_memory_saved_bytes:{}\r\ncompression_ratio:{:.2}\r\n",
             if codec.enabled() { "yes" } else { "no" },
+            codec.algorithm().name(),
             codec.min_idle_secs(),
             codec.min_size(),
             dicts.len(),
+            codec.stats.dicts_retrained.load(Relaxed),
+            codec.dicts_reclaimed(),
+            codec.stats.dict_drifts.load(Relaxed),
             codec.stats.dicts_rejected.load(Relaxed),
             pack.keys,
+            pack.zstd_keys,
+            pack.lz4_keys,
             pack.original_bytes,
             pack.stored_bytes,
+            c.db.net_compression_savings_bytes(),
             ratio,
         );
         let (sampler_prefixes, sample_bytes) = codec.sampler_memory();
         let prepared_bytes: usize = dicts.iter().map(|d| d.prepared_bytes).sum();
         let _ = write!(
             s,
-            "compression_max_bytes_per_tick:{}\r\ncompression_time_budget_ms:{}\r\ncompression_access_clock_bytes:{}\r\ncompression_sampler_prefixes:{}\r\ncompression_sample_bytes:{}\r\ncompression_prepared_dict_bytes:{}\r\ncompression_training_jobs:{}\r\ncompression_training_bytes:{}\r\ncompression_training_us:{}\r\ncompression_pack_us:{}\r\ncompression_pack_input_bytes:{}\r\ncompression_candidates_discarded:{}\r\ncompression_oversized_skips:{}\r\n",
+            "compression_max_bytes_per_tick:{}\r\ncompression_time_budget_ms:{}\r\ncompression_access_clock_bytes:{}\r\ncompression_sampler_prefixes:{}\r\ncompression_sample_bytes:{}\r\ncompression_prepared_dict_bytes:{}\r\ncompression_training_jobs:{}\r\ncompression_training_bytes:{}\r\ncompression_training_us:{}\r\ncompression_pack_us:{}\r\ncompression_pack_input_bytes:{}\r\ncompression_candidates_discarded:{}\r\ncompression_oversized_skips:{}\r\ncompression_cost_benefit_skips:{}\r\ncompression_decompress_calls:{}\r\ncompression_decompress_us:{}\r\n",
             codec.pack_max_bytes(),
             codec.pack_budget_ms(),
             c.db.access_clock_bytes(),
@@ -552,11 +590,14 @@ pub fn info(c: &mut Ctx, args: &Args) {
             codec.stats.pack_micros.load(Relaxed),
             codec.stats.pack_input_bytes.load(Relaxed),
             codec.stats.candidates_discarded.load(Relaxed),
-            codec.stats.oversized_skips.load(Relaxed)
+            codec.stats.oversized_skips.load(Relaxed),
+            codec.stats.cost_benefit_skips.load(Relaxed),
+            codec.stats.decompress_calls.load(Relaxed),
+            codec.stats.decompress_micros.load(Relaxed),
         );
         let _ = write!(
             s,
-            "compression_adaptive_dicts:{}\r\ncompression_adaptive_maintenance:{}\r\ncompression_min_ttl:{}\r\ncompression_hot_maxmemory:{}\r\ncompression_hot_resident_bytes:{}\r\ncompression_hot_promotions:{}\r\ncompression_short_ttl_skips:{}\r\ncompression_maintenance_backoffs:{}\r\n",
+            "compression_adaptive_dicts:{}\r\ncompression_adaptive_maintenance:{}\r\ncompression_min_ttl:{}\r\ncompression_hot_maxmemory:{}\r\ncompression_hot_resident_bytes:{}\r\ncompression_hot_promotions:{}\r\ncompression_short_ttl_skips:{}\r\ncompression_maintenance_backoffs:{}\r\ncompression_latency_target_us:{}\r\ncompression_observed_p95_us:{p95_us}\r\ncompression_observed_p99_us:{p99_us}\r\n",
             if codec.adaptive_dicts() { "yes" } else { "no" },
             if codec.adaptive_maintenance() {
                 "yes"
@@ -568,18 +609,23 @@ pub fn info(c: &mut Ctx, args: &Args) {
             c.db.hot_resident_bytes(),
             codec.stats.hot_promotions.load(Relaxed),
             codec.stats.short_ttl_skips.load(Relaxed),
-            codec.stats.maintenance_backoffs.load(Relaxed)
+            codec.stats.maintenance_backoffs.load(Relaxed),
+            codec.latency_target_us(),
         );
         for d in &dicts {
             let _ = write!(
                 s,
-                "dict{}:prefix={},trained_ratio={:.2},raw_bytes={},level={},prepared_bytes={}\r\n",
+                "dict{}:prefix={},trained_ratio={:.2},raw_bytes={},level={},prepared_bytes={},version={},active_keys={},retired={},net_saved_bytes={}\r\n",
                 d.id,
                 String::from_utf8_lossy(&d.prefix),
                 d.trained_ratio,
                 d.raw_bytes,
                 d.level,
-                d.prepared_bytes
+                d.prepared_bytes,
+                d.version,
+                d.active_key_count(),
+                if d.is_retired() { 1 } else { 0 },
+                d.net_saved_bytes(),
             );
         }
         s.push_str("\r\n");

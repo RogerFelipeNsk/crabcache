@@ -6,12 +6,14 @@
 //! with the moved entry's index slot patched.
 
 use super::chunked::Chunked;
-use super::entry::{Entry, Packed};
+use super::compress::DictRegistry;
+use super::entry::{Entry, LZ4_DICT_ID, Packed};
 use super::{Clock, Policy};
 use ahash::RandomState;
 use hashbrown::HashTable;
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashMap};
+use std::sync::Arc;
 
 const LFU_INIT_VAL: u32 = 5;
 const LFU_LOG_FACTOR: f64 = 10.0;
@@ -29,6 +31,8 @@ pub struct ShardStats {
 #[derive(Default, Clone, Copy, Debug)]
 pub struct PackStats {
     pub keys: u64,
+    pub zstd_keys: u64,
+    pub lz4_keys: u64,
     /// Total uncompressed size of the packed values.
     pub original_bytes: u64,
     /// Total stored (compressed) size of the packed values.
@@ -38,6 +42,8 @@ pub struct PackStats {
 impl std::ops::AddAssign for PackStats {
     fn add_assign(&mut self, o: Self) {
         self.keys += o.keys;
+        self.zstd_keys += o.zstd_keys;
+        self.lz4_keys += o.lz4_keys;
         self.original_bytes += o.original_bytes;
         self.stored_bytes += o.stored_bytes;
     }
@@ -56,9 +62,12 @@ impl std::ops::AddAssign for ShardStats {
 pub struct PackCandidate {
     pub index: usize,
     pub key: Vec<u8>,
+    /// Plain value bytes (when `source_packed` is `None`) or stored compressed bytes (when migrating from a retired dictionary).
     pub value: Vec<u8>,
     pub access_secs: u32,
     pub dict: u32,
+    pub lfu: u8,
+    pub source_packed: Option<Packed>,
 }
 
 pub struct Shard {
@@ -73,6 +82,9 @@ pub struct Shard {
     ttl_keys: usize,
     used: usize,
     pack: PackStats,
+    /// Per-dictionary `(keys, original_bytes, stored_bytes)` in this shard for O(1) clear/reclaim.
+    dict_usage: HashMap<u32, (usize, u64, u64)>,
+    registry: Arc<DictRegistry>,
     hasher: RandomState,
     rng: u64,
     pub stats: ShardStats,
@@ -80,6 +92,10 @@ pub struct Shard {
 
 impl Shard {
     pub fn new(hasher: RandomState, seed: u64) -> Self {
+        Self::with_registry(hasher, seed, Arc::new(DictRegistry::default()))
+    }
+
+    pub fn with_registry(hasher: RandomState, seed: u64, registry: Arc<DictRegistry>) -> Self {
         Self {
             access_secs: None,
             hot_promoted: Vec::new(),
@@ -89,6 +105,8 @@ impl Shard {
             ttl_keys: 0,
             used: 0,
             pack: PackStats::default(),
+            dict_usage: HashMap::new(),
+            registry,
             hasher,
             rng: seed | 1,
             stats: ShardStats::default(),
@@ -213,6 +231,25 @@ impl Shard {
         self.pack
     }
 
+    pub fn pack_metadata_bytes(&self) -> usize {
+        self.access_clock_bytes()
+            + self.hot_promoted.capacity() * std::mem::size_of::<(usize, usize)>()
+            + self.dict_usage.capacity() * std::mem::size_of::<(u32, (usize, u64, u64))>()
+    }
+
+    pub fn has_retired_dicts(&self, codec: &super::compress::Codec) -> bool {
+        self.dict_usage
+            .keys()
+            .any(|&dict| codec.is_dict_retired(dict))
+    }
+
+    pub fn current_lfu(&self, i: usize, policy: Policy, clock: Clock) -> u8 {
+        match policy {
+            Policy::AllKeysLfu => lfu_decayed(self.entries[i].meta, clock) as u8,
+            _ => LFU_INIT_VAL as u8,
+        }
+    }
+
     /// Counts an entry entering the shard (memory and compression stats).
     fn track_add(&mut self, e: &Entry) {
         self.account(Footprint::of(e), true);
@@ -229,13 +266,37 @@ impl Shard {
         } else {
             self.used -= f.mem;
         }
-        if let Some((original, stored)) = f.packed {
+        if let Some((dict, original, stored)) = f.packed {
             if add {
                 self.pack.keys += 1;
+                if dict == LZ4_DICT_ID {
+                    self.pack.lz4_keys += 1;
+                } else {
+                    self.pack.zstd_keys += 1;
+                    let usage = self.dict_usage.entry(dict).or_insert((0, 0, 0));
+                    usage.0 += 1;
+                    usage.1 += original;
+                    usage.2 += stored;
+                    self.registry.inc_ref(dict, 1, original, stored);
+                }
                 self.pack.original_bytes += original;
                 self.pack.stored_bytes += stored;
             } else {
                 self.pack.keys -= 1;
+                if dict == LZ4_DICT_ID {
+                    self.pack.lz4_keys -= 1;
+                } else {
+                    self.pack.zstd_keys -= 1;
+                    if let Some(usage) = self.dict_usage.get_mut(&dict) {
+                        usage.0 = usage.0.saturating_sub(1);
+                        usage.1 = usage.1.saturating_sub(original);
+                        usage.2 = usage.2.saturating_sub(stored);
+                        if usage.0 == 0 {
+                            self.dict_usage.remove(&dict);
+                        }
+                    }
+                    self.registry.dec_ref(dict, 1, original, stored);
+                }
                 self.pack.original_bytes -= original;
                 self.pack.stored_bytes -= stored;
             }
@@ -339,11 +400,12 @@ impl Shard {
             _ => {}
         }
         // Adding or removing an expiry changes the allocation size.
+        // Account `after` before `before` so a packed entry never transiently drops its dictionary refcount to 0.
         let before = Footprint::of(&self.entries[i]);
         self.entries[i].set_expire_at(at);
         let after = Footprint::of(&self.entries[i]);
-        self.account(before, false);
         self.account(after, true);
+        self.account(before, false);
         if let Some((_, bytes)) = self.hot_promoted.iter_mut().find(|(index, _)| *index == i) {
             *bytes = after.mem;
         }
@@ -388,6 +450,9 @@ impl Shard {
     }
 
     pub fn clear(&mut self) {
+        for (dict, (keys, orig, stored)) in self.dict_usage.drain() {
+            self.registry.dec_ref(dict, keys, orig, stored);
+        }
         self.hot_promoted = Vec::new();
         self.entries.clear();
         if let Some(clocks) = &mut self.access_secs {
@@ -400,8 +465,8 @@ impl Shard {
         self.pack = PackStats::default();
     }
 
-    /// Replaces entry `i` with its compressed form if it still holds `key` with the plain value
-    /// `value`. The compressor works outside the lock, so the entry may have changed or moved; the
+    /// Replaces entry `i` with its compressed form if it still holds `key` with the expected value/packed state.
+    /// The compressor works outside the lock, so the entry may have changed or moved; the
     /// current expiry and eviction metadata are kept.
     pub fn pack_at(
         &mut self,
@@ -415,14 +480,20 @@ impl Shard {
             return false;
         };
         // Accesses and identical writes are relevant even when the contents match.
-        if self.last_access_secs(i) != candidate.access_secs
-            || clock.secs.saturating_sub(self.last_access_secs(i)) < min_idle
+        let last_access = self.last_access_secs(i);
+        if last_access != candidate.access_secs
+            || clock.secs < last_access
+            || clock.secs - last_access < min_idle
             || e.is_expired(clock.ms)
             || e.key() != candidate.key
-            || e.plain() != Some(candidate.value.as_slice())
+            || e.packed() != candidate.source_packed
+            || e.stored() != candidate.value.as_slice()
         {
             return false;
         }
+        let original_len = candidate
+            .source_packed
+            .map_or(candidate.value.len() as u32, |p| p.original_len);
         let packed = Entry::new_packed(
             &candidate.key,
             compressed,
@@ -430,11 +501,54 @@ impl Shard {
             e.meta,
             Packed {
                 dict: candidate.dict,
-                original_len: candidate.value.len() as u32,
+                original_len,
             },
         );
         let hash = self.hash_of(&candidate.key);
         self.replace(i, hash, packed);
+        true
+    }
+
+    /// Defers background packer evaluation of `candidate` until `until_secs` if the entry is unchanged.
+    pub fn defer_pack_at(&mut self, candidate: &PackCandidate, until_secs: u32) {
+        let i = candidate.index;
+        let Some(e) = self.entries.get(i) else {
+            return;
+        };
+        if self.last_access_secs(i) == candidate.access_secs
+            && e.key() == candidate.key
+            && e.packed() == candidate.source_packed
+            && e.stored() == candidate.value.as_slice()
+        {
+            self.record_access(i, until_secs);
+        }
+    }
+
+    /// Restores a retired-dictionary entry to plain form when recompression is no longer profitable,
+    /// allowing the retired dictionary slot to be reclaimed once all its references drain.
+    pub fn unpack_retired_at(
+        &mut self,
+        candidate: &PackCandidate,
+        plain: &[u8],
+        clock: Clock,
+    ) -> bool {
+        let i = candidate.index;
+        let Some(e) = self.entries.get(i) else {
+            return false;
+        };
+        if candidate.source_packed.is_none()
+            || self.last_access_secs(i) != candidate.access_secs
+            || e.is_expired(clock.ms)
+            || e.key() != candidate.key
+            || e.packed() != candidate.source_packed
+            || e.stored() != candidate.value.as_slice()
+        {
+            return false;
+        }
+        let unpacked = Entry::new(&candidate.key, plain, e.expire_at(), e.meta);
+        let hash = self.hash_of(&candidate.key);
+        self.replace(i, hash, unpacked);
+        self.record_access(i, clock.secs.saturating_add(60));
         true
     }
 
@@ -544,8 +658,8 @@ impl Policy {
 #[derive(Clone, Copy)]
 struct Footprint {
     mem: usize,
-    /// `(original_len, stored_len)` for packed entries.
-    packed: Option<(u64, u64)>,
+    /// `(dict_id, original_len, stored_len)` for packed entries.
+    packed: Option<(u32, u64, u64)>,
 }
 
 impl Footprint {
@@ -554,7 +668,7 @@ impl Footprint {
             mem: e.mem_usage(),
             packed: e
                 .packed()
-                .map(|p| (p.original_len as u64, e.stored().len() as u64)),
+                .map(|p| (p.dict, p.original_len as u64, e.stored().len() as u64)),
         }
     }
 }
@@ -751,6 +865,8 @@ mod tests {
             value: e.plain().unwrap().to_vec(),
             access_secs: s.last_access_secs(index),
             dict: 0,
+            lfu: 5,
+            source_packed: None,
         }
     }
 
